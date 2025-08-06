@@ -9,15 +9,13 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
-import jakarta.persistence.UniqueConstraint;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "expense_participants", uniqueConstraints = {
-        @UniqueConstraint(columnNames = {"expense_id", "user_id"})
-})
-public class ExpenseParticipant {
+@Table(name = "settlements")
+public class Settlement {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -27,10 +25,17 @@ public class ExpenseParticipant {
     private BigDecimal amount;
 
     @ManyToOne(optional = false, fetch = FetchType.LAZY)
-    @JoinColumn(name = "expense_id")
-    private Expense expense;
+    @JoinColumn(name = "group_id")
+    private Group group;
 
     @ManyToOne(optional = false, fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id")
-    private User participant;
+    @JoinColumn(name = "from_user_id")
+    private Member fromUser;
+
+    @ManyToOne(optional = false, fetch = FetchType.LAZY)
+    @JoinColumn(name = "to_user_id")
+    private Member toUser;
+
+    @Column(name = "settled_at", nullable = false)
+    private LocalDateTime settledAt = LocalDateTime.now();
 }
