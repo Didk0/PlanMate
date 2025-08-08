@@ -5,57 +5,61 @@ import io.plan.mate.expense.tracker.backend.payloads.dtos.GroupDto;
 import io.plan.mate.expense.tracker.backend.payloads.request.CreateGroupRequest;
 import io.plan.mate.expense.tracker.backend.repositories.GroupRepository;
 import io.plan.mate.expense.tracker.backend.services.GroupService;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
-
-import java.util.List;
 
 @Service
 @RequiredArgsConstructor
 public class GroupServiceImpl implements GroupService {
 
-    private final GroupRepository groupRepository;
-    private final ModelMapper modelMapper;
+  private final GroupRepository groupRepository;
+  private final ModelMapper modelMapper;
 
-    @Override
-    public GroupDto createGroup(final CreateGroupRequest createGroupRequest) {
+  @Override
+  public GroupDto createGroup(final CreateGroupRequest createGroupRequest) {
 
-        final Group group = Group.builder().name(createGroupRequest.name()).build();
+    final Group group = Group.builder().name(createGroupRequest.name()).build();
 
-        final Group createdGroup = groupRepository.save(group);
+    final Group createdGroup = groupRepository.save(group);
 
-        return modelMapper.map(createdGroup, GroupDto.class);
-    }
+    return modelMapper.map(createdGroup, GroupDto.class);
+  }
 
-    @Override
-    public GroupDto getGroupById(final Long id) {
+  @Override
+  public GroupDto getGroupById(final Long groupId) {
 
-        final Group group =
-                groupRepository.findById(id).orElseThrow(() -> new IllegalArgumentException(
-                        "Group with id=" + id + " not found"));
+    final Group group =
+        groupRepository
+            .findById(groupId)
+            .orElseThrow(
+                () -> new IllegalArgumentException("Group with id=" + groupId + " not found"));
 
-        return modelMapper.map(group, GroupDto.class);
-    }
+    return modelMapper.map(group, GroupDto.class);
+  }
 
-    @Override
-    public List<GroupDto> getAllGroups() {
+  @Override
+  public List<GroupDto> getAllGroups() {
 
-        return groupRepository.findAll().stream().map(group -> modelMapper.map(group,
-                GroupDto.class)).toList();
-    }
+    return groupRepository.findAll().stream()
+        .map(group -> modelMapper.map(group, GroupDto.class))
+        .toList();
+  }
 
-    @Override
-    public GroupDto deleteGroup(final Long id) {
+  @Override
+  public GroupDto deleteGroup(final Long groupId) {
 
-        final Group group =
-                groupRepository.findById(id).orElseThrow(() -> new IllegalArgumentException(
-                        "Group with id=" + id + " not found"));
+    final Group group =
+        groupRepository
+            .findById(groupId)
+            .orElseThrow(
+                () -> new IllegalArgumentException("Group with id=" + groupId + " not found"));
 
-        final GroupDto groupDtoToReturn = modelMapper.map(group, GroupDto.class);
+    final GroupDto groupDtoToReturn = modelMapper.map(group, GroupDto.class);
 
-        groupRepository.delete(group);
+    groupRepository.delete(group);
 
-        return groupDtoToReturn;
-    }
+    return groupDtoToReturn;
+  }
 }

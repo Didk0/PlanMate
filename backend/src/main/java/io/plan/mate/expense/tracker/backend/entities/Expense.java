@@ -11,14 +11,13 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.NoArgsConstructor;
-
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.NoArgsConstructor;
 
 @Entity
 @Table(name = "expenses")
@@ -27,26 +26,26 @@ import java.util.List;
 @Builder
 public class Expense {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+  @Id
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
+  private Long id;
 
-    private String description;
+  private String description;
 
-    @Column(nullable = false)
-    private BigDecimal amount;
+  @Column(nullable = false)
+  private BigDecimal amount;
 
-    @Column(name = "created_at", nullable = false, updatable = false)
-    private LocalDateTime createdAt = LocalDateTime.now();
+  @Column(name = "created_at", nullable = false, updatable = false)
+  private LocalDateTime createdAt = LocalDateTime.now();
 
-    @ManyToOne(optional = false, fetch = FetchType.LAZY)
-    @JoinColumn(name = "group_id")
-    private Group group;
+  @ManyToOne(optional = false, fetch = FetchType.LAZY)
+  @JoinColumn(name = "group_id")
+  private Group group;
 
-    @ManyToOne(optional = false, fetch = FetchType.LAZY)
-    @JoinColumn(name = "paid_by_user_id")
-    private Member paidBy;
+  @ManyToOne(optional = false, fetch = FetchType.LAZY)
+  @JoinColumn(name = "paid_by_user_id")
+  private User paidBy;
 
-    @OneToMany(mappedBy = "expense", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<ExpenseParticipant> participants = new ArrayList<>();
+  @OneToMany(mappedBy = "expense", cascade = CascadeType.ALL, orphanRemoval = true)
+  private List<ExpenseParticipant> participants = new ArrayList<>();
 }

@@ -36,7 +36,7 @@ CREATE TABLE expenses
     group_id        BIGINT         NOT NULL,
     paid_by_user_id BIGINT         NOT NULL,
     CONSTRAINT fk_expenses_group FOREIGN KEY (group_id) REFERENCES groups (id) ON DELETE CASCADE,
-    CONSTRAINT fk_expenses_paid_by FOREIGN KEY (paid_by_user_id) REFERENCES members (id) ON DELETE CASCADE
+    CONSTRAINT fk_expenses_paid_by FOREIGN KEY (paid_by_user_id) REFERENCES users (id) ON DELETE CASCADE
 );
 
 -- Expense participants table

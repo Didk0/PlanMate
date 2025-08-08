@@ -30,10 +30,10 @@ public class UserController {
     return ResponseEntity.status(HttpStatus.CREATED).body(userDto);
   }
 
-  @GetMapping("/{id}")
-  public ResponseEntity<UserDto> getUserById(@PathVariable final Long id) {
+  @GetMapping("/{userId}")
+  public ResponseEntity<UserDto> getUserById(@PathVariable final Long userId) {
 
-    final UserDto userDto = userService.getUserById(id);
+    final UserDto userDto = userService.getUserById(userId);
     return ResponseEntity.ok(userDto);
   }
 
@@ -44,10 +44,10 @@ public class UserController {
     return ResponseEntity.ok(users);
   }
 
-  @DeleteMapping("/{id}")
-  public ResponseEntity<UserDto> deleteUser(@PathVariable final Long id) {
+  @DeleteMapping("/{userId}")
+  public ResponseEntity<UserDto> deleteUser(@PathVariable final Long userId) {
 
-    final UserDto userDto = userService.deleteUser(id);
+    final UserDto userDto = userService.deleteUser(userId);
     return ResponseEntity.ok(userDto);
   }
 }

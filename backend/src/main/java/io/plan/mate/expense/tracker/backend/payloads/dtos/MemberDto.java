@@ -12,9 +12,10 @@ import lombok.Setter;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-public class GroupDto {
+public class MemberDto {
 
   private Long id;
-  private String name;
-  private LocalDateTime createdAt;
+  private String userName;
+  private String groupName;
+  private LocalDateTime joinedAt;
 }

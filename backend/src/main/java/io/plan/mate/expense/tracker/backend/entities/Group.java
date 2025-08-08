@@ -36,9 +36,9 @@ public class Group {
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
 
-    @Builder.Default
+    /*@Builder.Default
     @OneToMany(mappedBy = "group", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Member> members = new ArrayList<>();
+    private List<Member> members = new ArrayList<>();*/
 
     @Builder.Default
     @OneToMany(mappedBy = "group", cascade = CascadeType.ALL, orphanRemoval = true)

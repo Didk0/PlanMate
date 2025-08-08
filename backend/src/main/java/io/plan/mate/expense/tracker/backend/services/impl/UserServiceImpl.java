@@ -35,13 +35,15 @@ public class UserServiceImpl implements UserService {
   }
 
   @Override
-  public UserDto getUserById(final Long id) {
+  public UserDto getUserById(final Long userId) {
 
     final User user =
         userRepository
-            .findById(id)
+            .findById(userId)
             .orElseThrow(
-                () -> new IllegalArgumentException(String.format("No user with id %s found", id)));
+                () ->
+                    new IllegalArgumentException(
+                        String.format("No user with id %s found", userId)));
 
     return modelMapper.map(user, UserDto.class);
   }
@@ -55,15 +57,17 @@ public class UserServiceImpl implements UserService {
   }
 
   @Override
-  public UserDto deleteUser(final Long id) {
+  public UserDto deleteUser(final Long userId) {
 
     final User user =
         userRepository
-            .findById(id)
+            .findById(userId)
             .orElseThrow(
-                () -> new IllegalArgumentException(String.format("No user with id %s found", id)));
+                () ->
+                    new IllegalArgumentException(
+                        String.format("No user with id %s found", userId)));
 
-    UserDto userToDelete = modelMapper.map(user, UserDto.class);
+    final UserDto userToDelete = modelMapper.map(user, UserDto.class);
 
     userRepository.delete(user);
 
