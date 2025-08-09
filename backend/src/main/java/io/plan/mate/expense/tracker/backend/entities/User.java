@@ -34,8 +34,4 @@ public class User {
   @Builder.Default
   @Column(name = "created_at", nullable = false, updatable = false)
   private LocalDateTime createdAt = LocalDateTime.now();
-
-  /*  @Builder.Default
-  @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
-  private List<Member> memberships = new ArrayList<>();*/
 }

@@ -9,6 +9,7 @@ import io.plan.mate.expense.tracker.backend.repositories.GroupRepository;
 import io.plan.mate.expense.tracker.backend.repositories.MemberRepository;
 import io.plan.mate.expense.tracker.backend.repositories.UserRepository;
 import io.plan.mate.expense.tracker.backend.services.MemberService;
+import jakarta.transaction.Transactional;
 import java.time.LocalDateTime;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -52,11 +53,12 @@ public class MemberServiceImpl implements MemberService {
   }
 
   @Override
+  @Transactional
   public MemberDto removeUserFromGroup(final Long groupId, final Long userId) {
 
     final Member member =
         memberRepository
-            .findByGroupIdAndUserIdWithEagerFetch(groupId, userId)
+            .findByGroupIdAndUserId(groupId, userId)
             .orElseThrow(() -> new IllegalArgumentException("Membership not found"));
 
     final MemberDto memberDto = modelMapper.map(member, MemberDto.class);
@@ -67,6 +69,7 @@ public class MemberServiceImpl implements MemberService {
   }
 
   @Override
+  @Transactional
   public List<MemberDto> getGroupMembers(final Long groupId) {
 
     final List<Member> groupMembers = memberRepository.findByGroupId(groupId);
@@ -75,6 +78,7 @@ public class MemberServiceImpl implements MemberService {
   }
 
   @Override
+  @Transactional
   public List<GroupDto> getUserGroups(final Long userId) {
 
     final List<Member> userMemberships = memberRepository.findByUserId(userId);

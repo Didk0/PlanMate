@@ -10,36 +10,35 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
+import java.time.LocalDateTime;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDateTime;
-
-
 @Entity
-@Table(name = "members", uniqueConstraints = {
-        @UniqueConstraint(columnNames = {"user_id", "group_id"})
-})
+@Table(
+    name = "members",
+    uniqueConstraints = {@UniqueConstraint(columnNames = {"user_id", "group_id"})})
 @AllArgsConstructor
 @NoArgsConstructor
 @Getter
 @Builder
 public class Member {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+  @Id
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
+  private Long id;
 
-    @ManyToOne(optional = false, fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id")
-    private User user;
+  @ManyToOne(optional = false, fetch = FetchType.LAZY)
+  @JoinColumn(name = "user_id")
+  private User user;
 
-    @ManyToOne(optional = false, fetch = FetchType.LAZY)
-    @JoinColumn(name = "group_id")
-    private Group group;
+  @ManyToOne(optional = false, fetch = FetchType.LAZY)
+  @JoinColumn(name = "group_id")
+  private Group group;
 
-    @Column(name = "joined_at", nullable = false)
-    private LocalDateTime joinedAt = LocalDateTime.now();
+  @Column(name = "joined_at", nullable = false)
+  @Builder.Default
+  private LocalDateTime joinedAt = LocalDateTime.now();
 }

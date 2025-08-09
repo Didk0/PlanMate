@@ -17,12 +17,15 @@ import java.util.ArrayList;
 import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 @Entity
 @Table(name = "expenses")
 @AllArgsConstructor
 @NoArgsConstructor
+@Getter
 @Builder
 public class Expense {
 
@@ -36,6 +39,7 @@ public class Expense {
   private BigDecimal amount;
 
   @Column(name = "created_at", nullable = false, updatable = false)
+  @Builder.Default
   private LocalDateTime createdAt = LocalDateTime.now();
 
   @ManyToOne(optional = false, fetch = FetchType.LAZY)
@@ -47,5 +51,7 @@ public class Expense {
   private User paidBy;
 
   @OneToMany(mappedBy = "expense", cascade = CascadeType.ALL, orphanRemoval = true)
+  @Builder.Default
+  @Setter
   private List<ExpenseParticipant> participants = new ArrayList<>();
 }
