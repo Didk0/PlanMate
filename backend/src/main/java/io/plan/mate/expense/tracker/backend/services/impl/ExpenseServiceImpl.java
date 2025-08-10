@@ -1,14 +1,15 @@
 package io.plan.mate.expense.tracker.backend.services.impl;
 
-import io.plan.mate.expense.tracker.backend.entities.Expense;
-import io.plan.mate.expense.tracker.backend.entities.ExpenseParticipant;
-import io.plan.mate.expense.tracker.backend.entities.Group;
-import io.plan.mate.expense.tracker.backend.entities.User;
-import io.plan.mate.expense.tracker.backend.payloads.dtos.ExpenseDto;
+import io.plan.mate.expense.tracker.backend.db.dtos.ExpenseDto;
+import io.plan.mate.expense.tracker.backend.db.entities.Expense;
+import io.plan.mate.expense.tracker.backend.db.entities.ExpenseParticipant;
+import io.plan.mate.expense.tracker.backend.db.entities.Group;
+import io.plan.mate.expense.tracker.backend.db.entities.User;
+import io.plan.mate.expense.tracker.backend.db.repositories.ExpenseRepository;
+import io.plan.mate.expense.tracker.backend.db.repositories.GroupRepository;
+import io.plan.mate.expense.tracker.backend.db.repositories.UserRepository;
+import io.plan.mate.expense.tracker.backend.exception.handling.exceptions.ResourceNotFoundException;
 import io.plan.mate.expense.tracker.backend.payloads.request.CreateExpenseRequest;
-import io.plan.mate.expense.tracker.backend.repositories.ExpenseRepository;
-import io.plan.mate.expense.tracker.backend.repositories.GroupRepository;
-import io.plan.mate.expense.tracker.backend.repositories.UserRepository;
 import io.plan.mate.expense.tracker.backend.services.ExpenseService;
 import jakarta.transaction.Transactional;
 import java.time.LocalDateTime;
@@ -34,16 +35,16 @@ public class ExpenseServiceImpl implements ExpenseService {
             .findById(createExpenseRequest.groupId())
             .orElseThrow(
                 () ->
-                    new IllegalArgumentException(
-                        "Group with id " + createExpenseRequest.groupId() + " does not exist"));
+                    new ResourceNotFoundException(
+                        "Group with id " + createExpenseRequest.groupId() + " not found"));
 
     final User paidBy =
         userRepository
             .findById(createExpenseRequest.paidByUserId())
             .orElseThrow(
                 () ->
-                    new IllegalArgumentException(
-                        "User with id " + createExpenseRequest.paidByUserId() + " does not exist"));
+                    new ResourceNotFoundException(
+                        "User with id " + createExpenseRequest.paidByUserId() + " not found"));
 
     final Expense expense =
         Expense.builder()
@@ -64,8 +65,8 @@ public class ExpenseServiceImpl implements ExpenseService {
                           .findById(p.getParticipant().getId())
                           .orElseThrow(
                               () ->
-                                  new IllegalArgumentException(
-                                      "No user with id " + p.getParticipant().getId() + " exists"));
+                                  new ResourceNotFoundException(
+                                      "User with id " + p.getParticipant().getId() + " not found"));
                   return ExpenseParticipant.builder()
                       .expense(expense)
                       .participant(userParticipant)
@@ -90,7 +91,7 @@ public class ExpenseServiceImpl implements ExpenseService {
             .findByGroupId(groupId)
             .orElseThrow(
                 () ->
-                    new IllegalArgumentException(
+                    new ResourceNotFoundException(
                         "Expense for group with id " + groupId + " not found"));
 
     return expenses.stream().map(expense -> modelMapper.map(expense, ExpenseDto.class)).toList();

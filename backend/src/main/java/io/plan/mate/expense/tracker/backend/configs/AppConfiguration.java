@@ -1,0 +1,88 @@
+package io.plan.mate.expense.tracker.backend.configs;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import io.plan.mate.expense.tracker.backend.configs.converters.ExpenseParticipantToDtoConverter;
+import io.plan.mate.expense.tracker.backend.db.entities.ExpenseParticipant;
+import io.plan.mate.expense.tracker.backend.db.entities.User;
+import io.plan.mate.expense.tracker.backend.db.dtos.ExpenseParticipantDto;
+import io.swagger.v3.oas.models.ExternalDocumentation;
+import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.oas.models.info.Contact;
+import io.swagger.v3.oas.models.info.Info;
+import io.swagger.v3.oas.models.info.License;
+import io.swagger.v3.oas.models.servers.Server;
+import java.util.List;
+import org.modelmapper.ModelMapper;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.EnableAspectJAutoProxy;
+
+@Configuration
+@EnableAspectJAutoProxy
+public class AppConfiguration {
+
+  @Bean
+  public OpenAPI planMateOpenApi() {
+
+    return new OpenAPI()
+        .info(
+            new Info()
+                .title("PlanMate API")
+                .description("API documentation for the PlanMate group expense tracker")
+                .version("1.0.0")
+                .contact(new Contact().name("PlanMate Dev Team").email("support@planmate.com"))
+                .license(new License().name("Apache 2.0").url("http://springdoc.org")))
+        .servers(
+            List.of(
+                new Server().url("http://localhost:8080").description("Local development server")))
+        /*.components(
+            new Components()
+                .addSecuritySchemes(
+                    "bearerAuth",
+                    new SecurityScheme()
+                        .type(SecurityScheme.Type.HTTP)
+                        .scheme("bearer")
+                        .bearerFormat("JWT")))
+        .addSecurityItem(new SecurityRequirement().addList("bearerAuth"))*/
+        .externalDocs(
+            new ExternalDocumentation()
+                .description("PlanMate Github Repository")
+                .url("https://github.com/Didk0/PlanMate"));
+  }
+
+  @Bean
+  public ModelMapper modelMapper() {
+
+    final ModelMapper modelMapper = new ModelMapper();
+
+    modelMapper
+        .typeMap(ExpenseParticipantDto.class, ExpenseParticipant.class)
+        .addMappings(
+            mapper ->
+                mapper
+                    .using(
+                        context -> {
+                          final Long userId = (Long) context.getSource();
+                          if (userId == null) {
+                            return null;
+                          }
+                          return User.builder().id(userId).build();
+                        })
+                    .map(ExpenseParticipantDto::getUserId, ExpenseParticipant::setParticipant));
+
+    modelMapper.addConverter(new ExpenseParticipantToDtoConverter());
+
+    return modelMapper;
+  }
+
+  @Bean
+  public ObjectMapper objectMapper() {
+
+    return new ObjectMapper()
+        .registerModule(new JavaTimeModule())
+        .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
+        .enable(SerializationFeature.INDENT_OUTPUT);
+  }
+}

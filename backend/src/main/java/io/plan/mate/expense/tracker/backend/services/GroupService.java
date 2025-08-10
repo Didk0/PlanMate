@@ -1,6 +1,6 @@
 package io.plan.mate.expense.tracker.backend.services;
 
-import io.plan.mate.expense.tracker.backend.payloads.dtos.GroupDto;
+import io.plan.mate.expense.tracker.backend.db.dtos.GroupDto;
 import io.plan.mate.expense.tracker.backend.payloads.request.CreateGroupRequest;
 
 import java.util.List;

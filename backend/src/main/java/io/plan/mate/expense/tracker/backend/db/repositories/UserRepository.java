@@ -1,6 +1,6 @@
-package io.plan.mate.expense.tracker.backend.repositories;
+package io.plan.mate.expense.tracker.backend.db.repositories;
 
-import io.plan.mate.expense.tracker.backend.entities.User;
+import io.plan.mate.expense.tracker.backend.db.entities.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

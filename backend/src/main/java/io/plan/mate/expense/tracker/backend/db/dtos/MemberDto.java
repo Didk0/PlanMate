@@ -1,4 +1,4 @@
-package io.plan.mate.expense.tracker.backend.payloads.dtos;
+package io.plan.mate.expense.tracker.backend.db.dtos;
 
 import java.time.LocalDateTime;
 import lombok.AllArgsConstructor;
@@ -12,9 +12,10 @@ import lombok.Setter;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-public class GroupDto {
+public class MemberDto {
 
   private Long id;
-  private String name;
-  private LocalDateTime createdAt;
+  private String userName;
+  private String groupName;
+  private LocalDateTime joinedAt;
 }

@@ -1,9 +1,10 @@
 package io.plan.mate.expense.tracker.backend.services.impl;
 
-import io.plan.mate.expense.tracker.backend.entities.Group;
-import io.plan.mate.expense.tracker.backend.payloads.dtos.GroupDto;
+import io.plan.mate.expense.tracker.backend.db.dtos.GroupDto;
+import io.plan.mate.expense.tracker.backend.db.entities.Group;
+import io.plan.mate.expense.tracker.backend.db.repositories.GroupRepository;
+import io.plan.mate.expense.tracker.backend.exception.handling.exceptions.ResourceNotFoundException;
 import io.plan.mate.expense.tracker.backend.payloads.request.CreateGroupRequest;
-import io.plan.mate.expense.tracker.backend.repositories.GroupRepository;
 import io.plan.mate.expense.tracker.backend.services.GroupService;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -34,7 +35,7 @@ public class GroupServiceImpl implements GroupService {
         groupRepository
             .findById(groupId)
             .orElseThrow(
-                () -> new IllegalArgumentException("Group with id=" + groupId + " not found"));
+                () -> new ResourceNotFoundException("Group with id=" + groupId + " not found"));
 
     return modelMapper.map(group, GroupDto.class);
   }
@@ -54,7 +55,7 @@ public class GroupServiceImpl implements GroupService {
         groupRepository
             .findById(groupId)
             .orElseThrow(
-                () -> new IllegalArgumentException("Group with id=" + groupId + " not found"));
+                () -> new ResourceNotFoundException("Group with id=" + groupId + " not found"));
 
     final GroupDto groupDtoToReturn = modelMapper.map(group, GroupDto.class);
 

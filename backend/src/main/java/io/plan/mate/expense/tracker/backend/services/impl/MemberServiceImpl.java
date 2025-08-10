@@ -1,13 +1,15 @@
 package io.plan.mate.expense.tracker.backend.services.impl;
 
-import io.plan.mate.expense.tracker.backend.entities.Group;
-import io.plan.mate.expense.tracker.backend.entities.Member;
-import io.plan.mate.expense.tracker.backend.entities.User;
-import io.plan.mate.expense.tracker.backend.payloads.dtos.GroupDto;
-import io.plan.mate.expense.tracker.backend.payloads.dtos.MemberDto;
-import io.plan.mate.expense.tracker.backend.repositories.GroupRepository;
-import io.plan.mate.expense.tracker.backend.repositories.MemberRepository;
-import io.plan.mate.expense.tracker.backend.repositories.UserRepository;
+import io.plan.mate.expense.tracker.backend.db.dtos.GroupDto;
+import io.plan.mate.expense.tracker.backend.db.dtos.MemberDto;
+import io.plan.mate.expense.tracker.backend.db.entities.Group;
+import io.plan.mate.expense.tracker.backend.db.entities.Member;
+import io.plan.mate.expense.tracker.backend.db.entities.User;
+import io.plan.mate.expense.tracker.backend.db.repositories.GroupRepository;
+import io.plan.mate.expense.tracker.backend.db.repositories.MemberRepository;
+import io.plan.mate.expense.tracker.backend.db.repositories.UserRepository;
+import io.plan.mate.expense.tracker.backend.exception.handling.exceptions.BadRequestException;
+import io.plan.mate.expense.tracker.backend.exception.handling.exceptions.ResourceNotFoundException;
 import io.plan.mate.expense.tracker.backend.services.MemberService;
 import jakarta.transaction.Transactional;
 import java.time.LocalDateTime;
@@ -32,16 +34,16 @@ public class MemberServiceImpl implements MemberService {
         userRepository
             .findById(userId)
             .orElseThrow(
-                () -> new IllegalArgumentException("No user with id " + userId + " exists"));
+                () -> new ResourceNotFoundException("No user with id " + userId + " exists"));
 
     final Group group =
         groupRepository
             .findById(groupId)
             .orElseThrow(
-                () -> new IllegalArgumentException("No group with id " + groupId + " exists"));
+                () -> new ResourceNotFoundException("No group with id " + groupId + " exists"));
 
     if (memberRepository.findByGroupIdAndUserId(groupId, userId).isPresent()) {
-      throw new IllegalArgumentException(
+      throw new BadRequestException(
           "User with id " + userId + " is already a member in group with id " + groupId);
     }
 
@@ -59,7 +61,7 @@ public class MemberServiceImpl implements MemberService {
     final Member member =
         memberRepository
             .findByGroupIdAndUserId(groupId, userId)
-            .orElseThrow(() -> new IllegalArgumentException("Membership not found"));
+            .orElseThrow(() -> new ResourceNotFoundException("Membership not found"));
 
     final MemberDto memberDto = modelMapper.map(member, MemberDto.class);
 
@@ -69,17 +71,29 @@ public class MemberServiceImpl implements MemberService {
   }
 
   @Override
+  @Transactional
   public List<MemberDto> getGroupMembers(final Long groupId) {
 
-    final List<Member> groupMembers = memberRepository.findByGroupId(groupId);
+    final List<Member> groupMembers =
+        groupRepository
+            .findById(groupId)
+            .map(Group::getMembers)
+            .orElseThrow(
+                () -> new ResourceNotFoundException("Group with id " + groupId + " not found"));
 
     return groupMembers.stream().map(member -> modelMapper.map(member, MemberDto.class)).toList();
   }
 
   @Override
+  @Transactional
   public List<GroupDto> getUserGroups(final Long userId) {
 
-    final List<Member> userMemberships = memberRepository.findByUserId(userId);
+    final List<Member> userMemberships =
+        userRepository
+            .findById(userId)
+            .map(User::getMemberships)
+            .orElseThrow(
+                () -> new ResourceNotFoundException("User with id " + userId + " not found"));
 
     return userMemberships.stream()
         .map(

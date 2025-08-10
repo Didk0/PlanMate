@@ -1,8 +1,14 @@
 package io.plan.mate.expense.tracker.backend.controllers;
 
-import io.plan.mate.expense.tracker.backend.payloads.dtos.ExpenseDto;
+import io.plan.mate.expense.tracker.backend.db.dtos.ExpenseDto;
 import io.plan.mate.expense.tracker.backend.payloads.request.CreateExpenseRequest;
 import io.plan.mate.expense.tracker.backend.services.ExpenseService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -17,18 +23,43 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/expenses")
 @RequiredArgsConstructor
+@Tag(name = "expenses", description = "APIs to manage group expenses")
 public class ExpenseController {
 
   private final ExpenseService expenseService;
 
+  @Operation(
+      summary = "Create a new expense",
+      description = "Creates a new expense entry for a group",
+      responses = {
+        @ApiResponse(
+            responseCode = "201",
+            description = "Expense created successfully",
+            content = @Content(schema = @Schema(implementation = ExpenseDto.class))),
+        @ApiResponse(responseCode = "400", description = "Invalid field for expense provided"),
+        @ApiResponse(responseCode = "404", description = "User or group not found"),
+        @ApiResponse(responseCode = "500", description = "Internal server error")
+      })
   @PostMapping
   public ResponseEntity<ExpenseDto> createExpense(
-      @RequestBody final CreateExpenseRequest createExpenseRequest) {
+      @Valid @RequestBody final CreateExpenseRequest createExpenseRequest) {
 
     final ExpenseDto expenseDto = expenseService.createExpense(createExpenseRequest);
     return ResponseEntity.status(HttpStatus.CREATED).body(expenseDto);
   }
 
+  @Operation(
+      summary = "Get expenses by group ID",
+      description = "Retrieves all expenses for a specified group",
+      responses = {
+        @ApiResponse(
+            responseCode = "200",
+            description = "List of expenses for the group",
+            content =
+                @Content(schema = @Schema(implementation = ExpenseDto.class, type = "array"))),
+        @ApiResponse(responseCode = "404", description = "Group not found"),
+        @ApiResponse(responseCode = "500", description = "Internal server error")
+      })
   @GetMapping("/groups/{groupId}")
   public ResponseEntity<List<ExpenseDto>> getGroupExpenses(@PathVariable final Long groupId) {
 

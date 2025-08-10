@@ -1,4 +1,4 @@
-package io.plan.mate.expense.tracker.backend.payloads.dtos;
+package io.plan.mate.expense.tracker.backend.db.dtos;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

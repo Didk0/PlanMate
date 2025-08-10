@@ -1,6 +1,6 @@
 package io.plan.mate.expense.tracker.backend.services;
 
-import io.plan.mate.expense.tracker.backend.payloads.dtos.SettlementDto;
+import io.plan.mate.expense.tracker.backend.db.dtos.SettlementDto;
 import java.util.List;
 
 public interface SettlementService {

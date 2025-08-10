@@ -1,4 +1,4 @@
-package io.plan.mate.expense.tracker.backend.entities;
+package io.plan.mate.expense.tracker.backend.db.entities;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -9,7 +9,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
-import jakarta.persistence.UniqueConstraint;
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -17,28 +17,33 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @Entity
-@Table(
-    name = "members",
-    uniqueConstraints = {@UniqueConstraint(columnNames = {"user_id", "group_id"})})
+@Table(name = "settlements")
 @AllArgsConstructor
 @NoArgsConstructor
 @Getter
 @Builder
-public class Member {
+public class Settlement {
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Long id;
 
-  @ManyToOne(optional = false, fetch = FetchType.LAZY)
-  @JoinColumn(name = "user_id")
-  private User user;
+  @Column(nullable = false)
+  private BigDecimal amount;
 
   @ManyToOne(optional = false, fetch = FetchType.LAZY)
   @JoinColumn(name = "group_id")
   private Group group;
 
-  @Column(name = "joined_at", nullable = false)
+  @ManyToOne(optional = false, fetch = FetchType.LAZY)
+  @JoinColumn(name = "from_user_id")
+  private User fromUser;
+
+  @ManyToOne(optional = false, fetch = FetchType.LAZY)
+  @JoinColumn(name = "to_user_id")
+  private User toUser;
+
+  @Column(name = "settled_at", nullable = false)
   @Builder.Default
-  private LocalDateTime joinedAt = LocalDateTime.now();
+  private LocalDateTime settledAt = LocalDateTime.now();
 }

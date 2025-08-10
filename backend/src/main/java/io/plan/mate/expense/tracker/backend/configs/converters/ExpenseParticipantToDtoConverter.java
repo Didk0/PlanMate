@@ -1,7 +1,7 @@
-package io.plan.mate.expense.tracker.backend.config.converters;
+package io.plan.mate.expense.tracker.backend.configs.converters;
 
-import io.plan.mate.expense.tracker.backend.entities.ExpenseParticipant;
-import io.plan.mate.expense.tracker.backend.payloads.dtos.ExpenseParticipantDto;
+import io.plan.mate.expense.tracker.backend.db.entities.ExpenseParticipant;
+import io.plan.mate.expense.tracker.backend.db.dtos.ExpenseParticipantDto;
 import org.modelmapper.Converter;
 import org.modelmapper.spi.MappingContext;
 

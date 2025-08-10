@@ -1,4 +1,4 @@
-package io.plan.mate.expense.tracker.backend.payloads.dtos;
+package io.plan.mate.expense.tracker.backend.db.dtos;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;

@@ -1,4 +1,4 @@
-package io.plan.mate.expense.tracker.backend.entities;
+package io.plan.mate.expense.tracker.backend.db.entities;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;

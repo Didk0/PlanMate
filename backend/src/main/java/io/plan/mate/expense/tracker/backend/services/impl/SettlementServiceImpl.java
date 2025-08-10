@@ -1,13 +1,14 @@
 package io.plan.mate.expense.tracker.backend.services.impl;
 
-import io.plan.mate.expense.tracker.backend.entities.Expense;
-import io.plan.mate.expense.tracker.backend.entities.ExpenseParticipant;
-import io.plan.mate.expense.tracker.backend.entities.Group;
-import io.plan.mate.expense.tracker.backend.entities.Settlement;
-import io.plan.mate.expense.tracker.backend.entities.User;
-import io.plan.mate.expense.tracker.backend.payloads.dtos.SettlementDto;
-import io.plan.mate.expense.tracker.backend.repositories.ExpenseRepository;
-import io.plan.mate.expense.tracker.backend.repositories.SettlementRepository;
+import io.plan.mate.expense.tracker.backend.db.dtos.SettlementDto;
+import io.plan.mate.expense.tracker.backend.db.entities.Expense;
+import io.plan.mate.expense.tracker.backend.db.entities.ExpenseParticipant;
+import io.plan.mate.expense.tracker.backend.db.entities.Group;
+import io.plan.mate.expense.tracker.backend.db.entities.Settlement;
+import io.plan.mate.expense.tracker.backend.db.entities.User;
+import io.plan.mate.expense.tracker.backend.db.repositories.GroupRepository;
+import io.plan.mate.expense.tracker.backend.db.repositories.SettlementRepository;
+import io.plan.mate.expense.tracker.backend.exception.handling.exceptions.ResourceNotFoundException;
 import io.plan.mate.expense.tracker.backend.services.SettlementService;
 import jakarta.transaction.Transactional;
 import java.math.BigDecimal;
@@ -27,15 +28,21 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class SettlementServiceImpl implements SettlementService {
 
-  private final ExpenseRepository expenseRepository;
   private final SettlementRepository settlementRepository;
+  private final GroupRepository groupRepository;
   private final ModelMapper modelMapper;
 
   @Override
   @Transactional
   public List<SettlementDto> getSettlementsByGroup(final Long groupId) {
 
-    return settlementRepository.findByGroupId(groupId).stream()
+    final Group group =
+        groupRepository
+            .findById(groupId)
+            .orElseThrow(
+                () -> new ResourceNotFoundException("Group with id " + groupId + " not found"));
+
+    return group.getSettlements().stream()
         .map(settlement -> modelMapper.map(settlement, SettlementDto.class))
         .toList();
   }
@@ -45,9 +52,11 @@ public class SettlementServiceImpl implements SettlementService {
   public List<SettlementDto> calculateSettlements(final Long groupId) {
 
     final List<Expense> expenses =
-        expenseRepository
-            .findByGroupId(groupId)
-            .orElseThrow(() -> new IllegalArgumentException("Invalid group id " + groupId));
+        groupRepository
+            .findById(groupId)
+            .map(Group::getExpenses)
+            .orElseThrow(
+                () -> new ResourceNotFoundException("Group with id " + groupId + " not found"));
 
     // Calculate net balance per user (net balance = amount paid - amount owed)
     final Map<Long, BigDecimal> userIdToNetBalanceMap = new HashMap<>();

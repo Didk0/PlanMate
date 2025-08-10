@@ -1,6 +1,6 @@
 package io.plan.mate.expense.tracker.backend.services;
 
-import io.plan.mate.expense.tracker.backend.payloads.dtos.UserDto;
+import io.plan.mate.expense.tracker.backend.db.dtos.UserDto;
 import io.plan.mate.expense.tracker.backend.payloads.request.CreateUserRequest;
 import java.util.List;
 

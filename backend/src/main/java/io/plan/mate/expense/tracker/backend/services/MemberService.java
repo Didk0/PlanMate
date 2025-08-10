@@ -1,7 +1,7 @@
 package io.plan.mate.expense.tracker.backend.services;
 
-import io.plan.mate.expense.tracker.backend.payloads.dtos.GroupDto;
-import io.plan.mate.expense.tracker.backend.payloads.dtos.MemberDto;
+import io.plan.mate.expense.tracker.backend.db.dtos.GroupDto;
+import io.plan.mate.expense.tracker.backend.db.dtos.MemberDto;
 import java.util.List;
 
 public interface MemberService {

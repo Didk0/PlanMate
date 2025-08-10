@@ -1,4 +1,4 @@
-package io.plan.mate.expense.tracker.backend.payloads.dtos;
+package io.plan.mate.expense.tracker.backend.db.dtos;
 
 import java.time.LocalDateTime;
 import lombok.AllArgsConstructor;
@@ -6,16 +6,17 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import lombok.ToString;
 
 @Builder
 @Getter
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-public class MemberDto {
+@ToString
+public class GroupDto {
 
   private Long id;
-  private String userName;
-  private String groupName;
-  private LocalDateTime joinedAt;
+  private String name;
+  private LocalDateTime createdAt;
 }
