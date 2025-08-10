@@ -62,6 +62,6 @@ CREATE TABLE settlements
     to_user_id   BIGINT    NOT NULL,
     settled_at   TIMESTAMP NOT NULL DEFAULT now(),
     CONSTRAINT fk_settlements_group FOREIGN KEY (group_id) REFERENCES groups (id) ON DELETE CASCADE,
-    CONSTRAINT fk_settlements_from_user FOREIGN KEY (from_user_id) REFERENCES members (id) ON DELETE CASCADE,
-    CONSTRAINT fk_settlements_to_user FOREIGN KEY (to_user_id) REFERENCES members (id) ON DELETE CASCADE
+    CONSTRAINT fk_settlements_from_user FOREIGN KEY (from_user_id) REFERENCES users (id) ON DELETE CASCADE,
+    CONSTRAINT fk_settlements_to_user FOREIGN KEY (to_user_id) REFERENCES users (id) ON DELETE CASCADE
 );

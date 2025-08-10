@@ -69,7 +69,6 @@ public class MemberServiceImpl implements MemberService {
   }
 
   @Override
-  @Transactional
   public List<MemberDto> getGroupMembers(final Long groupId) {
 
     final List<Member> groupMembers = memberRepository.findByGroupId(groupId);
@@ -78,7 +77,6 @@ public class MemberServiceImpl implements MemberService {
   }
 
   @Override
-  @Transactional
   public List<GroupDto> getUserGroups(final Long userId) {
 
     final List<Member> userMemberships = memberRepository.findByUserId(userId);
