@@ -22,6 +22,8 @@ import java.util.PriorityQueue;
 import lombok.AllArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -48,6 +50,13 @@ public class SettlementServiceImpl implements SettlementService {
   }
 
   @Override
+  @CacheEvict(value = "settlements", key = "#groupId")
+  public void clearSettlementCache(final Long groupId) {
+    // This method invalidates the settlements cache when called
+  }
+
+  @Override
+  @Cacheable(value = "settlements", key = "#groupId")
   @Transactional
   public List<SettlementDto> calculateSettlements(final Long groupId) {
 

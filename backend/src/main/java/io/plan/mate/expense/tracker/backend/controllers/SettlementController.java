@@ -12,7 +12,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -56,7 +55,7 @@ public class SettlementController {
         @ApiResponse(responseCode = "404", description = "Group not found"),
         @ApiResponse(responseCode = "500", description = "Internal server error")
       })
-  @PostMapping("/calculate")
+  @GetMapping("/calculate")
   public ResponseEntity<List<SettlementDto>> calculateSettlements(
       @PathVariable final Long groupId) {
 

@@ -6,6 +6,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.time.LocalDateTime;
+
 @Builder
 @Getter
 @Setter
@@ -16,4 +18,5 @@ public class UserDto {
     private Long id;
     private String name;
     private String email;
+    private LocalDateTime createdAt;
 }

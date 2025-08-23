@@ -10,6 +10,7 @@ import io.plan.mate.expense.tracker.backend.db.repositories.MemberRepository;
 import io.plan.mate.expense.tracker.backend.db.repositories.UserRepository;
 import io.plan.mate.expense.tracker.backend.exception.handling.exceptions.BadRequestException;
 import io.plan.mate.expense.tracker.backend.exception.handling.exceptions.ResourceNotFoundException;
+import io.plan.mate.expense.tracker.backend.payloads.request.AddUserRequest;
 import io.plan.mate.expense.tracker.backend.services.MemberService;
 import jakarta.transaction.Transactional;
 import java.time.LocalDateTime;
@@ -28,13 +29,15 @@ public class MemberServiceImpl implements MemberService {
   private final ModelMapper modelMapper;
 
   @Override
-  public MemberDto addUserToGroup(final Long groupId, final Long userId) {
+  public MemberDto addUserToGroup(final Long groupId, final AddUserRequest addUserRequest) {
 
     final User user =
         userRepository
-            .findById(userId)
+            .findByName(addUserRequest.name())
             .orElseThrow(
-                () -> new ResourceNotFoundException("No user with id " + userId + " exists"));
+                () ->
+                    new ResourceNotFoundException(
+                        "No user with name " + addUserRequest.name() + " exists"));
 
     final Group group =
         groupRepository
@@ -42,9 +45,9 @@ public class MemberServiceImpl implements MemberService {
             .orElseThrow(
                 () -> new ResourceNotFoundException("No group with id " + groupId + " exists"));
 
-    if (memberRepository.findByGroupIdAndUserId(groupId, userId).isPresent()) {
+    if (memberRepository.findByGroupIdAndUserId(groupId, user.getId()).isPresent()) {
       throw new BadRequestException(
-          "User with id " + userId + " is already a member in group with id " + groupId);
+          "User with id " + user.getId() + " is already a member in group with id " + groupId);
     }
 
     Member member = Member.builder().user(user).group(group).joinedAt(LocalDateTime.now()).build();

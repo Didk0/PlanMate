@@ -4,24 +4,28 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import io.plan.mate.expense.tracker.backend.configs.converters.ExpenseParticipantToDtoConverter;
-import io.plan.mate.expense.tracker.backend.db.entities.ExpenseParticipant;
-import io.plan.mate.expense.tracker.backend.db.entities.User;
-import io.plan.mate.expense.tracker.backend.db.dtos.ExpenseParticipantDto;
 import io.swagger.v3.oas.models.ExternalDocumentation;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Contact;
 import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.info.License;
 import io.swagger.v3.oas.models.servers.Server;
+import java.time.Duration;
 import java.util.List;
 import org.modelmapper.ModelMapper;
+import org.springframework.boot.autoconfigure.cache.RedisCacheManagerBuilderCustomizer;
+import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.EnableAspectJAutoProxy;
+import org.springframework.data.redis.cache.RedisCacheConfiguration;
+import org.springframework.data.redis.serializer.GenericJackson2JsonRedisSerializer;
+import org.springframework.data.redis.serializer.RedisSerializationContext.SerializationPair;
 
 @Configuration
 @EnableAspectJAutoProxy
-public class AppConfiguration {
+@EnableCaching
+public class AppConfig {
 
   @Bean
   public OpenAPI planMateOpenApi() {
@@ -57,21 +61,22 @@ public class AppConfiguration {
 
     final ModelMapper modelMapper = new ModelMapper();
 
-    modelMapper
-        .typeMap(ExpenseParticipantDto.class, ExpenseParticipant.class)
-        .addMappings(
-            mapper ->
-                mapper
-                    .using(
-                        context -> {
-                          final Long userId = (Long) context.getSource();
-                          if (userId == null) {
-                            return null;
-                          }
-                          return User.builder().id(userId).build();
-                        })
-                    .map(ExpenseParticipantDto::getUserId, ExpenseParticipant::setParticipant));
-
+    //    modelMapper
+    //        .typeMap(ExpenseParticipantDto.class, ExpenseParticipant.class)
+    //        .addMappings(
+    //            mapper ->
+    //                mapper
+    //                    .using(
+    //                        context -> {
+    //                          final Long userId = (Long) context.getSource();
+    //                          if (userId == null) {
+    //                            return null;
+    //                          }
+    //                          return User.builder().id(userId).build();
+    //                        })
+    //                    .map(ExpenseParticipantDto::getUserId,
+    // ExpenseParticipant::setParticipant));
+    //
     modelMapper.addConverter(new ExpenseParticipantToDtoConverter());
 
     return modelMapper;
@@ -84,5 +89,30 @@ public class AppConfiguration {
         .registerModule(new JavaTimeModule())
         .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
         .enable(SerializationFeature.INDENT_OUTPUT);
+  }
+
+  @Bean
+  public RedisCacheConfiguration cacheConfiguration() {
+
+    return RedisCacheConfiguration.defaultCacheConfig()
+        .entryTtl(Duration.ofDays(1))
+        .disableCachingNullValues()
+        .serializeValuesWith(
+            SerializationPair.fromSerializer(new GenericJackson2JsonRedisSerializer()));
+  }
+
+  @Bean
+  public RedisCacheManagerBuilderCustomizer redisCacheManagerBuilderCustomizer(
+      final ObjectMapper objectMapper) {
+
+    return builder ->
+        builder.withCacheConfiguration(
+            "settlements",
+            RedisCacheConfiguration.defaultCacheConfig()
+                .entryTtl(Duration.ofDays(1))
+                .disableCachingNullValues()
+                .serializeValuesWith(
+                    SerializationPair.fromSerializer(
+                        new GenericJackson2JsonRedisSerializer(objectMapper))));
   }
 }

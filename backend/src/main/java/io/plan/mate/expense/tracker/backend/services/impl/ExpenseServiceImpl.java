@@ -11,6 +11,7 @@ import io.plan.mate.expense.tracker.backend.db.repositories.UserRepository;
 import io.plan.mate.expense.tracker.backend.exception.handling.exceptions.ResourceNotFoundException;
 import io.plan.mate.expense.tracker.backend.payloads.request.CreateExpenseRequest;
 import io.plan.mate.expense.tracker.backend.services.ExpenseService;
+import io.plan.mate.expense.tracker.backend.services.SettlementService;
 import jakarta.transaction.Transactional;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -26,25 +27,26 @@ public class ExpenseServiceImpl implements ExpenseService {
   private final UserRepository userRepository;
   private final GroupRepository groupRepository;
   private final ModelMapper modelMapper;
+  private final SettlementService settlementService;
 
   @Override
-  public ExpenseDto createExpense(final CreateExpenseRequest createExpenseRequest) {
+  @Transactional
+  public ExpenseDto createExpense(
+      final Long groupId, final CreateExpenseRequest createExpenseRequest) {
 
     final Group group =
         groupRepository
-            .findById(createExpenseRequest.groupId())
+            .findById(groupId)
             .orElseThrow(
-                () ->
-                    new ResourceNotFoundException(
-                        "Group with id " + createExpenseRequest.groupId() + " not found"));
+                () -> new ResourceNotFoundException("Group with id " + groupId + " not found"));
 
     final User paidBy =
         userRepository
-            .findById(createExpenseRequest.paidByUserId())
+            .findByName(createExpenseRequest.paidByUserName())
             .orElseThrow(
                 () ->
                     new ResourceNotFoundException(
-                        "User with id " + createExpenseRequest.paidByUserId() + " not found"));
+                        "User with name " + createExpenseRequest.paidByUserName() + " not found"));
 
     final Expense expense =
         Expense.builder()
@@ -57,12 +59,17 @@ public class ExpenseServiceImpl implements ExpenseService {
 
     final List<ExpenseParticipant> participants =
         createExpenseRequest.participants().stream()
-            .map(p -> modelMapper.map(p, ExpenseParticipant.class))
+            .map(
+                p ->
+                    ExpenseParticipant.builder()
+                        .participant(User.builder().name(p.userName()).build())
+                        .shareAmount(p.shareAmount())
+                        .build())
             .map(
                 p -> {
                   final User userParticipant =
                       userRepository
-                          .findById(p.getParticipant().getId())
+                          .findByName(p.getParticipant().getName())
                           .orElseThrow(
                               () ->
                                   new ResourceNotFoundException(
@@ -77,9 +84,13 @@ public class ExpenseServiceImpl implements ExpenseService {
 
     expense.setParticipants(participants);
 
-    expenseRepository.save(expense);
+    final Expense savedExpense = expenseRepository.save(expense);
 
-    return modelMapper.map(expense, ExpenseDto.class);
+    final ExpenseDto expenseDto = modelMapper.map(savedExpense, ExpenseDto.class);
+
+    settlementService.clearSettlementCache(group.getId());
+
+    return expenseDto;
   }
 
   @Override

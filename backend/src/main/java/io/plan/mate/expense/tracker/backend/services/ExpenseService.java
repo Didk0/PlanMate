@@ -6,7 +6,7 @@ import java.util.List;
 
 public interface ExpenseService {
 
-  ExpenseDto createExpense(CreateExpenseRequest createExpenseRequest);
+  ExpenseDto createExpense(Long groupId, CreateExpenseRequest createExpenseRequest);
 
   List<ExpenseDto> getGroupExpenses(Long groupId);
 }

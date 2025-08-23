@@ -43,7 +43,6 @@ public class GroupController {
   @PostMapping
   public ResponseEntity<GroupDto> createGroup(
       @Valid @RequestBody final CreateGroupRequest createGroupRequest) {
-
     final GroupDto groupDto = groupService.createGroup(createGroupRequest);
     return ResponseEntity.status(HttpStatus.CREATED).body(groupDto);
   }

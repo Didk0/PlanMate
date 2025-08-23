@@ -21,7 +21,11 @@ public class GroupServiceImpl implements GroupService {
   @Override
   public GroupDto createGroup(final CreateGroupRequest createGroupRequest) {
 
-    final Group group = Group.builder().name(createGroupRequest.name()).build();
+    final Group group =
+        Group.builder()
+            .name(createGroupRequest.name())
+            .description(createGroupRequest.description())
+            .build();
 
     final Group createdGroup = groupRepository.save(group);
 

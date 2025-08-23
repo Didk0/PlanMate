@@ -1,8 +1,11 @@
 package io.plan.mate.expense.tracker.backend.controllers;
 
 import io.plan.mate.expense.tracker.backend.db.dtos.ExpenseDto;
+import io.plan.mate.expense.tracker.backend.payloads.events.ExpenseChangeEnum;
+import io.plan.mate.expense.tracker.backend.payloads.events.ExpenseCreatedEvent;
 import io.plan.mate.expense.tracker.backend.payloads.request.CreateExpenseRequest;
 import io.plan.mate.expense.tracker.backend.services.ExpenseService;
+import io.plan.mate.expense.tracker.backend.services.publishers.WebSocketEventPublisher;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -27,6 +30,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class ExpenseController {
 
   private final ExpenseService expenseService;
+  private final WebSocketEventPublisher eventPublisher;
 
   @Operation(
       summary = "Create a new expense",
@@ -40,11 +44,14 @@ public class ExpenseController {
         @ApiResponse(responseCode = "404", description = "User or group not found"),
         @ApiResponse(responseCode = "500", description = "Internal server error")
       })
-  @PostMapping
+  @PostMapping("/groups/{groupId}")
   public ResponseEntity<ExpenseDto> createExpense(
+      @PathVariable final Long groupId,
       @Valid @RequestBody final CreateExpenseRequest createExpenseRequest) {
 
-    final ExpenseDto expenseDto = expenseService.createExpense(createExpenseRequest);
+    final ExpenseDto expenseDto = expenseService.createExpense(groupId, createExpenseRequest);
+    eventPublisher.publishExpenseCreated(
+        new ExpenseCreatedEvent(ExpenseChangeEnum.ADD_EXPENSE, expenseDto));
     return ResponseEntity.status(HttpStatus.CREATED).body(expenseDto);
   }
 

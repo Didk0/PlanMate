@@ -20,7 +20,7 @@ public class ExpenseDto {
   private String description;
   private BigDecimal amount;
   private LocalDateTime createdAt;
-  private Long groupId;
-  private Long paidByUserId;
+  private GroupDto group;
+  private UserDto paidByUser;
   private List<ExpenseParticipantDto> participants;
 }

@@ -15,10 +15,8 @@ import lombok.Setter;
 public class SettlementDto {
 
   private Long id;
-  private Long groupId;
-  private Long fromUserId;
-  private String fromUserName;
-  private Long toUserId;
-  private String toUserName;
+  private GroupDto group;
+  private UserDto fromUser;
+  private UserDto toUser;
   private BigDecimal amount;
 }
