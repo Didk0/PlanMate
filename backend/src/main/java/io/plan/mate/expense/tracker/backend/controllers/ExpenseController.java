@@ -24,7 +24,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/api/expenses")
+@RequestMapping("/api/groups")
 @RequiredArgsConstructor
 @Tag(name = "expenses", description = "APIs to manage group expenses")
 public class ExpenseController {
@@ -44,7 +44,7 @@ public class ExpenseController {
         @ApiResponse(responseCode = "404", description = "User or group not found"),
         @ApiResponse(responseCode = "500", description = "Internal server error")
       })
-  @PostMapping("/groups/{groupId}")
+  @PostMapping("/{groupId}/expenses")
   public ResponseEntity<ExpenseDto> createExpense(
       @PathVariable final Long groupId,
       @Valid @RequestBody final CreateExpenseRequest createExpenseRequest) {
@@ -67,7 +67,7 @@ public class ExpenseController {
         @ApiResponse(responseCode = "404", description = "Group not found"),
         @ApiResponse(responseCode = "500", description = "Internal server error")
       })
-  @GetMapping("/groups/{groupId}")
+  @GetMapping("/{groupId}/expenses")
   public ResponseEntity<List<ExpenseDto>> getGroupExpenses(@PathVariable final Long groupId) {
 
     final List<ExpenseDto> expenseDtos = expenseService.getGroupExpenses(groupId);

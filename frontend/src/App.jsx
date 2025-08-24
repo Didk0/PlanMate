@@ -6,20 +6,21 @@ import Home from "./components/home/Home";
 import Navbar from "./components/shared/Navbar";
 import React from "react";
 import SettlementsForm from "./components/settlements/SettlementsForm";
-import { Route, Router, Routes } from "react-router-dom";
+import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
 
 function App() {
   return (
     <React.Fragment>
-      <Navbar />
-
-      <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/groups" element={<Groups />} />
-        <Route path="/groups/:id" element={<GroupDetails />} />
-        <Route path="/groups/:id/expense" element={<AddExpenseForm />} />
-        <Route path="/groups/:id/settlements" element={<SettlementsForm />} />
-      </Routes>
+      <Router>
+        <Navbar />
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/groups" element={<Groups />} />
+          <Route path="/groups/:id" element={<GroupDetails />} />
+          <Route path="/groups/:id/expense" element={<AddExpenseForm />} />
+          <Route path="/groups/:id/settlements" element={<SettlementsForm />} />
+        </Routes>
+      </Router>
     </React.Fragment>
   );
 }

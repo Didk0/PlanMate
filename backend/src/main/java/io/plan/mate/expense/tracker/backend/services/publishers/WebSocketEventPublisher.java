@@ -10,21 +10,19 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class WebSocketEventPublisher {
 
-  private static final String BASE_DEST = "/topic";
+  private static final String BASE_DEST = "/topic/groups/";
 
   private final SimpMessagingTemplate messagingTemplate;
 
   public void publishExpenseCreated(final ExpenseCreatedEvent event) {
 
-    final String destination =
-        BASE_DEST + "/expenses/groups/" + event.expenseDto().getGroup().getId();
+    final String destination = BASE_DEST + event.expense().getGroup().getId() + "/expenses";
     messagingTemplate.convertAndSend(destination, event);
   }
 
   public void publishMembersUpdate(final MemberChangedEvent event) {
 
-    final String destination =
-        BASE_DEST + "/groups/" + event.member().getGroup().getId() + "/users";
+    final String destination = BASE_DEST + event.member().getGroup().getId() + "/users";
     messagingTemplate.convertAndSend(destination, event);
   }
 }

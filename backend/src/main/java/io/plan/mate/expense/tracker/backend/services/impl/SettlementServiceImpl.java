@@ -14,6 +14,7 @@ import jakarta.transaction.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
@@ -35,21 +36,6 @@ public class SettlementServiceImpl implements SettlementService {
   private final ModelMapper modelMapper;
 
   @Override
-  @Transactional
-  public List<SettlementDto> getSettlementsByGroup(final Long groupId) {
-
-    final Group group =
-        groupRepository
-            .findById(groupId)
-            .orElseThrow(
-                () -> new ResourceNotFoundException("Group with id " + groupId + " not found"));
-
-    return group.getSettlements().stream()
-        .map(settlement -> modelMapper.map(settlement, SettlementDto.class))
-        .toList();
-  }
-
-  @Override
   @CacheEvict(value = "settlements", key = "#groupId")
   public void clearSettlementCache(final Long groupId) {
     // This method invalidates the settlements cache when called
@@ -67,6 +53,10 @@ public class SettlementServiceImpl implements SettlementService {
             .orElseThrow(
                 () -> new ResourceNotFoundException("Group with id " + groupId + " not found"));
 
+    if (expenses.isEmpty()) {
+      return Collections.emptyList();
+    }
+
     // Calculate net balance per user (net balance = amount paid - amount owed)
     final Map<Long, BigDecimal> userIdToNetBalanceMap = new HashMap<>();
 
@@ -77,11 +67,9 @@ public class SettlementServiceImpl implements SettlementService {
 
       final Long payerId = expense.getPaidBy().getId();
 
-      userIdToNetBalanceMap.put(
-          payerId,
-          userIdToNetBalanceMap.getOrDefault(payerId, BigDecimal.ZERO).add(expense.getAmount()));
-
       userCache.putIfAbsent(payerId, expense.getPaidBy());
+
+      BigDecimal payerNetBalance = BigDecimal.ZERO;
 
       for (final ExpenseParticipant expenseParticipant : expense.getParticipants()) {
 
@@ -93,8 +81,14 @@ public class SettlementServiceImpl implements SettlementService {
                 .getOrDefault(userId, BigDecimal.ZERO)
                 .subtract(expenseParticipant.getShareAmount()));
 
+        payerNetBalance = payerNetBalance.add(expenseParticipant.getShareAmount());
+
         userCache.putIfAbsent(userId, expenseParticipant.getParticipant());
       }
+
+      userIdToNetBalanceMap.put(
+              payerId,
+              userIdToNetBalanceMap.getOrDefault(payerId, BigDecimal.ZERO).add(payerNetBalance));
     }
 
     final PriorityQueue<UserBalance> creditors =

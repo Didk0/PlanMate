@@ -1,76 +1,73 @@
 import ExpensesSection from "../expenses/ExpensesSection";
 import MembersSection from "../members/MembersSection";
-import expenseService from "../../api/services/expenseService";
-import groupService from "../../api/services/groupService";
-import userService from "../../api/services/userService";
 import { AnimatePresence } from "framer-motion";
 import { motion } from "framer-motion";
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
 import { useNavigate, useParams } from "react-router-dom";
 import { useGroupWebSocket } from "../../websocket/useGroupWebSocket";
+
+import {
+  addMemberToGroup,
+  loadGroupDetailsData,
+  removeMemberFromGroup,
+} from "../../store/actions";
 
 const GroupDetails = () => {
   const { id } = useParams();
   const groupId = id;
 
+  const { isLoading, errorMessage } = useSelector((state) => state.errors);
+
   const [group, setGroup] = useState(null);
   const [members, setMembers] = useState([]);
   const [expenses, setExpenses] = useState([]);
+
   const [showExpenses, setShowExpenses] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+
+  const dispatch = useDispatch();
 
   const navigate = useNavigate();
 
   useEffect(() => {
-    (async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const [groupData, membersData, expensesData] = await Promise.all([
-          groupService.getGroupById(groupId),
-          userService.getGroupMembers(groupId),
-          expenseService.getGroupExpenses(groupId),
-        ]);
-        setGroup(groupData);
-        setMembers(membersData);
-        setExpenses(expensesData);
-      } catch (e) {
-        setError(e.message || "Failed to load group details");
-      } finally {
-        setLoading(false);
+    dispatch(loadGroupDetailsData(groupId)).then((data) => {
+      if (data) {
+        setGroup(data.groupData);
+        setMembers(data.membersData);
+        setExpenses(data.expensesData);
       }
-    })();
-  }, []);
+    });
+  }, [dispatch, groupId]);
 
   useGroupWebSocket(groupId, (_, message) => {
-    const { changeType, data } = JSON.parse(message.body);
-    switch (changeType) {
+    const payload = JSON.parse(message.body);
+    switch (payload.changeType) {
       case "ADD_MEMBER":
-        setMembers((prevMembers) => [...prevMembers, data]);
+        setMembers((prevMembers) => [...prevMembers, payload.member]);
         break;
       case "REMOVE_MEMBER":
         setMembers((prevMembers) =>
-          prevMembers.filter((m) => m.id !== data.id)
+          prevMembers.filter((m) => m.id !== payload.member.id)
         );
         break;
       case "ADD_EXPENSE":
-        setExpenses((prevExpenses) => [...prevExpenses, data]);
+        console.log(payload);
+        setExpenses((prevExpenses) => [...prevExpenses, payload.expense]);
         break;
       default:
         break;
     }
   });
 
-  const handleAddMember = async ({ name }) => {
-    await userService.addMemberToGroup(groupId, { name });
+  const handleAddMember = ({ name }) => {
+    dispatch(addMemberToGroup(groupId, { name }));
   };
 
   const handleRemoveMember = async (userId) => {
-    await userService.removeMemberFromGroup(groupId, userId);
+    dispatch(removeMemberFromGroup(groupId, userId));
   };
 
-  if (loading) {
+  if (isLoading || !group || !members || !expenses) {
     return (
       <div className="min-h-screen flex items-center justify-center text-yellow-900 font-semibold text-xl">
         Loading group...
@@ -78,18 +75,10 @@ const GroupDetails = () => {
     );
   }
 
-  if (error) {
+  if (errorMessage) {
     return (
       <div className="min-h-screen flex items-center justify-center text-red-700 font-semibold text-lg px-4">
-        {error}
-      </div>
-    );
-  }
-
-  if (!group) {
-    return (
-      <div className="min-h-screen flex items-center justify-center text-yellow-900 font-semibold text-xl px-4">
-        Group not found
+        {errorMessage}
       </div>
     );
   }

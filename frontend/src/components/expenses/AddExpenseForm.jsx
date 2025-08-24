@@ -1,11 +1,14 @@
 import React, { useEffect, useState } from "react";
-import api from "../../api/api";
+import { useDispatch, useSelector } from "react-redux";
 import { useNavigate, useParams } from "react-router-dom";
+import { createExpense, getGroupMembers } from "../../store/actions";
 
 const AddExpenseForm = () => {
   const { id } = useParams();
   const groupId = id;
   const navigate = useNavigate();
+
+  const { isLoading, errorMessage } = useSelector((state) => state.errors);
 
   const [description, setDescription] = useState("");
   const [amount, setAmount] = useState("");
@@ -13,25 +16,47 @@ const AddExpenseForm = () => {
   const [participants, setParticipants] = useState([]);
   const [members, setMembers] = useState([]);
 
+  const dispatch = useDispatch();
+
   useEffect(() => {
-    api
-      .get(`groups/${groupId}/users`)
-      .then((response) => {
-        setMembers(response.data);
+    dispatch(getGroupMembers(groupId)).then((membersData) => {
+      setMembers(membersData);
+
+      if (membersData.length > 0) {
+        const defaultPayer = membersData[0].user.name;
+
+        setPaidByUserName(defaultPayer);
+
         setParticipants(
-          response.data.map((m) => ({
-            memberId: m.id,
-            shareAmount: "",
-            userName: m.user.name,
-          }))
+          membersData
+            .filter((m) => m.user.name !== (paidByUserName || defaultPayer))
+            .map((m) => ({
+              memberId: m.id,
+              shareAmount: "",
+              userName: m.user.name,
+            }))
         );
-        if (response.data.length > 0) {
-          // Default payer to first member if none selected
-          setPaidByUserName(response.data[0].user.name);
-        }
-      })
-      .catch((err) => console.error(err));
-  }, [groupId]);
+      }
+    });
+  }, [dispatch, groupId]);
+
+  useEffect(() => {
+    if (!paidByUserName || members.length === 0) return;
+    setParticipants((prevParticipants) =>
+      members
+        .filter((m) => m.user.name !== paidByUserName)
+        .map((member) => {
+          const existing = prevParticipants.find(
+            (p) => p.memberId === member.id
+          );
+          return {
+            memberId: member.id,
+            userName: member.user.name,
+            shareAmount: existing ? existing.shareAmount : "",
+          };
+        })
+    );
+  }, [paidByUserName, members]);
 
   const handleAmountChange = (memberId, value) => {
     setParticipants((prev) =>
@@ -52,9 +77,25 @@ const AddExpenseForm = () => {
         shareAmount: parseFloat(p.shareAmount || 0),
       })),
     };
-    await api.post(`/expenses/groups/${groupId}`, expenseData);
+    await dispatch(createExpense(groupId, expenseData));
     navigate(`/groups/${groupId}`);
   };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center text-yellow-900 font-semibold text-xl">
+        Loading...
+      </div>
+    );
+  }
+
+  if (errorMessage) {
+    return (
+      <div className="min-h-screen flex items-center justify-center text-red-700 font-semibold text-lg px-4">
+        {errorMessage}
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-r from-yellow-400 via-yellow-300 to-yellow-200 p-6 flex flex-col items-center">
@@ -120,30 +161,32 @@ const AddExpenseForm = () => {
         </h3>
 
         <div className="space-y-4 mb-6">
-          {members.map((member) => (
-            <div
-              key={member.id}
-              className="flex items-center gap-4 flex-wrap md:flex-nowrap"
-            >
-              <span className="w-32 font-medium text-yellow-900">
-                {member.user.name}
-              </span>
-              <input
-                type="number"
-                placeholder="Share Amount"
-                value={
-                  participants.find((p) => p.memberId === member.id)
-                    ?.shareAmount || ""
-                }
-                onChange={(event) =>
-                  handleAmountChange(member.id, event.target.value)
-                }
-                className="w-full max-w-[140px] border border-yellow-400 rounded-md p-3 focus:outline-yellow-500 focus:ring-2 focus:ring-yellow-400 transition text-yellow-900 font-semibold"
-                min="0"
-                step="0.01"
-              />
-            </div>
-          ))}
+          {members
+            .filter((member) => member.user.name !== paidByUserName)
+            .map((member) => (
+              <div
+                key={member.id}
+                className="flex items-center gap-4 flex-wrap md:flex-nowrap"
+              >
+                <span className="w-32 font-medium text-yellow-900">
+                  {member.user.name}
+                </span>
+                <input
+                  type="number"
+                  placeholder="Share Amount"
+                  value={
+                    participants.find((p) => p.memberId === member.id)
+                      ?.shareAmount || ""
+                  }
+                  onChange={(event) =>
+                    handleAmountChange(member.id, event.target.value)
+                  }
+                  className="w-full max-w-[150px] border border-yellow-400 rounded-md p-3 focus:outline-yellow-500 focus:ring-2 focus:ring-yellow-400 transition text-yellow-900 font-semibold"
+                  min="0"
+                  step="0.01"
+                />
+              </div>
+            ))}
         </div>
 
         <button

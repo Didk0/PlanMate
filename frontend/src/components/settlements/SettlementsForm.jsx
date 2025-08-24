@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
-import api from "../../api/api";
+import { useDispatch, useSelector } from "react-redux";
 import { useNavigate, useParams } from "react-router-dom";
+import { calculateSettlements } from "../../store/actions";
 
 const SettlementsForm = () => {
   const { id } = useParams();
@@ -8,14 +9,29 @@ const SettlementsForm = () => {
   const navigate = useNavigate();
   const [settlements, setSettlements] = useState([]);
 
+  const { isLoading, errorMessage } = useSelector((state) => state.errors);
+
+  const dispatch = useDispatch();
+
   useEffect(() => {
-    api
-      .get(`/groups/${groupId}/settlements/calculate`)
-      .then((response) => {
-        setSettlements(response.data);
-      })
-      .catch((err) => console.error(err));
-  }, [groupId]);
+    dispatch(calculateSettlements(groupId)).then(setSettlements);
+  }, []);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center text-yellow-900 font-semibold text-xl">
+        Loading settlements...
+      </div>
+    );
+  }
+
+  if (errorMessage) {
+    return (
+      <div className="min-h-screen flex items-center justify-center text-red-700 font-semibold text-lg px-4">
+        {errorMessage}
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-r from-yellow-400 via-yellow-300 to-yellow-200 p-6 flex flex-col items-center">

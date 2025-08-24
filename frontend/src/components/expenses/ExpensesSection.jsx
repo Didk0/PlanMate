@@ -36,7 +36,7 @@ const ExpensesSection = ({ expenses, groupId }) => {
         </Link>
       </div>
       {expenses.length === 0 ? (
-        <p className="text-yellow-900 text-lg">No expenses yet.</p>
+        <p className="text-yellow-900 text-lg">No expenses yet</p>
       ) : (
         <motion.ul
           className="space-y-4"
@@ -69,17 +69,19 @@ const ExpensesSection = ({ expenses, groupId }) => {
                       Participants:
                     </h4>
                     <ul className="list-disc list-inside space-y-1 text-yellow-900 text-sm">
-                      {expense.participants.map((participant) => (
-                        <li
-                          key={participant.id}
-                          className="flex justify-between"
-                        >
-                          <span>{participant.userName}</span>
-                          <span className="font-semibold">
-                            ${participant.shareAmount.toFixed(2)}
-                          </span>
-                        </li>
-                      ))}
+                      {expense.participants
+                        .filter((participant) => participant.shareAmount > 0)
+                        .map((participant) => (
+                          <li
+                            key={participant.id}
+                            className="flex justify-between"
+                          >
+                            <span>{participant.userName}</span>
+                            <span className="font-semibold">
+                              ${participant.shareAmount.toFixed(2)}
+                            </span>
+                          </li>
+                        ))}
                     </ul>
                   </div>
                 )}

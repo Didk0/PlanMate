@@ -1,64 +1,58 @@
 import React, { useEffect, useState } from "react";
-import groupService from "../../api/services/groupService";
 import { AnimatePresence } from "framer-motion";
 import { motion } from "motion/react";
+import { useDispatch, useSelector } from "react-redux";
 import { Link } from "react-router-dom";
+import { createGroup, loadAllGroups } from "../../store/actions";
 
 const Groups = () => {
-  const [groups, setGroups] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const { isLoading, errorMessage } = useSelector((state) => state.errors);
 
-  const [showCreateForm, setShowCreateForm] = useState(false);
-  const [newGroupName, setNewGroupName] = useState("");
-  const [newGroupDescription, setNewGroupDescription] = useState("");
+  const [groups, setGroups] = useState([]);
+
+  const dispatch = useDispatch();
 
   useEffect(() => {
-    groupService
-      .getAllGroups()
-      .then(setGroups)
-      .catch((e) => setError(e.message || "Failed to load groups"))
-      .finally(() => setLoading(false));
-  }, []);
+    dispatch(loadAllGroups()).then((data) => {
+      if (data) {
+        setGroups(data);
+      }
+    });
+  }, [dispatch]);
+
+  const [showCreateForm, setShowCreateForm] = useState(false);
+  const [newGroup, setNewGroup] = useState({ name: "", description: "" });
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setNewGroup((prev) => ({ ...prev, [name]: value }));
+  };
 
   const handleCreateGroup = async () => {
-    if (!newGroupName.trim()) {
-      alert("Please enter a group name");
+    const { name, description } = newGroup;
+    if (!name.trim() || !description.trim()) {
+      alert("Please enter both a group name and description.");
       return;
     }
-    if (!newGroupDescription.trim()) {
-      alert("Please enter a group description");
-      return;
-    }
-    try {
-      setLoading(true);
-      const createdGroup = await groupService.createGroup({
-        name: newGroupName,
-        description: newGroupDescription,
-      });
+    const createdGroup = await dispatch(createGroup(newGroup));
+    if (createdGroup) {
       setGroups((prev) => [...prev, createdGroup]);
-      setNewGroupName("");
-      setNewGroupDescription("");
+      setNewGroup({ name: "", description: "" });
       setShowCreateForm(false);
-    } catch (e) {
-      alert(e.message || "Failed to create group");
-    } finally {
-      setLoading(false);
     }
   };
 
-  if (loading) {
+  if (isLoading || !groups) {
     return (
       <div className="min-h-screen flex items-center justify-center text-yellow-900 font-semibold text-xl">
         Loading groups...
       </div>
     );
   }
-
-  if (error) {
+  if (errorMessage) {
     return (
       <div className="min-h-screen flex items-center justify-center text-red-700 font-semibold text-lg px-4">
-        {error}
+        {errorMessage}
       </div>
     );
   }
@@ -113,18 +107,20 @@ const Groups = () => {
               className="mb-8 p-6 rounded-md bg-yellow-100 border border-yellow-300 shadow-inner overflow-hidden"
             >
               <input
+                name="name"
                 type="text"
                 placeholder="Group Name"
-                value={newGroupName}
-                onChange={(e) => setNewGroupName(e.target.value)}
+                value={newGroup.name}
+                onChange={handleInputChange}
                 className="w-full md:w-auto border border-yellow-400 rounded-md p-3 mb-4 md:mb-0 md:mr-4 text-yellow-900 font-semibold focus:outline-yellow-500 focus:ring-2 focus:ring-yellow-400 transition"
               />
 
               <input
+                name="description"
                 type="text"
                 placeholder="Group Description"
-                value={newGroupDescription}
-                onChange={(e) => setNewGroupDescription(e.target.value)}
+                value={newGroup.description}
+                onChange={handleInputChange}
                 className="w-full md:w-auto border border-yellow-400 rounded-md p-3 mb-4 md:mb-0 md:mr-4 text-yellow-900 font-semibold focus:outline-yellow-500 focus:ring-2 focus:ring-yellow-400 transition"
               />
 
