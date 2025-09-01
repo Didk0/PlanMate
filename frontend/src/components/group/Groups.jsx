@@ -6,6 +6,7 @@ import { Link } from "react-router-dom";
 import { createGroup, loadAllGroups } from "../../store/actions";
 
 const Groups = () => {
+
   const { isLoading, errorMessage } = useSelector((state) => state.errors);
 
   const [groups, setGroups] = useState([]);
@@ -13,11 +14,18 @@ const Groups = () => {
   const dispatch = useDispatch();
 
   useEffect(() => {
-    dispatch(loadAllGroups()).then((data) => {
-      if (data) {
-        setGroups(data);
-      }
-    });
+    const fetchGroups = async () => {
+      
+        try {
+          const data = await dispatch(loadAllGroups());
+          if (data) {
+            setGroups(data);
+          }
+        } catch (error) {
+          console.error("Failed to refresh token or load groups", error);
+        }
+    };
+    fetchGroups();
   }, [dispatch]);
 
   const [showCreateForm, setShowCreateForm] = useState(false);
@@ -34,12 +42,16 @@ const Groups = () => {
       alert("Please enter both a group name and description.");
       return;
     }
-    const createdGroup = await dispatch(createGroup(newGroup));
-    if (createdGroup) {
-      setGroups((prev) => [...prev, createdGroup]);
-      setNewGroup({ name: "", description: "" });
-      setShowCreateForm(false);
-    }
+      try {
+        const createdGroup = await dispatch(createGroup(newGroup));
+        if (createdGroup) {
+          setGroups((prev) => [...prev, createdGroup]);
+          setNewGroup({ name: "", description: "" });
+          setShowCreateForm(false);
+        }
+      } catch (error) {
+        console.error("Create group failed", error);
+      }
   };
 
   if (isLoading || !groups) {

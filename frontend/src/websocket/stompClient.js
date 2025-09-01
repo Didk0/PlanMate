@@ -1,6 +1,5 @@
 import SockJS from "sockjs-client";
 import { Client } from "@stomp/stompjs";
-import { useRef } from "react";
 
 export function createStompClient({ onConnect, onDisconnect, onError } = {}) {
   const wsUrl = import.meta.env.VITE_WS_URL;

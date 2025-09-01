@@ -5,7 +5,7 @@ import io.plan.mate.expense.tracker.backend.payloads.events.ExpenseChangeEnum;
 import io.plan.mate.expense.tracker.backend.payloads.events.ExpenseCreatedEvent;
 import io.plan.mate.expense.tracker.backend.payloads.request.CreateExpenseRequest;
 import io.plan.mate.expense.tracker.backend.services.ExpenseService;
-import io.plan.mate.expense.tracker.backend.services.publishers.WebSocketEventPublisher;
+import io.plan.mate.expense.tracker.backend.services.websocket.WebSocketEventPublisher;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;

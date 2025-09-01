@@ -19,6 +19,7 @@ import lombok.NoArgsConstructor;
 @Entity
 @Table(
     name = "members",
+    schema = "planmate",
     uniqueConstraints = {@UniqueConstraint(columnNames = {"user_id", "group_id"})})
 @AllArgsConstructor
 @NoArgsConstructor

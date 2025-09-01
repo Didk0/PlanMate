@@ -1,4 +1,4 @@
-package io.plan.mate.expense.tracker.backend.services.publishers;
+package io.plan.mate.expense.tracker.backend.services.websocket;
 
 import io.plan.mate.expense.tracker.backend.payloads.events.ExpenseCreatedEvent;
 import io.plan.mate.expense.tracker.backend.payloads.events.MemberChangedEvent;

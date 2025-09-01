@@ -10,8 +10,11 @@ public record CreateUserRequest(
     @Schema(description = "Name of the user", example = "John Doe")
         @NotBlank(message = "Name must not be blank")
         @Size(max = 30, message = "Name must not exceed 30 characters")
-        String name,
+        String username,
     @Schema(description = "Email address of the user", example = "john.doe@gmail.com")
         @NotBlank(message = "Email must not be blank")
         @Email(message = "Email must be valid")
-        String email) {}
+        String email,
+    String firstName,
+    String lastName,
+    String keycloakId) {}

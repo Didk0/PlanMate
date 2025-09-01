@@ -3,9 +3,19 @@ import api from "../api";
 const userService = {
   getGroupMembers: (groupId) =>
     api.get(`groups/${groupId}/users`).then((res) => res.data),
+
   addMemberToGroup: (groupId, user) =>
     api.post(`groups/${groupId}/users`, user).then((res) => res.data),
-  removeMemberFromGroup: (groupId, userId) => api.delete(`groups/${groupId}/users/${userId}`),
+
+  removeMemberFromGroup: (groupId, userId) =>
+    api.delete(`groups/${groupId}/users/${userId}`),
+
+  createUser: (userData, token) =>
+    api
+      .post("users", userData, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      .then((res) => res.data),
 };
 
 export default userService;

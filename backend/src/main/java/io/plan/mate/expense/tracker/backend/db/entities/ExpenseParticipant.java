@@ -20,6 +20,7 @@ import lombok.Setter;
 @Entity
 @Table(
     name = "expense_participants",
+    schema = "planmate",
     uniqueConstraints = {@UniqueConstraint(columnNames = {"expense_id", "user_id"})})
 @AllArgsConstructor
 @NoArgsConstructor

@@ -17,7 +17,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @Entity
-@Table(name = "groups")
+@Table(name = "groups", schema = "planmate")
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder

@@ -51,7 +51,6 @@ const GroupDetails = () => {
         );
         break;
       case "ADD_EXPENSE":
-        console.log(payload);
         setExpenses((prevExpenses) => [...prevExpenses, payload.expense]);
         break;
       default:

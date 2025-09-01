@@ -1,5 +1,7 @@
 import "./App.css";
 import AddExpenseForm from "./components/expenses/AddExpenseForm";
+import ApiTokenSetter from "./components/auth/ApiTokenSetter";
+import AuthSync from "./components/auth/AuthSync";
 import GroupDetails from "./components/group/GroupDetails";
 import Groups from "./components/group/Groups";
 import Home from "./components/home/Home";
@@ -12,6 +14,8 @@ function App() {
   return (
     <React.Fragment>
       <Router>
+        <AuthSync />
+        <ApiTokenSetter />
         <Navbar />
         <Routes>
           <Route path="/" element={<Home />} />

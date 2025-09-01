@@ -12,14 +12,16 @@ import jakarta.persistence.UniqueConstraint;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @Entity
-@Table(name = "users", uniqueConstraints = @UniqueConstraint(columnNames = "email"))
+@Table(
+    name = "users",
+    schema = "planmate",
+    uniqueConstraints = @UniqueConstraint(columnNames = "email"))
 @NoArgsConstructor
 @AllArgsConstructor
 @Getter

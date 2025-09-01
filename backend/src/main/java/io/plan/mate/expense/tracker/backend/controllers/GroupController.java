@@ -75,6 +75,7 @@ public class GroupController {
         @ApiResponse(responseCode = "500", description = "Internal server error")
       })
   @GetMapping
+  // @PreAuthorize("hasRole('role_admin')")
   public ResponseEntity<List<GroupDto>> getAllGroups() {
 
     return ResponseEntity.ok(groupService.getAllGroups());

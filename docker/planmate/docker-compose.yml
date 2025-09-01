@@ -1,3 +1,5 @@
+version: '3.8'
+
 services:
   db:
     image: postgres:15
@@ -19,5 +21,25 @@ services:
     ports:
       - "6379:6379"
 
+  keycloak:
+    container_name: planmate-keycloak
+    image: quay.io/keycloak/keycloak:26.1.0
+    ports:
+      - "9090:8080"
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: admin
+      KC_BOOTSTRAP_ADMIN_PASSWORD: password
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://db:5432/planmate?currentSchema=keycloak
+      KC_DB_USERNAME: postgres
+      KC_DB_PASSWORD: postgres
+    volumes:
+      - keycloak_data:/opt/keycloak/data
+    command:
+      - start-dev
+    depends_on:
+      - db
+
 volumes:
   db-data:
+  keycloak_data:
