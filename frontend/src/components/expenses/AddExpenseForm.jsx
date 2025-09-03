@@ -23,17 +23,17 @@ const AddExpenseForm = () => {
       setMembers(membersData);
 
       if (membersData.length > 0) {
-        const defaultPayer = membersData[0].user.name;
+        const defaultPayer = membersData[0].username;
 
         setPaidByUserName(defaultPayer);
 
         setParticipants(
           membersData
-            .filter((m) => m.user.name !== (paidByUserName || defaultPayer))
+            .filter((m) => m.username !== (paidByUserName || defaultPayer))
             .map((m) => ({
               memberId: m.id,
               shareAmount: "",
-              userName: m.user.name,
+              userName: m.username,
             }))
         );
       }
@@ -44,14 +44,14 @@ const AddExpenseForm = () => {
     if (!paidByUserName || members.length === 0) return;
     setParticipants((prevParticipants) =>
       members
-        .filter((m) => m.user.name !== paidByUserName)
+        .filter((m) => m.username !== paidByUserName)
         .map((member) => {
           const existing = prevParticipants.find(
             (p) => p.memberId === member.id
           );
           return {
             memberId: member.id,
-            userName: member.user.name,
+            userName: member.username,
             shareAmount: existing ? existing.shareAmount : "",
           };
         })
@@ -150,8 +150,8 @@ const AddExpenseForm = () => {
           required
         >
           {members.map((member) => (
-            <option key={member.id} value={member.user.name}>
-              {member.user.name}
+            <option key={member.id} value={member.username}>
+              {member.username}
             </option>
           ))}
         </select>
@@ -162,14 +162,14 @@ const AddExpenseForm = () => {
 
         <div className="space-y-4 mb-6">
           {members
-            .filter((member) => member.user.name !== paidByUserName)
+            .filter((member) => member.username !== paidByUserName)
             .map((member) => (
               <div
                 key={member.id}
                 className="flex items-center gap-4 flex-wrap md:flex-nowrap"
               >
                 <span className="w-32 font-medium text-yellow-900">
-                  {member.user.name}
+                  {member.username}
                 </span>
                 <input
                   type="number"

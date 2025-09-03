@@ -53,9 +53,9 @@ public class MemberController {
       @PathVariable final Long groupId, @Valid @RequestBody final AddUserRequest addUserRequest) {
 
     final MemberDto memberDto = memberService.addUserToGroup(groupId, addUserRequest);
+
     eventPublisher.publishMembersUpdate(
-        new MemberChangedEvent(
-            MemberChangeEnum.ADD_MEMBER, memberDto));
+        new MemberChangedEvent(MemberChangeEnum.ADD_MEMBER, groupId, memberDto));
 
     return ResponseEntity.status(HttpStatus.CREATED).body(memberDto);
   }
@@ -71,16 +71,17 @@ public class MemberController {
         @ApiResponse(responseCode = "404", description = "Group or user not found"),
         @ApiResponse(responseCode = "500", description = "Internal server error")
       })
-  @DeleteMapping("/groups/{groupId}/users/{userId}")
-  public ResponseEntity<MemberDto> removeUserFromGroup(
-      @PathVariable final Long groupId, @PathVariable final Long userId) {
+  @DeleteMapping("/groups/{groupId}/users/{memberId}")
+  public ResponseEntity<Void> removeUserFromGroup(
+      @PathVariable final Long groupId, @PathVariable final Long memberId) {
 
-    final MemberDto memberDto = memberService.removeUserFromGroup(groupId, userId);
+    memberService.removeUserFromGroup(groupId, memberId);
+
     eventPublisher.publishMembersUpdate(
         new MemberChangedEvent(
-            MemberChangeEnum.REMOVE_MEMBER, memberDto));
+            MemberChangeEnum.REMOVE_MEMBER, groupId, MemberDto.builder().id(memberId).build()));
 
-    return ResponseEntity.ok(memberDto);
+    return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
   }
 
   @Operation(

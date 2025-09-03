@@ -59,7 +59,7 @@ const ExpensesSection = ({ expenses, groupId }) => {
                   </div>
                   <div className="flex flex-wrap gap-6 text-yellow-800 text-sm mt-2">
                     <div>Amount: ${expense.amount.toFixed(2)}</div>
-                    <div>Paid by: {expense.paidByUser.name}</div>
+                    <div>Paid by: {expense.paidByFirstName} {expense.paidByLastName}</div>
                   </div>
                 </div>
                 {/* Participants list */}
@@ -76,7 +76,7 @@ const ExpensesSection = ({ expenses, groupId }) => {
                             key={participant.id}
                             className="flex justify-between"
                           >
-                            <span>{participant.userName}</span>
+                            <span>{participant.firstName} {participant.lastName}</span>
                             <span className="font-semibold">
                               ${participant.shareAmount.toFixed(2)}
                             </span>

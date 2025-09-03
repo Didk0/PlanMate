@@ -58,12 +58,12 @@ const GroupDetails = () => {
     }
   });
 
-  const handleAddMember = ({ name }) => {
-    dispatch(addMemberToGroup(groupId, { name }));
+  const handleAddMember = (username) => {
+    dispatch(addMemberToGroup(groupId, { username }));
   };
 
-  const handleRemoveMember = async (userId) => {
-    dispatch(removeMemberFromGroup(groupId, userId));
+  const handleRemoveMember = async (memberId) => {
+    dispatch(removeMemberFromGroup(groupId, memberId));
   };
 
   if (isLoading || !group || !members || !expenses) {

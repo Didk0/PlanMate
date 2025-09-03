@@ -12,10 +12,13 @@ import jakarta.persistence.UniqueConstraint;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
+import org.hibernate.annotations.CreationTimestamp;
 
 @Entity
 @Table(
@@ -25,6 +28,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Getter
+@Setter
 @Builder
 public class User {
 
@@ -33,16 +37,24 @@ public class User {
   private Long id;
 
   @Column(nullable = false)
-  private String name;
+  private UUID keycloakId;
+
+  @Column(nullable = false)
+  private String username;
 
   @Column(nullable = false, unique = true)
   private String email;
 
+  private String firstName;
+
+  private String lastName;
+
+  @Builder.Default
+  //@CreationTimestamp
+  @Column(name = "created_at", nullable = false, updatable = false)
+  private LocalDateTime createdAt = LocalDateTime.now();
+
   @Builder.Default
   @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
   private List<Member> memberships = new ArrayList<>();
-
-  @Builder.Default
-  @Column(name = "created_at", nullable = false, updatable = false)
-  private LocalDateTime createdAt = LocalDateTime.now();
 }

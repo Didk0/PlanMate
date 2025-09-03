@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import io.plan.mate.expense.tracker.backend.configs.converters.ExpenseParticipantToDtoConverter;
+import io.plan.mate.expense.tracker.backend.configs.converters.MemberToMemberDtoConverter;
 import io.swagger.v3.oas.models.ExternalDocumentation;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Contact;
@@ -61,22 +62,7 @@ public class AppConfig {
 
     final ModelMapper modelMapper = new ModelMapper();
 
-    //    modelMapper
-    //        .typeMap(ExpenseParticipantDto.class, ExpenseParticipant.class)
-    //        .addMappings(
-    //            mapper ->
-    //                mapper
-    //                    .using(
-    //                        context -> {
-    //                          final Long userId = (Long) context.getSource();
-    //                          if (userId == null) {
-    //                            return null;
-    //                          }
-    //                          return User.builder().id(userId).build();
-    //                        })
-    //                    .map(ExpenseParticipantDto::getUserId,
-    // ExpenseParticipant::setParticipant));
-    //
+    modelMapper.addConverter(new MemberToMemberDtoConverter());
     modelMapper.addConverter(new ExpenseParticipantToDtoConverter());
 
     return modelMapper;

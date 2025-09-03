@@ -51,8 +51,13 @@ const SettlementsForm = () => {
                 key={index}
                 className="p-4 border border-yellow-300 rounded-md bg-yellow-200 shadow-sm text-yellow-900 font-semibold"
               >
-                <span className="font-bold">{settlement.fromUser.name}</span>{" "}
-                pays <span className="font-bold">{settlement.toUser.name}</span>{" "}
+                <span className="font-bold">
+                  {settlement.fromUserFirstName} {settlement.fromUserLastName}
+                </span>{" "}
+                pays{" "}
+                <span className="font-bold">
+                  {settlement.toUserFirstName} {settlement.toUserLastName}
+                </span>{" "}
                 <span className="text-yellow-700">
                   ${settlement.amount.toFixed(2)}
                 </span>

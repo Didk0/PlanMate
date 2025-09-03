@@ -1,10 +1,13 @@
 package io.plan.mate.expense.tracker.backend.configs;
 
-import io.plan.mate.expense.tracker.backend.configs.converters.JwtConverter;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.keycloak.OAuth2Constants;
+import org.keycloak.admin.client.Keycloak;
+import org.keycloak.admin.client.KeycloakBuilder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -21,7 +24,7 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 @RequiredArgsConstructor
 public class SecurityConfig {
 
-  private final JwtConverter jwtConverter;
+  private final ApplicationProperties applicationProperties;
 
   @Bean
   public SecurityFilterChain resourceServerSecurityFilterChain(final HttpSecurity http)
@@ -32,8 +35,7 @@ public class SecurityConfig {
         .authorizeHttpRequests(
             authorize ->
                 authorize.requestMatchers("/ws/**").permitAll().anyRequest().authenticated())
-        .oauth2ResourceServer(
-            oauth2 -> oauth2.jwt(jwt -> jwt.jwtAuthenticationConverter(jwtConverter)))
+        .oauth2ResourceServer(oauth2 -> oauth2.jwt(Customizer.withDefaults()))
         .sessionManagement(
             session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
 
@@ -44,7 +46,7 @@ public class SecurityConfig {
   public CorsConfigurationSource corsConfigurationSource() {
 
     final CorsConfiguration corsConfiguration = new CorsConfiguration();
-    corsConfiguration.setAllowedOrigins(List.of("http://localhost:5173"));
+    corsConfiguration.setAllowedOrigins(List.of(applicationProperties.getFrontendUrl()));
     corsConfiguration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
     corsConfiguration.setAllowCredentials(true);
     corsConfiguration.setAllowedHeaders(List.of("*"));
@@ -55,5 +57,18 @@ public class SecurityConfig {
     source.registerCorsConfiguration("/ws/**", corsConfiguration);
 
     return source;
+  }
+
+  @Bean
+  Keycloak keycloak() {
+
+    return KeycloakBuilder.builder()
+        .serverUrl(applicationProperties.getKeycloakAuthServerUrl())
+        .realm(applicationProperties.getKeycloakRealm())
+        .clientId(applicationProperties.getKeycloakClientId())
+        .grantType(OAuth2Constants.CLIENT_CREDENTIALS)
+        .clientSecret(applicationProperties.getKeycloakClientSecret())
+        .scope(applicationProperties.getKeycloakScope())
+        .build();
   }
 }

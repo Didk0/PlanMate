@@ -1,14 +1,17 @@
 package io.plan.mate.expense.tracker.backend.services.impl;
 
+import io.plan.mate.expense.tracker.backend.configs.ApplicationProperties;
 import io.plan.mate.expense.tracker.backend.db.dtos.UserDto;
 import io.plan.mate.expense.tracker.backend.db.entities.User;
 import io.plan.mate.expense.tracker.backend.db.repositories.UserRepository;
-import io.plan.mate.expense.tracker.backend.exception.handling.exceptions.BadRequestException;
 import io.plan.mate.expense.tracker.backend.exception.handling.exceptions.ResourceNotFoundException;
 import io.plan.mate.expense.tracker.backend.payloads.request.CreateUserRequest;
 import io.plan.mate.expense.tracker.backend.services.UserService;
+import java.time.LocalDateTime;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.keycloak.admin.client.Keycloak;
+import org.keycloak.representations.idm.UserRepresentation;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 
@@ -18,18 +21,43 @@ public class UserServiceImpl implements UserService {
 
   private final UserRepository userRepository;
   private final ModelMapper modelMapper;
+  private final Keycloak keycloak;
+  private final ApplicationProperties applicationProperties;
 
   @Override
   public UserDto createUser(final CreateUserRequest createUserRequest) {
 
-    if (userRepository.findByEmail(createUserRequest.email()).isPresent()) {
+    final User existingUser =
+        userRepository.findByKeycloakId(createUserRequest.keycloakId()).orElse(null);
 
-      throw new BadRequestException(
-          String.format("Email %s already exists", createUserRequest.email()));
+    if (existingUser != null) {
+
+      final UserRepresentation userRepresentation =
+          keycloak
+              .realm(applicationProperties.getKeycloakRealm())
+              .users()
+              .get(String.valueOf(createUserRequest.keycloakId()))
+              .toRepresentation();
+
+      existingUser.setEmail(userRepresentation.getEmail());
+      existingUser.setUsername(userRepresentation.getUsername());
+      existingUser.setFirstName(userRepresentation.getFirstName());
+      existingUser.setLastName(userRepresentation.getLastName());
+
+      final User updatedUser = userRepository.save(existingUser);
+
+      return modelMapper.map(updatedUser, UserDto.class);
     }
 
     final User user =
-        User.builder().name(createUserRequest.username()).email(createUserRequest.email()).build();
+        User.builder()
+            .username(createUserRequest.username())
+            .email(createUserRequest.email())
+            .firstName(createUserRequest.firstName())
+            .lastName(createUserRequest.lastName())
+            .createdAt(LocalDateTime.now())
+            .keycloakId(createUserRequest.keycloakId())
+            .build();
 
     final User createdUser = userRepository.save(user);
 

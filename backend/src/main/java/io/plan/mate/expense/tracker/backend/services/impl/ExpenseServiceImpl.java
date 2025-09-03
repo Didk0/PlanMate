@@ -42,7 +42,7 @@ public class ExpenseServiceImpl implements ExpenseService {
 
     final User paidBy =
         userRepository
-            .findByName(createExpenseRequest.paidByUserName())
+            .findByUsername(createExpenseRequest.paidByUserName())
             .orElseThrow(
                 () ->
                     new ResourceNotFoundException(
@@ -60,24 +60,19 @@ public class ExpenseServiceImpl implements ExpenseService {
     final List<ExpenseParticipant> participants =
         createExpenseRequest.participants().stream()
             .map(
-                p ->
-                    ExpenseParticipant.builder()
-                        .participant(User.builder().name(p.userName()).build())
-                        .shareAmount(p.shareAmount())
-                        .build())
-            .map(
                 p -> {
                   final User userParticipant =
                       userRepository
-                          .findByName(p.getParticipant().getName())
+                          .findByUsername(p.userName())
                           .orElseThrow(
                               () ->
                                   new ResourceNotFoundException(
-                                      "User with id " + p.getParticipant().getId() + " not found"));
+                                      "User with username " + p.userName() + " not found"));
+
                   return ExpenseParticipant.builder()
                       .expense(expense)
                       .participant(userParticipant)
-                      .shareAmount(p.getShareAmount())
+                      .shareAmount(p.shareAmount())
                       .build();
                 })
             .toList();

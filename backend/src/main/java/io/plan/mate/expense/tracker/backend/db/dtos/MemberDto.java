@@ -15,7 +15,9 @@ import lombok.Setter;
 public class MemberDto {
 
   private Long id;
-  private UserDto user;
-  private GroupDto group;
+  private String username;
+  private String firstName;
+  private String lastName;
+  private String groupName;
   private LocalDateTime joinedAt;
 }

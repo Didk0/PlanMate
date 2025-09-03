@@ -1,7 +1,7 @@
 package io.plan.mate.expense.tracker.backend.configs.converters;
 
-import io.plan.mate.expense.tracker.backend.db.entities.ExpenseParticipant;
 import io.plan.mate.expense.tracker.backend.db.dtos.ExpenseParticipantDto;
+import io.plan.mate.expense.tracker.backend.db.entities.ExpenseParticipant;
 import org.modelmapper.Converter;
 import org.modelmapper.spi.MappingContext;
 
@@ -17,17 +17,11 @@ public class ExpenseParticipantToDtoConverter
       return null;
     }
 
-    final ExpenseParticipantDto expenseParticipantDto =
-        ExpenseParticipantDto.builder()
-            .id(expenseParticipant.getId())
-            .shareAmount(expenseParticipant.getShareAmount())
-            .build();
-
-    if (expenseParticipant.getParticipant() != null) {
-      expenseParticipantDto.setUserId(expenseParticipant.getParticipant().getId());
-      expenseParticipantDto.setUserName(expenseParticipant.getParticipant().getName());
-    }
-
-    return expenseParticipantDto;
+    return ExpenseParticipantDto.builder()
+        .id(expenseParticipant.getId())
+        .firstName(expenseParticipant.getParticipant().getFirstName())
+        .lastName(expenseParticipant.getParticipant().getLastName())
+        .shareAmount(expenseParticipant.getShareAmount())
+        .build();
   }
 }

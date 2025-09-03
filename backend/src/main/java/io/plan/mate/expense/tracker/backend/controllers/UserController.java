@@ -47,6 +47,7 @@ public class UserController {
       @Valid @RequestBody final CreateUserRequest createUserRequest) {
 
     final UserDto userDto = userService.createUser(createUserRequest);
+
     return ResponseEntity.status(HttpStatus.CREATED).body(userDto);
   }
 

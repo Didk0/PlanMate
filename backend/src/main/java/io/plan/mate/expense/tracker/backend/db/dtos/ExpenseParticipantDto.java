@@ -1,6 +1,5 @@
 package io.plan.mate.expense.tracker.backend.db.dtos;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotNull;
@@ -28,9 +27,7 @@ public class ExpenseParticipantDto {
   @DecimalMin(value = "0.0", inclusive = false, message = "Share amount must be positive")
   private BigDecimal shareAmount;
 
-  @JsonIgnore private ExpenseDto expense;
+  private String firstName;
 
-  private Long userId;
-
-  private String userName;
+  private String lastName;
 }

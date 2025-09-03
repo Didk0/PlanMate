@@ -33,11 +33,11 @@ public class MemberServiceImpl implements MemberService {
 
     final User user =
         userRepository
-            .findByName(addUserRequest.name())
+            .findByUsername(addUserRequest.username())
             .orElseThrow(
                 () ->
                     new ResourceNotFoundException(
-                        "No user with name " + addUserRequest.name() + " exists"));
+                        "No user with name " + addUserRequest.username() + " exists"));
 
     final Group group =
         groupRepository
@@ -59,30 +59,21 @@ public class MemberServiceImpl implements MemberService {
 
   @Override
   @Transactional
-  public MemberDto removeUserFromGroup(final Long groupId, final Long userId) {
+  public void removeUserFromGroup(final Long groupId, final Long memberId) {
 
     final Member member =
         memberRepository
-            .findByGroupIdAndUserId(groupId, userId)
+            .findByGroupIdAndId(groupId, memberId)
             .orElseThrow(() -> new ResourceNotFoundException("Membership not found"));
 
-    final MemberDto memberDto = modelMapper.map(member, MemberDto.class);
-
     memberRepository.delete(member);
-
-    return memberDto;
   }
 
   @Override
   @Transactional
   public List<MemberDto> getGroupMembers(final Long groupId) {
 
-    final List<Member> groupMembers =
-        groupRepository
-            .findById(groupId)
-            .map(Group::getMembers)
-            .orElseThrow(
-                () -> new ResourceNotFoundException("Group with id " + groupId + " not found"));
+    final List<Member> groupMembers = memberRepository.findByGroupId(groupId);
 
     return groupMembers.stream().map(member -> modelMapper.map(member, MemberDto.class)).toList();
   }

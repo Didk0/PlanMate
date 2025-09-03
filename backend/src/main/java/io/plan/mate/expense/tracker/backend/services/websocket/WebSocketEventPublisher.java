@@ -16,13 +16,13 @@ public class WebSocketEventPublisher {
 
   public void publishExpenseCreated(final ExpenseCreatedEvent event) {
 
-    final String destination = BASE_DEST + event.expense().getGroup().getId() + "/expenses";
+    final String destination = BASE_DEST + event.groupId() + "/expenses";
     messagingTemplate.convertAndSend(destination, event);
   }
 
   public void publishMembersUpdate(final MemberChangedEvent event) {
 
-    final String destination = BASE_DEST + event.member().getGroup().getId() + "/users";
+    final String destination = BASE_DEST + event.groupId() + "/users";
     messagingTemplate.convertAndSend(destination, event);
   }
 }

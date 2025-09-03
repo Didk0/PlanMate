@@ -41,6 +41,7 @@ public class SettlementController {
       @PathVariable final Long groupId) {
 
     final List<SettlementDto> settlements = settlementService.calculateSettlements(groupId);
+
     return ResponseEntity.ok(settlements);
   }
 }

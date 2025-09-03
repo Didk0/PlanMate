@@ -1,19 +1,17 @@
-import { AnimatePresence } from "framer-motion";
-import { motion } from "motion/react";
+import { AnimatePresence, motion } from "framer-motion";
 import { useState } from "react";
 
 const MembersSection = ({ members, onAddMember, onRemoveMember }) => {
-  
   const [showAddForm, setShowAddForm] = useState(false);
-  const [name, setName] = useState("");
+  const [username, setUsername] = useState("");
 
   const handleAdd = () => {
-    if (!name.trim()) {
+    if (!username.trim()) {
       alert("Please enter a name");
       return;
     }
-    onAddMember({ name });
-    setName("");
+    onAddMember(username);
+    setUsername("");
     setShowAddForm(false);
   };
 
@@ -32,12 +30,12 @@ const MembersSection = ({ members, onAddMember, onRemoveMember }) => {
               className="flex justify-between items-center p-4 rounded-md bg-yellow-200 shadow hover:shadow-lg transition cursor-default"
             >
               <span className="text-yellow-900 font-medium">
-                {member.user.name}
+                {member.firstName} {member.lastName}
               </span>
               <button
-                onClick={() => onRemoveMember(member.user.id)}
+                onClick={() => onRemoveMember(member.id)}
                 className="text-white bg-red-600 hover:bg-red-700 transition px-3 py-1 rounded-md text-sm font-semibold shadow"
-                aria-label={`Remove member ${member.user.name}`}
+                aria-label={`Remove member ${member.username}`}
               >
                 &times;
               </button>
@@ -68,9 +66,9 @@ const MembersSection = ({ members, onAddMember, onRemoveMember }) => {
           >
             <input
               type="text"
-              placeholder="Name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
+              placeholder="Username"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
               className="w-full md:w-auto border border-yellow-400 rounded-md p-3 mb-4 md:mb-0 md:mr-4 text-yellow-900 font-semibold focus:outline-yellow-500 focus:ring-2 focus:ring-yellow-400 transition"
             />
             <button

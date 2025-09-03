@@ -16,7 +16,9 @@ public class SettlementDto {
 
   private Long id;
   private GroupDto group;
-  private UserDto fromUser;
-  private UserDto toUser;
+  private String fromUserFirstName;
+  private String fromUserLastName;
+  private String toUserFirstName;
+  private String toUserLastName;
   private BigDecimal amount;
 }

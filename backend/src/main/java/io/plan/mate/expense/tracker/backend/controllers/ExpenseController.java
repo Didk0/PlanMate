@@ -50,8 +50,10 @@ public class ExpenseController {
       @Valid @RequestBody final CreateExpenseRequest createExpenseRequest) {
 
     final ExpenseDto expenseDto = expenseService.createExpense(groupId, createExpenseRequest);
+
     eventPublisher.publishExpenseCreated(
-        new ExpenseCreatedEvent(ExpenseChangeEnum.ADD_EXPENSE, expenseDto));
+        new ExpenseCreatedEvent(ExpenseChangeEnum.ADD_EXPENSE, groupId, expenseDto));
+
     return ResponseEntity.status(HttpStatus.CREATED).body(expenseDto);
   }
 
@@ -71,6 +73,7 @@ public class ExpenseController {
   public ResponseEntity<List<ExpenseDto>> getGroupExpenses(@PathVariable final Long groupId) {
 
     final List<ExpenseDto> expenseDtos = expenseService.getGroupExpenses(groupId);
+
     return ResponseEntity.ok(expenseDtos);
   }
 }

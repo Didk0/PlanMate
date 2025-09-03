@@ -4,20 +4,22 @@ import { useDispatch } from "react-redux";
 import { clearAuthData, setAuthData } from "../../store/actions/index";
 
 const AuthSync = () => {
-  const { isAuthenticated, tokenData, token } = useContext(AuthContext);
+  const { tokenData, token } = useContext(AuthContext);
   const dispatch = useDispatch();
 
   useEffect(() => {
     if (token && tokenData) {
       const user = {
-        name: tokenData.name,
+        name: tokenData.preferred_username,
         email: tokenData.email,
+        firstName: tokenData.given_name,
+        lastName: tokenData.family_name,
       };
       dispatch(setAuthData(user, token));
     } else {
       dispatch(clearAuthData());
     }
-  }, [isAuthenticated, token, tokenData, dispatch]);
+  }, [token, tokenData, dispatch]);
 
   return null;
 };
