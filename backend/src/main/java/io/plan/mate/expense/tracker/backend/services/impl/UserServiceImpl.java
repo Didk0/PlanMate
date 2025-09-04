@@ -1,16 +1,15 @@
 package io.plan.mate.expense.tracker.backend.services.impl;
 
-import io.plan.mate.expense.tracker.backend.configs.ApplicationProperties;
 import io.plan.mate.expense.tracker.backend.db.dtos.UserDto;
 import io.plan.mate.expense.tracker.backend.db.entities.User;
 import io.plan.mate.expense.tracker.backend.db.repositories.UserRepository;
 import io.plan.mate.expense.tracker.backend.exception.handling.exceptions.ResourceNotFoundException;
 import io.plan.mate.expense.tracker.backend.payloads.request.CreateUserRequest;
 import io.plan.mate.expense.tracker.backend.services.UserService;
+import io.plan.mate.expense.tracker.backend.services.keycloak.KeycloakService;
 import java.time.LocalDateTime;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
-import org.keycloak.admin.client.Keycloak;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
@@ -21,8 +20,7 @@ public class UserServiceImpl implements UserService {
 
   private final UserRepository userRepository;
   private final ModelMapper modelMapper;
-  private final Keycloak keycloak;
-  private final ApplicationProperties applicationProperties;
+  private final KeycloakService keycloakService;
 
   @Override
   public UserDto createUser(final CreateUserRequest createUserRequest) {
@@ -33,11 +31,7 @@ public class UserServiceImpl implements UserService {
     if (existingUser != null) {
 
       final UserRepresentation userRepresentation =
-          keycloak
-              .realm(applicationProperties.getKeycloakRealm())
-              .users()
-              .get(String.valueOf(createUserRequest.keycloakId()))
-              .toRepresentation();
+          keycloakService.getUser(createUserRequest.keycloakId());
 
       existingUser.setEmail(userRepresentation.getEmail());
       existingUser.setUsername(userRepresentation.getUsername());

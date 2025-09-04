@@ -51,6 +51,52 @@ services:
     networks:
       - planmate-network
 
+  backend:
+    image: didko20/planmate-app:latest
+    container_name: planmate-backend
+    restart: always
+    environment:
+      DATASOURCE_URL: jdbc:postgresql://db:5432/planmate?currentSchema=planmate
+      DATASOURCE_USER: postgres
+      DATASOURCE_PASSWORD: postgres
+      FRONTEND_URL: http://localhost:5173
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      JWT_ISSUER_URI: http://host.docker.internal:9090/realms/planmate
+      JWK_SET_URI: http://host.docker.internal:9090/realms/planmate/protocol/openid-connect/certs
+      KEYCLOAK_URL: http://host.docker.internal:9090
+      KEYCLOAK_REALM: planmate
+      KEYCLOAK_CLIENT_ID: planmate-backend
+      KEYCLOAK_CLIENT_SECRET: jIafh3HXU8TwCrXfDuC4NXeLuaOFeSWi
+    ports:
+      - "8080:8080"
+    depends_on:
+      - db
+      - redis
+      - keycloak
+    networks:
+      - planmate-network
+
+  frontend:
+    build:
+      context: ../../frontend
+      dockerfile: docker/Dockerfile
+      args:
+        VITE_KEYCLOAK_URL: "http://host.docker.internal:9090"
+    container_name: planmate-frontend
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: always
+    environment:
+      VITE_KEYCLOAK_URL: "http://host.docker.internal:9090"
+    ports:
+      - "5173:80"
+    depends_on:
+      - backend
+      - keycloak
+    networks:
+      - planmate-network
+
 volumes:
   db-data:
   keycloak_data:
