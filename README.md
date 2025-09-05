@@ -18,8 +18,7 @@ PlanMate is a group expense tracking app.
 - Spring WebSockets
 - Keycloak
 - Flyway (DB migrations)
-**---**
-  
+
 **Frontend**
 - React + Vite (Javascript)
 - Tailwind CSS (UI styling)
