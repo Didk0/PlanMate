@@ -2,6 +2,8 @@ package io.plan.mate.expense.tracker.backend.configs.aspects;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.time.Duration;
+import java.time.Instant;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.aspectj.lang.ProceedingJoinPoint;
@@ -36,31 +38,33 @@ public class LoggingAspect {
         methodName,
         safeSerialize(args));
 
-    final long startTime = System.currentTimeMillis();
+    final Instant startTime = Instant.now();
 
     try {
       final Object result = joinPoint.proceed();
 
-      final long duration = System.currentTimeMillis() - startTime;
+      final Instant endTime = Instant.now();
+      final long durationMillis = Duration.between(startTime, endTime).toMillis();
 
       log.info(
           "Response from {}.{}() = {} (Execution time: {} ms)",
           className,
           methodName,
           safeSerialize(result),
-          duration);
+          durationMillis);
 
       return result;
 
     } catch (final Exception exception) {
 
-      final long duration = System.currentTimeMillis() - startTime;
+      final Instant endTime = Instant.now();
+      final long durationMillis = Duration.between(startTime, endTime).toMillis();
 
       log.error(
           "Exception in {}.{}() after {} ms with message = {} and cause = {}",
           className,
           methodName,
-          duration,
+          durationMillis,
           exception.getMessage(),
           exception.getCause() != null ? exception.getCause() : "NULL",
           exception);
