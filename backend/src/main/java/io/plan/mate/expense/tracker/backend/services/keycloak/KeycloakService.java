@@ -1,6 +1,6 @@
 package io.plan.mate.expense.tracker.backend.services.keycloak;
 
-import io.plan.mate.expense.tracker.backend.configs.ApplicationProperties;
+import io.plan.mate.expense.tracker.backend.configs.application.properties.KeycloakProperties;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.keycloak.admin.client.Keycloak;
@@ -12,12 +12,12 @@ import org.springframework.stereotype.Service;
 public class KeycloakService {
 
   private final Keycloak keycloak;
-  private final ApplicationProperties applicationProperties;
+  private final KeycloakProperties keycloakProperties;
 
   public UserRepresentation getUser(UUID keycloakId) {
 
     return keycloak
-        .realm(applicationProperties.getKeycloakRealm())
+        .realm(keycloakProperties.getRealm())
         .users()
         .get(String.valueOf(keycloakId))
         .toRepresentation();

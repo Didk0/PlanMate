@@ -1,5 +1,7 @@
 package io.plan.mate.expense.tracker.backend.configs;
 
+import io.plan.mate.expense.tracker.backend.configs.application.properties.FrontendProperties;
+import io.plan.mate.expense.tracker.backend.configs.application.properties.KeycloakProperties;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.keycloak.OAuth2Constants;
@@ -24,7 +26,8 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 @RequiredArgsConstructor
 public class SecurityConfig {
 
-  private final ApplicationProperties applicationProperties;
+  private final FrontendProperties frontendProperties;
+  private final KeycloakProperties keycloakProperties;
 
   @Bean
   public SecurityFilterChain resourceServerSecurityFilterChain(final HttpSecurity http)
@@ -56,7 +59,7 @@ public class SecurityConfig {
   public CorsConfigurationSource corsConfigurationSource() {
 
     final CorsConfiguration corsConfiguration = new CorsConfiguration();
-    corsConfiguration.setAllowedOrigins(List.of(applicationProperties.getFrontendUrl()));
+    corsConfiguration.setAllowedOrigins(List.of(frontendProperties.getUrl()));
     corsConfiguration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
     corsConfiguration.setAllowCredentials(true);
     corsConfiguration.setAllowedHeaders(List.of("*"));
@@ -73,12 +76,12 @@ public class SecurityConfig {
   Keycloak keycloak() {
 
     return KeycloakBuilder.builder()
-        .serverUrl(applicationProperties.getKeycloakAuthServerUrl())
-        .realm(applicationProperties.getKeycloakRealm())
-        .clientId(applicationProperties.getKeycloakClientId())
+        .serverUrl(keycloakProperties.getAuthServerUrl())
+        .realm(keycloakProperties.getRealm())
+        .clientId(keycloakProperties.getClientId())
         .grantType(OAuth2Constants.CLIENT_CREDENTIALS)
-        .clientSecret(applicationProperties.getKeycloakClientSecret())
-        .scope(applicationProperties.getKeycloakScope())
+        .clientSecret(keycloakProperties.getClientSecret())
+        .scope(keycloakProperties.getScope())
         .build();
   }
 }

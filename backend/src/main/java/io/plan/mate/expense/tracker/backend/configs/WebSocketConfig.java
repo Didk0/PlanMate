@@ -1,5 +1,6 @@
 package io.plan.mate.expense.tracker.backend.configs;
 
+import io.plan.mate.expense.tracker.backend.configs.application.properties.FrontendProperties;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.messaging.simp.config.MessageBrokerRegistry;
@@ -12,7 +13,7 @@ import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerCo
 @RequiredArgsConstructor
 public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
-  private final ApplicationProperties applicationProperties;
+  private final FrontendProperties frontendProperties;
 
   @Override
   public void configureMessageBroker(final MessageBrokerRegistry config) {
@@ -24,7 +25,7 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
   public void registerStompEndpoints(final StompEndpointRegistry registry) {
     registry
         .addEndpoint("/ws")
-        .setAllowedOriginPatterns(applicationProperties.getFrontendUrl())
+        .setAllowedOrigins(frontendProperties.getUrl())
         .withSockJS();
   }
 }
