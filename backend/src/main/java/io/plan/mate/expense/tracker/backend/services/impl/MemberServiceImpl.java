@@ -12,7 +12,7 @@ import io.plan.mate.expense.tracker.backend.exception.handling.exceptions.BadReq
 import io.plan.mate.expense.tracker.backend.exception.handling.exceptions.ResourceNotFoundException;
 import io.plan.mate.expense.tracker.backend.payloads.request.AddUserRequest;
 import io.plan.mate.expense.tracker.backend.services.MemberService;
-import jakarta.transaction.Transactional;
+import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -29,6 +29,7 @@ public class MemberServiceImpl implements MemberService {
   private final ModelMapper modelMapper;
 
   @Override
+  @Transactional
   public MemberDto addUserToGroup(final Long groupId, final AddUserRequest addUserRequest) {
 
     final User user =
@@ -70,7 +71,7 @@ public class MemberServiceImpl implements MemberService {
   }
 
   @Override
-  @Transactional
+  @Transactional(readOnly = true)
   public List<MemberDto> getGroupMembers(final Long groupId) {
 
     final List<Member> groupMembers = memberRepository.findByGroupId(groupId);
@@ -79,7 +80,7 @@ public class MemberServiceImpl implements MemberService {
   }
 
   @Override
-  @Transactional
+  @Transactional(readOnly = true)
   public List<GroupDto> getUserGroups(final Long userId) {
 
     final List<Member> userMemberships =

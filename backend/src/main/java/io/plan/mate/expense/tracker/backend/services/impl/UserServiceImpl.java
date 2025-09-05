@@ -13,6 +13,7 @@ import lombok.RequiredArgsConstructor;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
@@ -23,6 +24,7 @@ public class UserServiceImpl implements UserService {
   private final KeycloakService keycloakService;
 
   @Override
+  @Transactional
   public UserDto createUser(final CreateUserRequest createUserRequest) {
 
     final User existingUser =
@@ -59,6 +61,7 @@ public class UserServiceImpl implements UserService {
   }
 
   @Override
+  @Transactional(readOnly = true)
   public UserDto getUserById(final Long userId) {
 
     final User user =
@@ -73,6 +76,7 @@ public class UserServiceImpl implements UserService {
   }
 
   @Override
+  @Transactional(readOnly = true)
   public List<UserDto> getAllUsers() {
 
     return userRepository.findAll().stream()
@@ -81,6 +85,7 @@ public class UserServiceImpl implements UserService {
   }
 
   @Override
+  @Transactional
   public UserDto deleteUser(final Long userId) {
 
     final User user =

@@ -10,7 +10,7 @@ import io.plan.mate.expense.tracker.backend.db.repositories.GroupRepository;
 import io.plan.mate.expense.tracker.backend.db.repositories.SettlementRepository;
 import io.plan.mate.expense.tracker.backend.exception.handling.exceptions.ResourceNotFoundException;
 import io.plan.mate.expense.tracker.backend.services.SettlementService;
-import jakarta.transaction.Transactional;
+import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -43,7 +43,7 @@ public class SettlementServiceImpl implements SettlementService {
 
   @Override
   @Cacheable(value = "settlements", key = "#groupId")
-  @Transactional
+  @Transactional(readOnly = true)
   public List<SettlementDto> calculateSettlements(final Long groupId) {
 
     final List<Expense> expenses =

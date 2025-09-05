@@ -12,7 +12,7 @@ import io.plan.mate.expense.tracker.backend.exception.handling.exceptions.Resour
 import io.plan.mate.expense.tracker.backend.payloads.request.CreateExpenseRequest;
 import io.plan.mate.expense.tracker.backend.services.ExpenseService;
 import io.plan.mate.expense.tracker.backend.services.SettlementService;
-import jakarta.transaction.Transactional;
+import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -89,16 +89,10 @@ public class ExpenseServiceImpl implements ExpenseService {
   }
 
   @Override
-  @Transactional
+  @Transactional(readOnly = true)
   public List<ExpenseDto> getGroupExpenses(final Long groupId) {
 
-    final List<Expense> expenses =
-        expenseRepository
-            .findByGroupId(groupId)
-            .orElseThrow(
-                () ->
-                    new ResourceNotFoundException(
-                        "Expense for group with id " + groupId + " not found"));
+    final List<Expense> expenses = expenseRepository.findByGroupId(groupId);
 
     return expenses.stream().map(expense -> modelMapper.map(expense, ExpenseDto.class)).toList();
   }

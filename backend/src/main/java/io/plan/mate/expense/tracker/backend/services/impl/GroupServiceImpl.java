@@ -10,6 +10,7 @@ import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
@@ -19,6 +20,7 @@ public class GroupServiceImpl implements GroupService {
   private final ModelMapper modelMapper;
 
   @Override
+  @Transactional
   public GroupDto createGroup(final CreateGroupRequest createGroupRequest) {
 
     final Group group =
@@ -33,6 +35,7 @@ public class GroupServiceImpl implements GroupService {
   }
 
   @Override
+  @Transactional(readOnly = true)
   public GroupDto getGroupById(final Long groupId) {
 
     final Group group =
@@ -45,6 +48,7 @@ public class GroupServiceImpl implements GroupService {
   }
 
   @Override
+  @Transactional(readOnly = true)
   public List<GroupDto> getAllGroups() {
 
     return groupRepository.findAll().stream()
@@ -53,6 +57,7 @@ public class GroupServiceImpl implements GroupService {
   }
 
   @Override
+  @Transactional
   public GroupDto deleteGroup(final Long groupId) {
 
     final Group group =
