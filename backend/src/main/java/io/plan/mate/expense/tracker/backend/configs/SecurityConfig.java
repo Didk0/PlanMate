@@ -9,6 +9,8 @@ import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.KeycloakBuilder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Lazy;
+import org.springframework.core.env.Environment;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -28,26 +30,39 @@ public class SecurityConfig {
 
   private final FrontendProperties frontendProperties;
   private final KeycloakProperties keycloakProperties;
+  private final Environment environment;
 
   @Bean
   public SecurityFilterChain resourceServerSecurityFilterChain(final HttpSecurity http)
       throws Exception {
 
+    final boolean isDev = List.of(environment.getActiveProfiles()).contains("dev");
+
     http.csrf(CsrfConfigurer::disable)
         .cors(cors -> cors.configurationSource(corsConfigurationSource()))
         .authorizeHttpRequests(
-            authorize ->
+            authorize -> {
+              authorize
+                  .requestMatchers(
+                      "/ws/**",
+                      "/swagger-ui/**",
+                      "/v3/api-docs/**",
+                      "/swagger-resources/**",
+                      "/webjars/**")
+                  .permitAll();
+
+              if (isDev) {
+                authorize.requestMatchers("/actuator/**").permitAll();
+              } else {
                 authorize
-                    .requestMatchers(
-                        "/ws/**",
-                        "/swagger-ui/**",
-                        "/v3/api-docs/**",
-                        "/swagger-resources/**",
-                        "/webjars/**",
-                        "/actuator/**")
+                    .requestMatchers("/actuator/health", "/actuator/info")
                     .permitAll()
-                    .anyRequest()
-                    .authenticated())
+                    .requestMatchers("/actuator/**")
+                    .authenticated();
+              }
+
+              authorize.anyRequest().authenticated();
+            })
         .oauth2ResourceServer(oauth2 -> oauth2.jwt(Customizer.withDefaults()))
         .sessionManagement(
             session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
@@ -73,7 +88,8 @@ public class SecurityConfig {
   }
 
   @Bean
-  Keycloak keycloak() {
+  @Lazy
+  public Keycloak keycloak() {
 
     return KeycloakBuilder.builder()
         .serverUrl(keycloakProperties.getAuthServerUrl())
