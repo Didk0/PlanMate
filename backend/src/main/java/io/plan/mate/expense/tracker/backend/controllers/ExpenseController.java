@@ -1,6 +1,7 @@
 package io.plan.mate.expense.tracker.backend.controllers;
 
 import io.plan.mate.expense.tracker.backend.db.dtos.ExpenseDto;
+import io.plan.mate.expense.tracker.backend.exception.handling.dtos.ApiError;
 import io.plan.mate.expense.tracker.backend.payloads.events.ExpenseChangeEnum;
 import io.plan.mate.expense.tracker.backend.payloads.events.ExpenseCreatedEvent;
 import io.plan.mate.expense.tracker.backend.payloads.request.CreateExpenseRequest;
@@ -40,9 +41,10 @@ public class ExpenseController {
             responseCode = "201",
             description = "Expense created successfully",
             content = @Content(schema = @Schema(implementation = ExpenseDto.class))),
-        @ApiResponse(responseCode = "400", description = "Invalid field for expense provided"),
-        @ApiResponse(responseCode = "404", description = "User or group not found"),
-        @ApiResponse(responseCode = "500", description = "Internal server error")
+        @ApiResponse(responseCode = "400", description = "Invalid field for expense provided", content = @Content(schema = @Schema(implementation = ApiError.class))),
+        @ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content(schema = @Schema(implementation = ApiError.class))),
+        @ApiResponse(responseCode = "404", description = "User or group not found", content = @Content(schema = @Schema(implementation = ApiError.class))),
+        @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content(schema = @Schema(implementation = ApiError.class)))
       })
   @PostMapping("/{groupId}/expenses")
   public ResponseEntity<ExpenseDto> createExpense(
@@ -66,8 +68,9 @@ public class ExpenseController {
             description = "List of expenses for the group",
             content =
                 @Content(schema = @Schema(implementation = ExpenseDto.class, type = "array"))),
-        @ApiResponse(responseCode = "404", description = "Group not found"),
-        @ApiResponse(responseCode = "500", description = "Internal server error")
+        @ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content(schema = @Schema(implementation = ApiError.class))),
+        @ApiResponse(responseCode = "404", description = "Group not found", content = @Content(schema = @Schema(implementation = ApiError.class))),
+        @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content(schema = @Schema(implementation = ApiError.class)))
       })
   @GetMapping("/{groupId}/expenses")
   public ResponseEntity<List<ExpenseDto>> getGroupExpenses(@PathVariable final Long groupId) {

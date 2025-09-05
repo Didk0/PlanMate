@@ -1,6 +1,7 @@
 package io.plan.mate.expense.tracker.backend.controllers;
 
 import io.plan.mate.expense.tracker.backend.db.dtos.SettlementDto;
+import io.plan.mate.expense.tracker.backend.exception.handling.dtos.ApiError;
 import io.plan.mate.expense.tracker.backend.services.SettlementService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -33,8 +34,9 @@ public class SettlementController {
             description = "List of calculated settlements",
             content =
                 @Content(schema = @Schema(implementation = SettlementDto.class, type = "array"))),
-        @ApiResponse(responseCode = "404", description = "Group not found"),
-        @ApiResponse(responseCode = "500", description = "Internal server error")
+        @ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content(schema = @Schema(implementation = ApiError.class))),
+        @ApiResponse(responseCode = "404", description = "Group not found", content = @Content(schema = @Schema(implementation = ApiError.class))),
+        @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content(schema = @Schema(implementation = ApiError.class)))
       })
   @GetMapping("/calculate")
   public ResponseEntity<List<SettlementDto>> calculateSettlements(

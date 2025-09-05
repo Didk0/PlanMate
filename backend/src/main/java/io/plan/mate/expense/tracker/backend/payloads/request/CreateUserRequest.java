@@ -8,7 +8,7 @@ import java.util.UUID;
 
 @Schema(description = "Request to create a new user")
 public record CreateUserRequest(
-    @Schema(description = "Name of the user", example = "John Doe")
+    @Schema(description = "Username of the user", example = "john.doe")
         @NotBlank(message = "Name must not be blank")
         @Size(max = 30, message = "Name must not exceed 30 characters")
         String username,
@@ -16,6 +16,9 @@ public record CreateUserRequest(
         @NotBlank(message = "Email must not be blank")
         @Email(message = "Email must be valid")
         String email,
+    @Schema(description = "First name", example = "John")
     String firstName,
+    @Schema(description = "Last name", example = "Doe")
     String lastName,
+    @Schema(description = "Keycloak user ID", example = "1f8b6d02-5b66-4b2d-9f2e-2a01f91e2a11")
     UUID keycloakId) {}

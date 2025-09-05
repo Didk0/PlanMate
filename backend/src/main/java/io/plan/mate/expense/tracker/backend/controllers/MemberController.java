@@ -2,6 +2,7 @@ package io.plan.mate.expense.tracker.backend.controllers;
 
 import io.plan.mate.expense.tracker.backend.db.dtos.GroupDto;
 import io.plan.mate.expense.tracker.backend.db.dtos.MemberDto;
+import io.plan.mate.expense.tracker.backend.exception.handling.dtos.ApiError;
 import io.plan.mate.expense.tracker.backend.payloads.events.MemberChangeEnum;
 import io.plan.mate.expense.tracker.backend.payloads.events.MemberChangedEvent;
 import io.plan.mate.expense.tracker.backend.payloads.request.AddUserRequest;
@@ -44,9 +45,11 @@ public class MemberController {
             content = @Content(schema = @Schema(implementation = MemberDto.class))),
         @ApiResponse(
             responseCode = "400",
-            description = "User is already a member of the given group"),
-        @ApiResponse(responseCode = "404", description = "Group or user not found"),
-        @ApiResponse(responseCode = "500", description = "Internal server error")
+            description = "User is already a member of the given group",
+            content = @Content(schema = @Schema(implementation = ApiError.class))),
+        @ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content(schema = @Schema(implementation = ApiError.class))),
+        @ApiResponse(responseCode = "404", description = "Group or user not found", content = @Content(schema = @Schema(implementation = ApiError.class))),
+        @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content(schema = @Schema(implementation = ApiError.class)))
       })
   @PostMapping("/groups/{groupId}/users")
   public ResponseEntity<MemberDto> addUserToGroup(
@@ -64,12 +67,10 @@ public class MemberController {
       summary = "Remove user from group",
       description = "Removes a user from a specified group",
       responses = {
-        @ApiResponse(
-            responseCode = "200",
-            description = "User successfully removed from group",
-            content = @Content(schema = @Schema(implementation = MemberDto.class))),
-        @ApiResponse(responseCode = "404", description = "Group or user not found"),
-        @ApiResponse(responseCode = "500", description = "Internal server error")
+        @ApiResponse(responseCode = "204", description = "User successfully removed from group"),
+        @ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content(schema = @Schema(implementation = ApiError.class))),
+        @ApiResponse(responseCode = "404", description = "Group or user not found", content = @Content(schema = @Schema(implementation = ApiError.class))),
+        @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content(schema = @Schema(implementation = ApiError.class)))
       })
   @DeleteMapping("/groups/{groupId}/users/{memberId}")
   public ResponseEntity<Void> removeUserFromGroup(
@@ -92,8 +93,9 @@ public class MemberController {
             responseCode = "200",
             description = "List of group members",
             content = @Content(schema = @Schema(implementation = MemberDto.class, type = "array"))),
-        @ApiResponse(responseCode = "404", description = "Group not found"),
-        @ApiResponse(responseCode = "500", description = "Internal server error")
+        @ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content(schema = @Schema(implementation = ApiError.class))),
+        @ApiResponse(responseCode = "404", description = "Group not found", content = @Content(schema = @Schema(implementation = ApiError.class))),
+        @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content(schema = @Schema(implementation = ApiError.class)))
       })
   @GetMapping("/groups/{groupId}/users")
   public ResponseEntity<List<MemberDto>> getGroupMembers(@PathVariable final Long groupId) {
@@ -109,8 +111,9 @@ public class MemberController {
             responseCode = "200",
             description = "List of groups for the user",
             content = @Content(schema = @Schema(implementation = GroupDto.class, type = "array"))),
-        @ApiResponse(responseCode = "404", description = "User not found"),
-        @ApiResponse(responseCode = "500", description = "Internal server error")
+        @ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content(schema = @Schema(implementation = ApiError.class))),
+        @ApiResponse(responseCode = "404", description = "User not found", content = @Content(schema = @Schema(implementation = ApiError.class))),
+        @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content(schema = @Schema(implementation = ApiError.class)))
       })
   @GetMapping("/users/{userId}/groups")
   public ResponseEntity<List<GroupDto>> getUserGroups(@PathVariable final Long userId) {

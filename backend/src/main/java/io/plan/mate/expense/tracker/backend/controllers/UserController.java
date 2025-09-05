@@ -1,6 +1,7 @@
 package io.plan.mate.expense.tracker.backend.controllers;
 
 import io.plan.mate.expense.tracker.backend.db.dtos.UserDto;
+import io.plan.mate.expense.tracker.backend.exception.handling.dtos.ApiError;
 import io.plan.mate.expense.tracker.backend.payloads.request.CreateUserRequest;
 import io.plan.mate.expense.tracker.backend.services.UserService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -39,8 +40,10 @@ public class UserController {
             content = @Content(schema = @Schema(implementation = UserDto.class))),
         @ApiResponse(
             responseCode = "400",
-            description = "User with provided email already exists or invalid user field provided"),
-        @ApiResponse(responseCode = "500", description = "Internal server error")
+            description = "User with provided email already exists or invalid user field provided",
+            content = @Content(schema = @Schema(implementation = ApiError.class))),
+        @ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content(schema = @Schema(implementation = ApiError.class))),
+        @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content(schema = @Schema(implementation = ApiError.class)))
       })
   @PostMapping
   public ResponseEntity<UserDto> createUser(
@@ -59,8 +62,9 @@ public class UserController {
             responseCode = "200",
             description = "User found",
             content = @Content(schema = @Schema(implementation = UserDto.class))),
-        @ApiResponse(responseCode = "404", description = "User not found"),
-        @ApiResponse(responseCode = "500", description = "Internal server error")
+        @ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content(schema = @Schema(implementation = ApiError.class))),
+        @ApiResponse(responseCode = "404", description = "User not found", content = @Content(schema = @Schema(implementation = ApiError.class))),
+        @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content(schema = @Schema(implementation = ApiError.class)))
       })
   @GetMapping("/{userId}")
   public ResponseEntity<UserDto> getUserById(@PathVariable final Long userId) {
@@ -77,7 +81,8 @@ public class UserController {
             responseCode = "200",
             description = "List of users",
             content = @Content(schema = @Schema(implementation = UserDto.class, type = "array"))),
-        @ApiResponse(responseCode = "500", description = "Internal server error")
+        @ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content(schema = @Schema(implementation = ApiError.class))),
+        @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content(schema = @Schema(implementation = ApiError.class)))
       })
   @GetMapping
   public ResponseEntity<List<UserDto>> getAllUsers() {
@@ -90,12 +95,10 @@ public class UserController {
       summary = "Delete a user by ID",
       description = "Deletes the user identified by the provided ID",
       responses = {
-        @ApiResponse(
-            responseCode = "200",
-            description = "User deleted",
-            content = @Content(schema = @Schema(implementation = UserDto.class))),
-        @ApiResponse(responseCode = "404", description = "User not found"),
-        @ApiResponse(responseCode = "500", description = "Internal server error")
+        @ApiResponse(responseCode = "200", description = "User deleted", content = @Content(schema = @Schema(implementation = UserDto.class))),
+        @ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content(schema = @Schema(implementation = ApiError.class))),
+        @ApiResponse(responseCode = "404", description = "User not found", content = @Content(schema = @Schema(implementation = ApiError.class))),
+        @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content(schema = @Schema(implementation = ApiError.class)))
       })
   @DeleteMapping("/{userId}")
   public ResponseEntity<UserDto> deleteUser(@PathVariable final Long userId) {

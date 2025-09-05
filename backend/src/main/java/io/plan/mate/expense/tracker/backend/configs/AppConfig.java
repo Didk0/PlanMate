@@ -7,12 +7,13 @@ import io.plan.mate.expense.tracker.backend.configs.converters.ExpenseParticipan
 import io.plan.mate.expense.tracker.backend.configs.converters.MemberToMemberDtoConverter;
 import io.swagger.v3.oas.models.ExternalDocumentation;
 import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.info.Contact;
 import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.info.License;
-import io.swagger.v3.oas.models.servers.Server;
+import io.swagger.v3.oas.models.security.SecurityRequirement;
+import io.swagger.v3.oas.models.security.SecurityScheme;
 import java.time.Duration;
-import java.util.List;
 import org.modelmapper.ModelMapper;
 import org.springframework.boot.autoconfigure.cache.RedisCacheManagerBuilderCustomizer;
 import org.springframework.cache.annotation.EnableCaching;
@@ -39,10 +40,7 @@ public class AppConfig {
                 .version("1.0.0")
                 .contact(new Contact().name("PlanMate Dev Team").email("support@planmate.com"))
                 .license(new License().name("Apache 2.0").url("http://springdoc.org")))
-        .servers(
-            List.of(
-                new Server().url("http://localhost:8080").description("Local development server")))
-        /*.components(
+        .components(
             new Components()
                 .addSecuritySchemes(
                     "bearerAuth",
@@ -50,7 +48,7 @@ public class AppConfig {
                         .type(SecurityScheme.Type.HTTP)
                         .scheme("bearer")
                         .bearerFormat("JWT")))
-        .addSecurityItem(new SecurityRequirement().addList("bearerAuth"))*/
+        .addSecurityItem(new SecurityRequirement().addList("bearerAuth"))
         .externalDocs(
             new ExternalDocumentation()
                 .description("PlanMate Github Repository")

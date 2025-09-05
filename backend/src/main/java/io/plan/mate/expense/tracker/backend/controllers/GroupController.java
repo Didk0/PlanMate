@@ -1,6 +1,7 @@
 package io.plan.mate.expense.tracker.backend.controllers;
 
 import io.plan.mate.expense.tracker.backend.db.dtos.GroupDto;
+import io.plan.mate.expense.tracker.backend.exception.handling.dtos.ApiError;
 import io.plan.mate.expense.tracker.backend.payloads.request.CreateGroupRequest;
 import io.plan.mate.expense.tracker.backend.services.GroupService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -37,8 +38,9 @@ public class GroupController {
             responseCode = "201",
             description = "Group created successfully",
             content = @Content(schema = @Schema(implementation = GroupDto.class))),
-        @ApiResponse(responseCode = "400", description = "Invalid group field provided"),
-        @ApiResponse(responseCode = "500", description = "Internal server error")
+        @ApiResponse(responseCode = "400", description = "Invalid group field provided", content = @Content(schema = @Schema(implementation = ApiError.class))),
+        @ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content(schema = @Schema(implementation = ApiError.class))),
+        @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content(schema = @Schema(implementation = ApiError.class)))
       })
   @PostMapping
   public ResponseEntity<GroupDto> createGroup(
@@ -55,8 +57,9 @@ public class GroupController {
             responseCode = "200",
             description = "Group found",
             content = @Content(schema = @Schema(implementation = GroupDto.class))),
-        @ApiResponse(responseCode = "404", description = "Group not found"),
-        @ApiResponse(responseCode = "500", description = "Internal server error")
+        @ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content(schema = @Schema(implementation = ApiError.class))),
+        @ApiResponse(responseCode = "404", description = "Group not found", content = @Content(schema = @Schema(implementation = ApiError.class))),
+        @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content(schema = @Schema(implementation = ApiError.class)))
       })
   @GetMapping("/{groupId}")
   public ResponseEntity<GroupDto> getGroupById(@PathVariable final Long groupId) {
@@ -72,10 +75,10 @@ public class GroupController {
             responseCode = "200",
             description = "List of groups",
             content = @Content(schema = @Schema(implementation = GroupDto.class, type = "array"))),
-        @ApiResponse(responseCode = "500", description = "Internal server error")
+        @ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content(schema = @Schema(implementation = ApiError.class))),
+        @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content(schema = @Schema(implementation = ApiError.class)))
       })
   @GetMapping
-  // @PreAuthorize("hasRole('role_admin')")
   public ResponseEntity<List<GroupDto>> getAllGroups() {
 
     return ResponseEntity.ok(groupService.getAllGroups());
@@ -86,14 +89,12 @@ public class GroupController {
       description =
           "Deletes the group corresponding to the given ID and returns the deleted group details",
       responses = {
-        @ApiResponse(
-            responseCode = "200",
-            description = "Group deleted",
-            content = @Content(schema = @Schema(implementation = GroupDto.class))),
-        @ApiResponse(responseCode = "404", description = "Group not found"),
-        @ApiResponse(responseCode = "500", description = "Internal server error")
+        @ApiResponse(responseCode = "200", description = "Group deleted", content = @Content(schema = @Schema(implementation = GroupDto.class))),
+        @ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content(schema = @Schema(implementation = ApiError.class))),
+        @ApiResponse(responseCode = "404", description = "Group not found", content = @Content(schema = @Schema(implementation = ApiError.class))),
+        @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content(schema = @Schema(implementation = ApiError.class)))
       })
-  @DeleteMapping("{groupId}")
+  @DeleteMapping("/{groupId}")
   public ResponseEntity<GroupDto> deleteGroup(@PathVariable final Long groupId) {
 
     final GroupDto groupDto = groupService.deleteGroup(groupId);
