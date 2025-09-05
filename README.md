@@ -1,6 +1,6 @@
 ## PlanMate
 PlanMate is a group expense tracking app.
-**---**
+---
 ## Features
 - Create and manage groups
 - Add members to groups
