@@ -65,3 +65,8 @@ dist-ssr
 
 ### Keycloak ###
 docker/planmate/keycloak/
+
+### Claude ###
+.mcp.json
+CLAUDE.md
+.claude/
