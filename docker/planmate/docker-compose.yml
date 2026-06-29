@@ -1,5 +1,3 @@
-version: '3.8'
-
 networks:
   planmate-network:
     driver: bridge
@@ -14,20 +12,31 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
     ports:
-      - "5432:5432"
+      - "5433:5432"
     volumes:
       - db-data:/var/lib/postgresql/data
+      - ./init/01-keycloak-schema.sql:/docker-entrypoint-initdb.d/01-keycloak-schema.sql:ro
     networks:
       - planmate-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d planmate"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   redis:
     image: redis:7
     container_name: planmate-redis
     restart: always
     ports:
-      - "6379:6379"
+      - "6380:6379"
     networks:
       - planmate-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   keycloak:
     container_name: planmate-keycloak
@@ -42,38 +51,48 @@ services:
       KC_DB_URL: jdbc:postgresql://db:5432/planmate?currentSchema=keycloak
       KC_DB_USERNAME: postgres
       KC_DB_PASSWORD: postgres
+      KC_HEALTH_ENABLED: "true"
     volumes:
       - keycloak_data:/opt/keycloak/data
+      - ./keycloak/planmate-realm.json:/opt/keycloak/data/import/planmate-realm.json:ro
     command:
       - start-dev
+      - --import-realm
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     networks:
       - planmate-network
+    healthcheck:
+      test: ["CMD-SHELL", "exec 3<>/dev/tcp/localhost/9000"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+      start_period: 90s
 
   backend:
-    image: didko20/planmate-app:latest
+    build:
+      context: ../../backend
+      dockerfile: docker/Dockerfile
     container_name: planmate-backend
     restart: always
+    env_file:
+      - ../../backend/backend.env
     environment:
       DATASOURCE_URL: jdbc:postgresql://db:5432/planmate?currentSchema=planmate
-      DATASOURCE_USER: postgres
-      DATASOURCE_PASSWORD: postgres
-      FRONTEND_URL: http://localhost:5173
       REDIS_HOST: redis
-      REDIS_PORT: 6379
-      JWT_ISSUER_URI: http://host.docker.internal:9090/realms/planmate
-      JWK_SET_URI: http://host.docker.internal:9090/realms/planmate/protocol/openid-connect/certs
-      KEYCLOAK_URL: http://host.docker.internal:9090
-      KEYCLOAK_REALM: planmate
-      KEYCLOAK_CLIENT_ID: planmate-backend
-      KEYCLOAK_CLIENT_SECRET: jIafh3HXU8TwCrXfDuC4NXeLuaOFeSWi
+      JWT_ISSUER_URI: http://localhost:9090/realms/planmate
+      JWK_SET_URI: http://keycloak:8080/realms/planmate/protocol/openid-connect/certs
+      KEYCLOAK_URL: http://keycloak:8080
     ports:
       - "8080:8080"
     depends_on:
-      - db
-      - redis
-      - keycloak
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      keycloak:
+        condition: service_healthy
     networks:
       - planmate-network
 
@@ -82,13 +101,11 @@ services:
       context: ../../frontend
       dockerfile: docker/Dockerfile
       args:
-        VITE_KEYCLOAK_URL: "http://host.docker.internal:9090"
+        VITE_KEYCLOAK_URL: "http://localhost:9090"
+        VITE_BACK_END_URL: "http://localhost:8080"
+        VITE_WS_URL: "http://localhost:8080/ws"
     container_name: planmate-frontend
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
     restart: always
-    environment:
-      VITE_KEYCLOAK_URL: "http://host.docker.internal:9090"
     ports:
       - "5173:80"
     depends_on:

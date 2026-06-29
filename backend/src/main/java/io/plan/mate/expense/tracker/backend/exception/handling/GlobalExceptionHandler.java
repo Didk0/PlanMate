@@ -17,7 +17,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 public class GlobalExceptionHandler {
 
   @ExceptionHandler(ResourceNotFoundException.class)
-  public ResponseEntity<ApiError> handleNotFound(
+  public ResponseEntity<ApiError> handleResourceNotFound(
       final ResourceNotFoundException ex, final HttpServletRequest request) {
 
     final ApiError error =
@@ -33,7 +33,7 @@ public class GlobalExceptionHandler {
   }
 
   @ExceptionHandler(BadRequestException.class)
-  public ResponseEntity<ApiError> handleNotFound(
+  public ResponseEntity<ApiError> handleBadRequest(
       final BadRequestException ex, final HttpServletRequest request) {
 
     final ApiError error =
@@ -49,7 +49,7 @@ public class GlobalExceptionHandler {
   }
 
   @ExceptionHandler(MethodArgumentNotValidException.class)
-  public ResponseEntity<ApiError> handleNotFound(
+  public ResponseEntity<ApiError> handleMethodArgumentNotValid(
       final MethodArgumentNotValidException ex, final HttpServletRequest request) {
 
     log.error(

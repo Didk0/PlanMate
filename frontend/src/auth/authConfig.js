@@ -1,5 +1,5 @@
 export const authConfig = {
-  clientId: "planmate-client",
+  clientId: "planmate-frontend",
   authorizationEndpoint: `${
     import.meta.env.VITE_KEYCLOAK_URL
   }/realms/planmate/protocol/openid-connect/auth`,

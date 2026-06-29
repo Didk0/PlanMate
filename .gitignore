@@ -62,3 +62,6 @@ dist-ssr
 
 # Environment variables
 *.env
+
+### Keycloak ###
+docker/planmate/keycloak/
