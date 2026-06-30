@@ -70,3 +70,5 @@ docker/planmate/keycloak/
 .mcp.json
 CLAUDE.md
 .claude/
+.agents/
+skills-lock.json
