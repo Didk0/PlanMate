@@ -12,6 +12,7 @@ import io.plan.mate.expense.tracker.backend.exception.handling.exceptions.BadReq
 import io.plan.mate.expense.tracker.backend.exception.handling.exceptions.ResourceNotFoundException;
 import io.plan.mate.expense.tracker.backend.payloads.request.AddUserRequest;
 import io.plan.mate.expense.tracker.backend.services.MemberService;
+import io.plan.mate.expense.tracker.backend.services.SettlementService;
 import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -27,6 +28,7 @@ public class MemberServiceImpl implements MemberService {
   private final MemberRepository memberRepository;
   private final GroupRepository groupRepository;
   private final ModelMapper modelMapper;
+  private final SettlementService settlementService;
 
   @Override
   @Transactional
@@ -55,6 +57,8 @@ public class MemberServiceImpl implements MemberService {
 
     member = memberRepository.save(member);
 
+    settlementService.clearSettlementCache(groupId);
+
     return modelMapper.map(member, MemberDto.class);
   }
 
@@ -68,6 +72,8 @@ public class MemberServiceImpl implements MemberService {
             .orElseThrow(() -> new ResourceNotFoundException("Membership not found"));
 
     memberRepository.delete(member);
+
+    settlementService.clearSettlementCache(groupId);
   }
 
   @Override

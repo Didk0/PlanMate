@@ -37,14 +37,26 @@ public class SettlementServiceImpl implements SettlementService {
 
   @Override
   @CacheEvict(value = "settlements", key = "#groupId")
+  @Transactional
   public void clearSettlementCache(final Long groupId) {
-    // This method invalidates the settlements cache when called
+    // Invalidate both cache tiers: evict Redis (L1, via @CacheEvict) and drop the
+    // persisted settlements (L2) so the next read recomputes from current expenses.
+    settlementRepository.deleteByGroupId(groupId);
   }
 
   @Override
   @Cacheable(value = "settlements", key = "#groupId")
   @Transactional
   public List<SettlementDto> calculateSettlements(final Long groupId) {
+
+    // L2: reuse already-persisted settlements when Redis is cold/expired but the
+    // group has not been mutated (mutations clear these rows via clearSettlementCache).
+    final List<Settlement> persisted = settlementRepository.findByGroupId(groupId);
+    if (!persisted.isEmpty()) {
+      return persisted.stream()
+          .map(settlement -> modelMapper.map(settlement, SettlementDto.class))
+          .toList();
+    }
 
     final List<Expense> expenses =
         groupRepository
@@ -102,17 +114,14 @@ public class SettlementServiceImpl implements SettlementService {
 
     populateCreditorsAndDebtors(userIdToNetBalanceMap, creditors, userCache, debtors);
 
-    // delete all old settlements
-    settlementRepository.deleteByGroupId(groupId);
-
     final Group group = expenses.get(0).getGroup();
 
-    // match creditors and debtors
+    // match creditors and debtors, then persist as the L2 cache
     final List<Settlement> settlements = calculateSettlements(creditors, debtors, group);
 
-    settlementRepository.saveAll(settlements);
+    final List<Settlement> saved = settlementRepository.saveAll(settlements);
 
-    return settlements.stream()
+    return saved.stream()
         .map(settlement -> modelMapper.map(settlement, SettlementDto.class))
         .toList();
   }
