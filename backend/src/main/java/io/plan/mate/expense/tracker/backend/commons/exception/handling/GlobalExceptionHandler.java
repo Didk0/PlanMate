@@ -2,10 +2,13 @@ package io.plan.mate.expense.tracker.backend.commons.exception.handling;
 
 import io.plan.mate.expense.tracker.backend.commons.exception.handling.dto.ApiError;
 import io.plan.mate.expense.tracker.backend.commons.exception.handling.exception.BadRequestException;
+import io.plan.mate.expense.tracker.backend.commons.exception.handling.exception.ConflictException;
 import io.plan.mate.expense.tracker.backend.commons.exception.handling.exception.ResourceNotFoundException;
 import jakarta.servlet.http.HttpServletRequest;
 import java.time.LocalDateTime;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -52,41 +55,80 @@ public class GlobalExceptionHandler {
   public ResponseEntity<ApiError> handleMethodArgumentNotValid(
       final MethodArgumentNotValidException ex, final HttpServletRequest request) {
 
-    log.error(
+    log.warn(
         "Validation failed for request {} {}: {}",
         request.getMethod(),
         request.getRequestURI(),
-        ex.getMessage(),
-        ex);
+        ex.getMessage());
 
     final String message =
         ex.getBindingResult().getFieldErrors().stream()
             .map(err -> err.getField() + ": " + err.getDefaultMessage())
-            .findFirst()
-            .orElse("Validation error");
+            .collect(Collectors.joining("; "));
 
     final ApiError error =
         ApiError.builder()
             .timestamp(LocalDateTime.now())
             .status(HttpStatus.BAD_REQUEST.value())
             .error("Validation Error")
-            .message(message)
+            .message(message.isEmpty() ? "Validation error" : message)
             .path(request.getRequestURI())
             .build();
 
     return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
   }
 
+  @ExceptionHandler(ConflictException.class)
+  public ResponseEntity<ApiError> handleConflict(
+      final ConflictException ex, final HttpServletRequest request) {
+
+    final ApiError error =
+        ApiError.builder()
+            .timestamp(LocalDateTime.now())
+            .status(HttpStatus.CONFLICT.value())
+            .error("Conflict")
+            .message(ex.getMessage())
+            .path(request.getRequestURI())
+            .build();
+
+    return ResponseEntity.status(HttpStatus.CONFLICT).body(error);
+  }
+
+  @ExceptionHandler(DataIntegrityViolationException.class)
+  public ResponseEntity<ApiError> handleDataIntegrityViolation(
+      final DataIntegrityViolationException ex, final HttpServletRequest request) {
+
+    log.warn(
+        "Data integrity violation for request {} {}: {}",
+        request.getMethod(),
+        request.getRequestURI(),
+        ex.getMessage());
+
+    final ApiError error =
+        ApiError.builder()
+            .timestamp(LocalDateTime.now())
+            .status(HttpStatus.CONFLICT.value())
+            .error("Conflict")
+            .message("Request conflicts with existing data")
+            .path(request.getRequestURI())
+            .build();
+
+    return ResponseEntity.status(HttpStatus.CONFLICT).body(error);
+  }
+
   @ExceptionHandler(Exception.class)
   public ResponseEntity<ApiError> handleGeneric(
       final Exception ex, final HttpServletRequest request) {
+
+    log.error(
+        "Unhandled exception for request {} {}", request.getMethod(), request.getRequestURI(), ex);
 
     final ApiError error =
         ApiError.builder()
             .timestamp(LocalDateTime.now())
             .status(HttpStatus.INTERNAL_SERVER_ERROR.value())
             .error("Internal Server Error")
-            .message(ex.getMessage())
+            .message("An unexpected error occurred")
             .path(request.getRequestURI())
             .build();
 
