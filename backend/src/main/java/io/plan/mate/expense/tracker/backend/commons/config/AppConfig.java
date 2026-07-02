@@ -1,8 +1,6 @@
 package io.plan.mate.expense.tracker.backend.commons.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import io.plan.mate.expense.tracker.backend.expense.service.converter.ExpenseParticipantToDtoConverter;
 import io.plan.mate.expense.tracker.backend.member.service.converter.MemberToMemberDtoConverter;
 import io.swagger.v3.oas.models.ExternalDocumentation;
@@ -64,15 +62,6 @@ public class AppConfig {
     modelMapper.addConverter(new ExpenseParticipantToDtoConverter());
 
     return modelMapper;
-  }
-
-  @Bean
-  public ObjectMapper objectMapper() {
-
-    return new ObjectMapper()
-        .registerModule(new JavaTimeModule())
-        .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
-        .enable(SerializationFeature.INDENT_OUTPUT);
   }
 
   @Bean

@@ -32,11 +32,10 @@ public class LoggingAspect {
     final String methodName = methodSignature.getName();
     final Object[] args = joinPoint.getArgs();
 
-    log.info(
-        "Received request: {}.{}() with arguments = {}",
-        className,
-        methodName,
-        safeSerialize(args));
+    log.info("Received request: {}.{}()", className, methodName);
+    if (log.isDebugEnabled()) {
+      log.debug("Arguments for {}.{}() = {}", className, methodName, safeSerialize(args));
+    }
 
     final Instant startTime = Instant.now();
 
@@ -47,11 +46,10 @@ public class LoggingAspect {
       final long durationMillis = Duration.between(startTime, endTime).toMillis();
 
       log.info(
-          "Response from {}.{}() = {} (Execution time: {} ms)",
-          className,
-          methodName,
-          safeSerialize(result),
-          durationMillis);
+          "Response from {}.{}() (Execution time: {} ms)", className, methodName, durationMillis);
+      if (log.isDebugEnabled()) {
+        log.debug("Response body from {}.{}() = {}", className, methodName, safeSerialize(result));
+      }
 
       return result;
 
@@ -60,14 +58,12 @@ public class LoggingAspect {
       final Instant endTime = Instant.now();
       final long durationMillis = Duration.between(startTime, endTime).toMillis();
 
-      log.error(
-          "Exception in {}.{}() after {} ms with message = {} and cause = {}",
+      log.warn(
+          "Exception in {}.{}() after {} ms: {}",
           className,
           methodName,
           durationMillis,
-          exception.getMessage(),
-          exception.getCause() != null ? exception.getCause() : "NULL",
-          exception);
+          exception.toString());
 
       throw exception;
     }
