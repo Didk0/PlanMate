@@ -17,9 +17,7 @@ const MembersSection = ({ members, onAddMember, onRemoveMember }) => {
 
   return (
     <section>
-      <h2 className="text-2xl font-semibold text-yellow-900 mb-6 drop-shadow-sm">
-        Members
-      </h2>
+      <h2 className="text-2xl font-semibold text-yellow-900 mb-6 drop-shadow-sm">Members</h2>
       {members.length === 0 ? (
         <p className="text-yellow-900 text-lg">No members yet.</p>
       ) : (

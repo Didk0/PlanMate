@@ -13,11 +13,7 @@ export function createStompClient({ onConnect, onDisconnect, onError } = {}) {
       onConnect?.(client, frame);
     },
     onStompError: (frame) => {
-      console.error(
-        "[STOMP] broker error",
-        frame.headers["message"],
-        frame.body
-      );
+      console.error("[STOMP] broker error", frame.headers["message"], frame.body);
       onError?.(frame);
     },
     onWebSocketClose: (event) => {

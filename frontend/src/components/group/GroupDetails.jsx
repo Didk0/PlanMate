@@ -7,11 +7,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { useNavigate, useParams } from "react-router-dom";
 import { useGroupWebSocket } from "../../websocket/useGroupWebSocket";
 
-import {
-  addMemberToGroup,
-  loadGroupDetailsData,
-  removeMemberFromGroup,
-} from "../../store/actions";
+import { addMemberToGroup, loadGroupDetailsData, removeMemberFromGroup } from "../../store/actions";
 
 const GroupDetails = () => {
   const { id } = useParams();
@@ -46,9 +42,7 @@ const GroupDetails = () => {
         setMembers((prevMembers) => [...prevMembers, payload.member]);
         break;
       case "REMOVE_MEMBER":
-        setMembers((prevMembers) =>
-          prevMembers.filter((m) => m.id !== payload.member.id)
-        );
+        setMembers((prevMembers) => prevMembers.filter((m) => m.id !== payload.member.id));
         break;
       case "ADD_EXPENSE":
         setExpenses((prevExpenses) => [...prevExpenses, payload.expense]);
@@ -98,12 +92,8 @@ const GroupDetails = () => {
 
         {/* Header */}
         <header className="space-y-4 mb-6">
-          <h1 className="text-4xl font-extrabold text-yellow-900 drop-shadow-md">
-            {group.name}
-          </h1>
-          {group.description && (
-            <p className="text-yellow-900 text-lg">{group.description}</p>
-          )}
+          <h1 className="text-4xl font-extrabold text-yellow-900 drop-shadow-md">{group.name}</h1>
+          {group.description && <p className="text-yellow-900 text-lg">{group.description}</p>}
         </header>
 
         {/* Members Section */}

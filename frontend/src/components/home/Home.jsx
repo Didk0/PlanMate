@@ -14,8 +14,7 @@ const Home = () => {
           Welcome To PlanMate
         </h1>
         <p className="text-lg md:text-xl text-yellow-900 mb-8 max-w-xl mx-auto">
-          Track group expenses, view settlements, and keep everything balanced
-          easily.
+          Track group expenses, view settlements, and keep everything balanced easily.
         </p>
         <button
           onClick={handleGetStarted}

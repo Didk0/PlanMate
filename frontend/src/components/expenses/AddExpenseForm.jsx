@@ -12,7 +12,7 @@ const AddExpenseForm = () => {
 
   const [description, setDescription] = useState("");
   const [amount, setAmount] = useState("");
-  const [paidByUserName, setPaidByUserName] = useState("");
+  const [paidByUsername, setPaidByUsername] = useState("");
   const [participants, setParticipants] = useState([]);
   const [members, setMembers] = useState([]);
 
@@ -25,11 +25,11 @@ const AddExpenseForm = () => {
       if (membersData.length > 0) {
         const defaultPayer = membersData[0].username;
 
-        setPaidByUserName(defaultPayer);
+        setPaidByUsername(defaultPayer);
 
         setParticipants(
           membersData
-            .filter((m) => m.username !== (paidByUserName || defaultPayer))
+            .filter((m) => m.username !== (paidByUsername || defaultPayer))
             .map((m) => ({
               memberId: m.id,
               shareAmount: "",
@@ -41,14 +41,12 @@ const AddExpenseForm = () => {
   }, [dispatch, groupId]);
 
   useEffect(() => {
-    if (!paidByUserName || members.length === 0) return;
+    if (!paidByUsername || members.length === 0) return;
     setParticipants((prevParticipants) =>
       members
-        .filter((m) => m.username !== paidByUserName)
+        .filter((m) => m.username !== paidByUsername)
         .map((member) => {
-          const existing = prevParticipants.find(
-            (p) => p.memberId === member.id
-          );
+          const existing = prevParticipants.find((p) => p.memberId === member.id);
           return {
             memberId: member.id,
             userName: member.username,
@@ -56,13 +54,11 @@ const AddExpenseForm = () => {
           };
         })
     );
-  }, [paidByUserName, members]);
+  }, [paidByUsername, members]);
 
   const handleAmountChange = (memberId, value) => {
     setParticipants((prev) =>
-      prev.map((p) =>
-        p.memberId === memberId ? { ...p, shareAmount: value } : p
-      )
+      prev.map((p) => (p.memberId === memberId ? { ...p, shareAmount: value } : p))
     );
   };
 
@@ -71,7 +67,7 @@ const AddExpenseForm = () => {
     const expenseData = {
       description,
       amount: parseFloat(amount),
-      paidByUserName,
+      paidByUsername,
       participants: participants.map((p) => ({
         userName: p.userName,
         shareAmount: parseFloat(p.shareAmount || 0),
@@ -112,9 +108,7 @@ const AddExpenseForm = () => {
           &larr; Back
         </button>
 
-        <h1 className="text-3xl font-extrabold text-yellow-900 mb-6 drop-shadow-md">
-          Add Expense
-        </h1>
+        <h1 className="text-3xl font-extrabold text-yellow-900 mb-6 drop-shadow-md">Add Expense</h1>
 
         <input
           type="text"
@@ -136,16 +130,13 @@ const AddExpenseForm = () => {
           required
         />
 
-        <label
-          htmlFor="paidBy"
-          className="block mb-2 font-semibold text-yellow-900"
-        >
+        <label htmlFor="paidBy" className="block mb-2 font-semibold text-yellow-900">
           Select payer
         </label>
         <select
           id="paidBy"
-          value={paidByUserName}
-          onChange={(event) => setPaidByUserName(event.target.value)}
+          value={paidByUsername}
+          onChange={(event) => setPaidByUsername(event.target.value)}
           className="w-full p-3 mb-6 rounded-md border border-yellow-400 focus:outline-yellow-500 focus:ring-2 focus:ring-yellow-400 transition text-yellow-900 font-semibold"
           required
         >
@@ -156,31 +147,19 @@ const AddExpenseForm = () => {
           ))}
         </select>
 
-        <h3 className="text-xl font-semibold mb-4 text-yellow-900 drop-shadow-sm">
-          Participants:
-        </h3>
+        <h3 className="text-xl font-semibold mb-4 text-yellow-900 drop-shadow-sm">Participants:</h3>
 
         <div className="space-y-4 mb-6">
           {members
-            .filter((member) => member.username !== paidByUserName)
+            .filter((member) => member.username !== paidByUsername)
             .map((member) => (
-              <div
-                key={member.id}
-                className="flex items-center gap-4 flex-wrap md:flex-nowrap"
-              >
-                <span className="w-32 font-medium text-yellow-900">
-                  {member.username}
-                </span>
+              <div key={member.id} className="flex items-center gap-4 flex-wrap md:flex-nowrap">
+                <span className="w-32 font-medium text-yellow-900">{member.username}</span>
                 <input
                   type="number"
                   placeholder="Share Amount"
-                  value={
-                    participants.find((p) => p.memberId === member.id)
-                      ?.shareAmount || ""
-                  }
-                  onChange={(event) =>
-                    handleAmountChange(member.id, event.target.value)
-                  }
+                  value={participants.find((p) => p.memberId === member.id)?.shareAmount || ""}
+                  onChange={(event) => handleAmountChange(member.id, event.target.value)}
                   className="w-full max-w-[150px] border border-yellow-400 rounded-md p-3 focus:outline-yellow-500 focus:ring-2 focus:ring-yellow-400 transition text-yellow-900 font-semibold"
                   min="0"
                   step="0.01"

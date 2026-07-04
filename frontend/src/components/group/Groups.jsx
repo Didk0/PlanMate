@@ -6,7 +6,6 @@ import { Link } from "react-router-dom";
 import { createGroup, loadAllGroups } from "../../store/actions";
 
 const Groups = () => {
-
   const { isLoading, errorMessage } = useSelector((state) => state.errors);
 
   const [groups, setGroups] = useState([]);
@@ -15,15 +14,14 @@ const Groups = () => {
 
   useEffect(() => {
     const fetchGroups = async () => {
-      
-        try {
-          const data = await dispatch(loadAllGroups());
-          if (data) {
-            setGroups(data);
-          }
-        } catch (error) {
-          console.error("Failed to refresh token or load groups", error);
+      try {
+        const data = await dispatch(loadAllGroups());
+        if (data) {
+          setGroups(data);
         }
+      } catch (error) {
+        console.error("Failed to refresh token or load groups", error);
+      }
     };
     fetchGroups();
   }, [dispatch]);
@@ -42,16 +40,16 @@ const Groups = () => {
       alert("Please enter both a group name and description.");
       return;
     }
-      try {
-        const createdGroup = await dispatch(createGroup(newGroup));
-        if (createdGroup) {
-          setGroups((prev) => [...prev, createdGroup]);
-          setNewGroup({ name: "", description: "" });
-          setShowCreateForm(false);
-        }
-      } catch (error) {
-        console.error("Create group failed", error);
+    try {
+      const createdGroup = await dispatch(createGroup(newGroup));
+      if (createdGroup) {
+        setGroups((prev) => [...prev, createdGroup]);
+        setNewGroup({ name: "", description: "" });
+        setShowCreateForm(false);
       }
+    } catch (error) {
+      console.error("Create group failed", error);
+    }
   };
 
   if (isLoading || !groups) {
@@ -72,14 +70,10 @@ const Groups = () => {
   return (
     <div className="min-h-screen bg-gradient-to-r from-yellow-400 via-yellow-300 to-yellow-200 flex flex-col items-center px-6 py-16">
       <div className="w-full max-w-4xl bg-yellow-100 bg-opacity-80 rounded-lg shadow-lg p-8">
-        <h1 className="text-3xl font-extrabold text-yellow-900 mb-6 drop-shadow-md">
-          Groups
-        </h1>
+        <h1 className="text-3xl font-extrabold text-yellow-900 mb-6 drop-shadow-md">Groups</h1>
 
         {groups.length === 0 ? (
-          <p className="text-yellow-900 text-lg">
-            You are not member of any groups.
-          </p>
+          <p className="text-yellow-900 text-lg">You are not member of any groups.</p>
         ) : (
           <ul className="space-y-4">
             {groups.map((group) => (
