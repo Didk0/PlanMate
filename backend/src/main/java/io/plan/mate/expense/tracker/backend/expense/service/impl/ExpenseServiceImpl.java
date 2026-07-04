@@ -10,10 +10,15 @@ import io.plan.mate.expense.tracker.backend.group.jpa.repository.GroupRepository
 import io.plan.mate.expense.tracker.backend.user.jpa.repository.UserRepository;
 import io.plan.mate.expense.tracker.backend.commons.exception.handling.exception.BadRequestException;
 import io.plan.mate.expense.tracker.backend.commons.exception.handling.exception.ResourceNotFoundException;
+import io.plan.mate.expense.tracker.backend.expense.controller.payload.event.ExpenseChangeEnum;
+import io.plan.mate.expense.tracker.backend.expense.controller.payload.event.ExpenseCreatedEvent;
 import io.plan.mate.expense.tracker.backend.expense.controller.payload.request.CreateExpenseParticipant;
 import io.plan.mate.expense.tracker.backend.expense.controller.payload.request.CreateExpenseRequest;
 import io.plan.mate.expense.tracker.backend.expense.service.ExpenseService;
+import io.plan.mate.expense.tracker.backend.settlement.controller.payload.event.SettlementsChangeEnum;
+import io.plan.mate.expense.tracker.backend.settlement.controller.payload.event.SettlementsChangedEvent;
 import io.plan.mate.expense.tracker.backend.settlement.service.SettlementService;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -36,6 +41,7 @@ public class ExpenseServiceImpl implements ExpenseService {
   private final GroupRepository groupRepository;
   private final ModelMapper modelMapper;
   private final SettlementService settlementService;
+  private final ApplicationEventPublisher eventPublisher;
 
   @Override
   @Transactional
@@ -91,6 +97,12 @@ public class ExpenseServiceImpl implements ExpenseService {
     final ExpenseDto expenseDto = modelMapper.map(savedExpense, ExpenseDto.class);
 
     settlementService.clearSettlementCache(group.getId());
+
+    eventPublisher.publishEvent(
+        new ExpenseCreatedEvent(ExpenseChangeEnum.ADD_EXPENSE, group.getId(), expenseDto));
+    eventPublisher.publishEvent(
+        new SettlementsChangedEvent(
+            SettlementsChangeEnum.SETTLEMENTS_INVALIDATED, group.getId()));
 
     return expenseDto;
   }

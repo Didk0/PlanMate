@@ -6,9 +6,13 @@ import io.plan.mate.expense.tracker.backend.group.jpa.repository.GroupRepository
 import io.plan.mate.expense.tracker.backend.commons.exception.handling.exception.ResourceNotFoundException;
 import io.plan.mate.expense.tracker.backend.group.controller.payload.request.CreateGroupRequest;
 import io.plan.mate.expense.tracker.backend.group.service.GroupService;
+import io.plan.mate.expense.tracker.backend.settlement.controller.payload.event.SettlementsChangeEnum;
+import io.plan.mate.expense.tracker.backend.settlement.controller.payload.event.SettlementsChangedEvent;
+import io.plan.mate.expense.tracker.backend.settlement.service.SettlementService;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,6 +22,8 @@ public class GroupServiceImpl implements GroupService {
 
   private final GroupRepository groupRepository;
   private final ModelMapper modelMapper;
+  private final SettlementService settlementService;
+  private final ApplicationEventPublisher eventPublisher;
 
   @Override
   @Transactional
@@ -68,7 +74,12 @@ public class GroupServiceImpl implements GroupService {
 
     final GroupDto groupDtoToReturn = modelMapper.map(group, GroupDto.class);
 
+    settlementService.clearSettlementCache(groupId);
+
     groupRepository.delete(group);
+
+    eventPublisher.publishEvent(
+        new SettlementsChangedEvent(SettlementsChangeEnum.SETTLEMENTS_INVALIDATED, groupId));
 
     return groupDtoToReturn;
   }

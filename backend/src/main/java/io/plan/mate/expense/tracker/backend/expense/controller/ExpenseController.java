@@ -2,11 +2,8 @@ package io.plan.mate.expense.tracker.backend.expense.controller;
 
 import io.plan.mate.expense.tracker.backend.expense.service.dto.ExpenseDto;
 import io.plan.mate.expense.tracker.backend.commons.exception.handling.dto.ApiError;
-import io.plan.mate.expense.tracker.backend.expense.controller.payload.event.ExpenseChangeEnum;
-import io.plan.mate.expense.tracker.backend.expense.controller.payload.event.ExpenseCreatedEvent;
 import io.plan.mate.expense.tracker.backend.expense.controller.payload.request.CreateExpenseRequest;
 import io.plan.mate.expense.tracker.backend.expense.service.ExpenseService;
-import io.plan.mate.expense.tracker.backend.commons.websocket.WebSocketEventPublisher;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -31,7 +28,6 @@ import org.springframework.web.bind.annotation.RestController;
 public class ExpenseController {
 
   private final ExpenseService expenseService;
-  private final WebSocketEventPublisher eventPublisher;
 
   @Operation(
       summary = "Create a new expense",
@@ -52,9 +48,6 @@ public class ExpenseController {
       @Valid @RequestBody final CreateExpenseRequest createExpenseRequest) {
 
     final ExpenseDto expenseDto = expenseService.createExpense(groupId, createExpenseRequest);
-
-    eventPublisher.publishExpenseCreated(
-        new ExpenseCreatedEvent(ExpenseChangeEnum.ADD_EXPENSE, groupId, expenseDto));
 
     return ResponseEntity.status(HttpStatus.CREATED).body(expenseDto);
   }

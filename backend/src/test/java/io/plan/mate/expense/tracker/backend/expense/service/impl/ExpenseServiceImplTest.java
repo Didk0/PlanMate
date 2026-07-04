@@ -10,6 +10,7 @@ import static org.mockito.Mockito.when;
 
 import io.plan.mate.expense.tracker.backend.commons.exception.handling.exception.BadRequestException;
 import io.plan.mate.expense.tracker.backend.commons.exception.handling.exception.ResourceNotFoundException;
+import io.plan.mate.expense.tracker.backend.expense.controller.payload.event.ExpenseCreatedEvent;
 import io.plan.mate.expense.tracker.backend.expense.controller.payload.request.CreateExpenseParticipant;
 import io.plan.mate.expense.tracker.backend.expense.controller.payload.request.CreateExpenseRequest;
 import io.plan.mate.expense.tracker.backend.expense.jpa.entity.Expense;
@@ -18,6 +19,7 @@ import io.plan.mate.expense.tracker.backend.expense.service.dto.ExpenseDto;
 import io.plan.mate.expense.tracker.backend.group.jpa.entity.Group;
 import io.plan.mate.expense.tracker.backend.group.jpa.repository.GroupRepository;
 import io.plan.mate.expense.tracker.backend.settlement.service.SettlementService;
+import io.plan.mate.expense.tracker.backend.settlement.controller.payload.event.SettlementsChangedEvent;
 import io.plan.mate.expense.tracker.backend.user.jpa.entity.User;
 import io.plan.mate.expense.tracker.backend.user.jpa.repository.UserRepository;
 import java.math.BigDecimal;
@@ -32,6 +34,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.modelmapper.ModelMapper;
+import org.springframework.context.ApplicationEventPublisher;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("ExpenseServiceImpl")
@@ -42,6 +45,7 @@ class ExpenseServiceImplTest {
   @Mock private GroupRepository groupRepository;
   @Mock private ModelMapper modelMapper;
   @Mock private SettlementService settlementService;
+  @Mock private ApplicationEventPublisher eventPublisher;
 
   @InjectMocks private ExpenseServiceImpl expenseService;
 
@@ -171,6 +175,31 @@ class ExpenseServiceImplTest {
       expenseService.createExpense(1L, request);
 
       verify(settlementService).clearSettlementCache(1L);
+    }
+
+    @Test
+    @DisplayName("publishes an ExpenseCreatedEvent and a SettlementsChangedEvent after saving")
+    void createExpense_shouldPublishExpenseAndSettlementsEvents_whenExpenseIsSaved() {
+      Group group = Group.builder().id(1L).name("Trip").build();
+      User alice = user(1L, "alice");
+      User bob = user(2L, "bob");
+      when(groupRepository.findById(1L)).thenReturn(Optional.of(group));
+      when(userRepository.findByUsernameIn(any())).thenReturn(List.of(alice, bob));
+      when(expenseRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+      when(modelMapper.map(any(Expense.class), eq(ExpenseDto.class)))
+          .thenReturn(ExpenseDto.builder().build());
+
+      CreateExpenseRequest request =
+          new CreateExpenseRequest(
+              "Dinner",
+              new BigDecimal("30.00"),
+              "alice",
+              List.of(new CreateExpenseParticipant("bob", new BigDecimal("30.00"))));
+
+      expenseService.createExpense(1L, request);
+
+      verify(eventPublisher).publishEvent(any(ExpenseCreatedEvent.class));
+      verify(eventPublisher).publishEvent(any(SettlementsChangedEvent.class));
     }
   }
 }

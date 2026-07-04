@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate, useParams } from "react-router-dom";
 import { calculateSettlements } from "../../store/actions";
+import { useGroupWebSocket } from "../../websocket/useGroupWebSocket";
 
 const SettlementsForm = () => {
   const { id } = useParams();
@@ -16,6 +17,14 @@ const SettlementsForm = () => {
   useEffect(() => {
     dispatch(calculateSettlements(groupId)).then(setSettlements);
   }, []);
+
+  useGroupWebSocket(groupId, (topic, message) => {
+    if (!topic.endsWith("/settlements")) return;
+    const payload = JSON.parse(message.body);
+    if (payload.changeType === "SETTLEMENTS_INVALIDATED") {
+      dispatch(calculateSettlements(groupId)).then(setSettlements);
+    }
+  });
 
   if (isLoading) {
     return (

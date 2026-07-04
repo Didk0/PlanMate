@@ -10,9 +10,14 @@ import io.plan.mate.expense.tracker.backend.member.jpa.repository.MemberReposito
 import io.plan.mate.expense.tracker.backend.user.jpa.repository.UserRepository;
 import io.plan.mate.expense.tracker.backend.commons.exception.handling.exception.BadRequestException;
 import io.plan.mate.expense.tracker.backend.commons.exception.handling.exception.ResourceNotFoundException;
+import io.plan.mate.expense.tracker.backend.member.controller.payload.event.MemberChangeEnum;
+import io.plan.mate.expense.tracker.backend.member.controller.payload.event.MemberChangedEvent;
 import io.plan.mate.expense.tracker.backend.member.controller.payload.request.AddUserRequest;
 import io.plan.mate.expense.tracker.backend.member.service.MemberService;
+import io.plan.mate.expense.tracker.backend.settlement.controller.payload.event.SettlementsChangeEnum;
+import io.plan.mate.expense.tracker.backend.settlement.controller.payload.event.SettlementsChangedEvent;
 import io.plan.mate.expense.tracker.backend.settlement.service.SettlementService;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -29,6 +34,7 @@ public class MemberServiceImpl implements MemberService {
   private final GroupRepository groupRepository;
   private final ModelMapper modelMapper;
   private final SettlementService settlementService;
+  private final ApplicationEventPublisher eventPublisher;
 
   @Override
   @Transactional
@@ -59,7 +65,14 @@ public class MemberServiceImpl implements MemberService {
 
     settlementService.clearSettlementCache(groupId);
 
-    return modelMapper.map(member, MemberDto.class);
+    final MemberDto memberDto = modelMapper.map(member, MemberDto.class);
+
+    eventPublisher.publishEvent(
+        new MemberChangedEvent(MemberChangeEnum.ADD_MEMBER, groupId, memberDto));
+    eventPublisher.publishEvent(
+        new SettlementsChangedEvent(SettlementsChangeEnum.SETTLEMENTS_INVALIDATED, groupId));
+
+    return memberDto;
   }
 
   @Override
@@ -74,6 +87,12 @@ public class MemberServiceImpl implements MemberService {
     memberRepository.delete(member);
 
     settlementService.clearSettlementCache(groupId);
+
+    eventPublisher.publishEvent(
+        new MemberChangedEvent(
+            MemberChangeEnum.REMOVE_MEMBER, groupId, MemberDto.builder().id(memberId).build()));
+    eventPublisher.publishEvent(
+        new SettlementsChangedEvent(SettlementsChangeEnum.SETTLEMENTS_INVALIDATED, groupId));
   }
 
   @Override

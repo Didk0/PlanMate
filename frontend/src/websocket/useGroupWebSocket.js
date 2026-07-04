@@ -14,7 +14,11 @@ export function useGroupWebSocket(groupId, onMessageReceived) {
     if (!groupId) return;
 
     function handleConnect(client) {
-      const topics = [`/topic/groups/${groupId}/users`, `/topic/groups/${groupId}/expenses`];
+      const topics = [
+        `/topic/groups/${groupId}/users`,
+        `/topic/groups/${groupId}/expenses`,
+        `/topic/groups/${groupId}/settlements`,
+      ];
       subscriptionsRef.current = topics.map((topic) =>
         client.subscribe(topic, (message) => {
           onMessageReceivedRef.current?.(topic, message);

@@ -3,11 +3,8 @@ package io.plan.mate.expense.tracker.backend.member.controller;
 import io.plan.mate.expense.tracker.backend.group.service.dto.GroupDto;
 import io.plan.mate.expense.tracker.backend.member.service.dto.MemberDto;
 import io.plan.mate.expense.tracker.backend.commons.exception.handling.dto.ApiError;
-import io.plan.mate.expense.tracker.backend.member.controller.payload.event.MemberChangeEnum;
-import io.plan.mate.expense.tracker.backend.member.controller.payload.event.MemberChangedEvent;
 import io.plan.mate.expense.tracker.backend.member.controller.payload.request.AddUserRequest;
 import io.plan.mate.expense.tracker.backend.member.service.MemberService;
-import io.plan.mate.expense.tracker.backend.commons.websocket.WebSocketEventPublisher;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -33,7 +30,6 @@ import org.springframework.web.bind.annotation.RestController;
 public class MemberController {
 
   private final MemberService memberService;
-  private final WebSocketEventPublisher eventPublisher;
 
   @Operation(
       summary = "Add user to group",
@@ -57,9 +53,6 @@ public class MemberController {
 
     final MemberDto memberDto = memberService.addUserToGroup(groupId, addUserRequest);
 
-    eventPublisher.publishMembersUpdate(
-        new MemberChangedEvent(MemberChangeEnum.ADD_MEMBER, groupId, memberDto));
-
     return ResponseEntity.status(HttpStatus.CREATED).body(memberDto);
   }
 
@@ -77,10 +70,6 @@ public class MemberController {
       @PathVariable final Long groupId, @PathVariable final Long memberId) {
 
     memberService.removeUserFromGroup(groupId, memberId);
-
-    eventPublisher.publishMembersUpdate(
-        new MemberChangedEvent(
-            MemberChangeEnum.REMOVE_MEMBER, groupId, MemberDto.builder().id(memberId).build()));
 
     return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
   }

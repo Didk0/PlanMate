@@ -2,6 +2,7 @@ package io.plan.mate.expense.tracker.backend.commons.websocket;
 
 import io.plan.mate.expense.tracker.backend.expense.controller.payload.event.ExpenseCreatedEvent;
 import io.plan.mate.expense.tracker.backend.member.controller.payload.event.MemberChangedEvent;
+import io.plan.mate.expense.tracker.backend.settlement.controller.payload.event.SettlementsChangedEvent;
 import lombok.RequiredArgsConstructor;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Component;
@@ -23,6 +24,12 @@ public class WebSocketEventPublisher {
   public void publishMembersUpdate(final MemberChangedEvent event) {
 
     final String destination = BASE_DEST + event.groupId() + "/users";
+    messagingTemplate.convertAndSend(destination, event);
+  }
+
+  public void publishSettlementsChanged(final SettlementsChangedEvent event) {
+
+    final String destination = BASE_DEST + event.groupId() + "/settlements";
     messagingTemplate.convertAndSend(destination, event);
   }
 }
