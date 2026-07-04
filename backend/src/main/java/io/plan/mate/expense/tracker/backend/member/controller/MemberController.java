@@ -23,6 +23,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+// Base path is "/api" (not "/api/members") because these endpoints span two resource
+// roots the frontend calls directly: /groups/{groupId}/users and /users/{userId}/groups.
 @RestController
 @RequestMapping("/api")
 @RequiredArgsConstructor

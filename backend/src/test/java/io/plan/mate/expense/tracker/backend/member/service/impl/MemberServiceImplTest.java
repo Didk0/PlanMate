@@ -1,11 +1,15 @@
 package io.plan.mate.expense.tracker.backend.member.service.impl;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import io.plan.mate.expense.tracker.backend.commons.exception.handling.exception.ResourceNotFoundException;
 import io.plan.mate.expense.tracker.backend.group.jpa.entity.Group;
 import io.plan.mate.expense.tracker.backend.group.jpa.repository.GroupRepository;
+import io.plan.mate.expense.tracker.backend.group.service.dto.GroupDto;
 import io.plan.mate.expense.tracker.backend.member.controller.payload.event.MemberChangedEvent;
 import io.plan.mate.expense.tracker.backend.member.controller.payload.request.AddUserRequest;
 import io.plan.mate.expense.tracker.backend.member.jpa.entity.Member;
@@ -15,6 +19,7 @@ import io.plan.mate.expense.tracker.backend.settlement.controller.payload.event.
 import io.plan.mate.expense.tracker.backend.settlement.service.SettlementService;
 import io.plan.mate.expense.tracker.backend.user.jpa.entity.User;
 import io.plan.mate.expense.tracker.backend.user.jpa.repository.UserRepository;
+import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -79,6 +84,36 @@ class MemberServiceImplTest {
       verify(settlementService).clearSettlementCache(1L);
       verify(eventPublisher).publishEvent(any(MemberChangedEvent.class));
       verify(eventPublisher).publishEvent(any(SettlementsChangedEvent.class));
+    }
+  }
+
+  @Nested
+  @DisplayName("getUserGroups")
+  class GetUserGroups {
+
+    @Test
+    @DisplayName("throws ResourceNotFoundException when user does not exist")
+    void getUserGroups_shouldThrowResourceNotFoundException_whenUserDoesNotExist() {
+      when(userRepository.existsById(1L)).thenReturn(false);
+
+      assertThatThrownBy(() -> memberService.getUserGroups(1L))
+          .isInstanceOf(ResourceNotFoundException.class);
+    }
+
+    @Test
+    @DisplayName("returns the groups the user is a member of without an N+1 lookup")
+    void getUserGroups_shouldReturnGroups_whenUserIsMember() {
+      Group group = Group.builder().id(1L).name("Trip").build();
+      Member member = Member.builder().id(1L).group(group).build();
+
+      when(userRepository.existsById(1L)).thenReturn(true);
+      when(memberRepository.findByUserId(1L)).thenReturn(List.of(member));
+      when(modelMapper.map(group, GroupDto.class)).thenReturn(GroupDto.builder().id(1L).build());
+
+      List<GroupDto> groups = memberService.getUserGroups(1L);
+
+      assertThat(groups).hasSize(1);
+      assertThat(groups.get(0).getId()).isEqualTo(1L);
     }
   }
 }

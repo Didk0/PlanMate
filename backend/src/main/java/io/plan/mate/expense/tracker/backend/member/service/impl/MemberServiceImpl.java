@@ -108,21 +108,12 @@ public class MemberServiceImpl implements MemberService {
   @Transactional(readOnly = true)
   public List<GroupDto> getUserGroups(final Long userId) {
 
-    final List<Member> userMemberships =
-        userRepository
-            .findById(userId)
-            .map(User::getMemberships)
-            .orElseThrow(
-                () -> new ResourceNotFoundException("User with id " + userId + " not found"));
+    if (!userRepository.existsById(userId)) {
+      throw new ResourceNotFoundException("User with id " + userId + " not found");
+    }
 
-    return userMemberships.stream()
-        .map(
-            member ->
-                GroupDto.builder()
-                    .id(member.getGroup().getId())
-                    .name(member.getGroup().getName())
-                    .createdAt(member.getGroup().getCreatedAt())
-                    .build())
+    return memberRepository.findByUserId(userId).stream()
+        .map(member -> modelMapper.map(member.getGroup(), GroupDto.class))
         .toList();
   }
 }

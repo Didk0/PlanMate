@@ -11,4 +11,8 @@ public interface ExpenseRepository extends JpaRepository<Expense, Long> {
 
   @EntityGraph(attributePaths = {"participants", "participants.participant", "paidBy"})
   List<Expense> findByGroupId(Long groupId);
+
+  boolean existsByPaidById(Long userId);
+
+  boolean existsByParticipants_ParticipantId(Long userId);
 }

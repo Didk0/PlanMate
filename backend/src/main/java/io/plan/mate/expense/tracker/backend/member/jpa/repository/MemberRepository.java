@@ -18,4 +18,9 @@ public interface MemberRepository extends JpaRepository<Member, Long> {
 
   @EntityGraph(attributePaths = {"user", "group"})
   Optional<Member> findByGroupIdAndId(Long groupId, Long memberId);
+
+  boolean existsByUserId(Long userId);
+
+  @EntityGraph(attributePaths = "group")
+  List<Member> findByUserId(Long userId);
 }

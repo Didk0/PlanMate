@@ -9,7 +9,6 @@ import static org.mockito.Mockito.when;
 import io.plan.mate.expense.tracker.backend.commons.exception.handling.exception.ResourceNotFoundException;
 import io.plan.mate.expense.tracker.backend.group.jpa.entity.Group;
 import io.plan.mate.expense.tracker.backend.group.jpa.repository.GroupRepository;
-import io.plan.mate.expense.tracker.backend.group.service.dto.GroupDto;
 import io.plan.mate.expense.tracker.backend.settlement.controller.payload.event.SettlementsChangedEvent;
 import io.plan.mate.expense.tracker.backend.settlement.service.SettlementService;
 import java.util.Optional;
@@ -56,7 +55,6 @@ class GroupServiceImplTest {
     void deleteGroup_shouldClearSettlementCacheAndPublishEvent_whenGroupDeleted() {
       Group group = Group.builder().id(1L).name("Trip").build();
       when(groupRepository.findById(1L)).thenReturn(Optional.of(group));
-      when(modelMapper.map(group, GroupDto.class)).thenReturn(GroupDto.builder().id(1L).build());
 
       groupService.deleteGroup(1L);
 

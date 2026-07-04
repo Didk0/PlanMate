@@ -95,15 +95,16 @@ public class UserController {
       summary = "Delete a user by ID",
       description = "Deletes the user identified by the provided ID",
       responses = {
-        @ApiResponse(responseCode = "200", description = "User deleted", content = @Content(schema = @Schema(implementation = UserDto.class))),
+        @ApiResponse(responseCode = "204", description = "User deleted"),
         @ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content(schema = @Schema(implementation = ApiError.class))),
         @ApiResponse(responseCode = "404", description = "User not found", content = @Content(schema = @Schema(implementation = ApiError.class))),
+        @ApiResponse(responseCode = "409", description = "User has group memberships or expense history", content = @Content(schema = @Schema(implementation = ApiError.class))),
         @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content(schema = @Schema(implementation = ApiError.class)))
       })
   @DeleteMapping("/{userId}")
-  public ResponseEntity<UserDto> deleteUser(@PathVariable final Long userId) {
+  public ResponseEntity<Void> deleteUser(@PathVariable final Long userId) {
 
-    final UserDto userDto = userService.deleteUser(userId);
-    return ResponseEntity.ok(userDto);
+    userService.deleteUser(userId);
+    return ResponseEntity.noContent().build();
   }
 }

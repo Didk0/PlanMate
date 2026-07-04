@@ -3,7 +3,10 @@ package io.plan.mate.expense.tracker.backend.user.service.impl;
 import io.plan.mate.expense.tracker.backend.user.service.dto.UserDto;
 import io.plan.mate.expense.tracker.backend.user.jpa.entity.User;
 import io.plan.mate.expense.tracker.backend.user.jpa.repository.UserRepository;
+import io.plan.mate.expense.tracker.backend.commons.exception.handling.exception.ConflictException;
 import io.plan.mate.expense.tracker.backend.commons.exception.handling.exception.ResourceNotFoundException;
+import io.plan.mate.expense.tracker.backend.expense.jpa.repository.ExpenseRepository;
+import io.plan.mate.expense.tracker.backend.member.jpa.repository.MemberRepository;
 import io.plan.mate.expense.tracker.backend.user.controller.payload.request.CreateUserRequest;
 import io.plan.mate.expense.tracker.backend.user.service.UserService;
 import io.plan.mate.expense.tracker.backend.user.service.keycloak.KeycloakService;
@@ -20,6 +23,8 @@ import org.springframework.transaction.annotation.Transactional;
 public class UserServiceImpl implements UserService {
 
   private final UserRepository userRepository;
+  private final MemberRepository memberRepository;
+  private final ExpenseRepository expenseRepository;
   private final ModelMapper modelMapper;
   private final KeycloakService keycloakService;
 
@@ -86,7 +91,7 @@ public class UserServiceImpl implements UserService {
 
   @Override
   @Transactional
-  public UserDto deleteUser(final Long userId) {
+  public void deleteUser(final Long userId) {
 
     final User user =
         userRepository
@@ -96,10 +101,18 @@ public class UserServiceImpl implements UserService {
                     new ResourceNotFoundException(
                         String.format("No user with id %s found", userId)));
 
-    final UserDto userToDelete = modelMapper.map(user, UserDto.class);
+    final boolean hasMembershipsOrExpenseHistory =
+        memberRepository.existsByUserId(userId)
+            || expenseRepository.existsByPaidById(userId)
+            || expenseRepository.existsByParticipants_ParticipantId(userId);
+
+    if (hasMembershipsOrExpenseHistory) {
+      throw new ConflictException(
+          String.format(
+              "User with id %s cannot be deleted while they have group memberships or expense history",
+              userId));
+    }
 
     userRepository.delete(user);
-
-    return userToDelete;
   }
 }

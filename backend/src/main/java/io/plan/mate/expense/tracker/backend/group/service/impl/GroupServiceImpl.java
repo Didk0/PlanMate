@@ -64,7 +64,7 @@ public class GroupServiceImpl implements GroupService {
 
   @Override
   @Transactional
-  public GroupDto deleteGroup(final Long groupId) {
+  public void deleteGroup(final Long groupId) {
 
     final Group group =
         groupRepository
@@ -72,15 +72,11 @@ public class GroupServiceImpl implements GroupService {
             .orElseThrow(
                 () -> new ResourceNotFoundException("Group with id=" + groupId + " not found"));
 
-    final GroupDto groupDtoToReturn = modelMapper.map(group, GroupDto.class);
-
     settlementService.clearSettlementCache(groupId);
 
     groupRepository.delete(group);
 
     eventPublisher.publishEvent(
         new SettlementsChangedEvent(SettlementsChangeEnum.SETTLEMENTS_INVALIDATED, groupId));
-
-    return groupDtoToReturn;
   }
 }

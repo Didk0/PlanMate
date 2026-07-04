@@ -1,7 +1,5 @@
 package io.plan.mate.expense.tracker.backend.settlement.service.dto;
 
-import io.plan.mate.expense.tracker.backend.group.service.dto.GroupDto;
-
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.math.BigDecimal;
 import lombok.AllArgsConstructor;
@@ -20,9 +18,6 @@ public class SettlementDto {
 
   @Schema(description = "Settlement ID", example = "55")
   private Long id;
-
-  @Schema(description = "Group where the settlement belongs")
-  private GroupDto group;
 
   @Schema(description = "Payer first name", example = "Bob")
   private String fromUserFirstName;

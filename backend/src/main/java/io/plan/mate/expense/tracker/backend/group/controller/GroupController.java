@@ -86,19 +86,18 @@ public class GroupController {
 
   @Operation(
       summary = "Delete a group by ID",
-      description =
-          "Deletes the group corresponding to the given ID and returns the deleted group details",
+      description = "Deletes the group corresponding to the given ID",
       responses = {
-        @ApiResponse(responseCode = "200", description = "Group deleted", content = @Content(schema = @Schema(implementation = GroupDto.class))),
+        @ApiResponse(responseCode = "204", description = "Group deleted"),
         @ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content(schema = @Schema(implementation = ApiError.class))),
         @ApiResponse(responseCode = "404", description = "Group not found", content = @Content(schema = @Schema(implementation = ApiError.class))),
         @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content(schema = @Schema(implementation = ApiError.class)))
       })
   @DeleteMapping("/{groupId}")
-  public ResponseEntity<GroupDto> deleteGroup(@PathVariable final Long groupId) {
+  public ResponseEntity<Void> deleteGroup(@PathVariable final Long groupId) {
 
-    final GroupDto groupDto = groupService.deleteGroup(groupId);
+    groupService.deleteGroup(groupId);
 
-    return ResponseEntity.ok(groupDto);
+    return ResponseEntity.noContent().build();
   }
 }

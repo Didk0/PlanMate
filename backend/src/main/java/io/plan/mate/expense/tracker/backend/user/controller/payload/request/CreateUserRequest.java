@@ -3,6 +3,7 @@ package io.plan.mate.expense.tracker.backend.user.controller.payload.request;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import java.util.UUID;
 
@@ -21,4 +22,5 @@ public record CreateUserRequest(
     @Schema(description = "Last name", example = "Doe")
     String lastName,
     @Schema(description = "Keycloak user ID", example = "1f8b6d02-5b66-4b2d-9f2e-2a01f91e2a11")
-    UUID keycloakId) {}
+        @NotNull(message = "Keycloak ID must not be null")
+        UUID keycloakId) {}
