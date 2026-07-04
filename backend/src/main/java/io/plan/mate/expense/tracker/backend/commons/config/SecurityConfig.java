@@ -36,7 +36,7 @@ public class SecurityConfig {
   public SecurityFilterChain resourceServerSecurityFilterChain(final HttpSecurity http)
       throws Exception {
 
-    final boolean isDev = List.of(environment.getActiveProfiles()).contains("dev");
+    final boolean isLocal = List.of(environment.getActiveProfiles()).contains("local");
 
     http.csrf(CsrfConfigurer::disable)
         .cors(cors -> cors.configurationSource(corsConfigurationSource()))
@@ -51,7 +51,7 @@ public class SecurityConfig {
                       "/webjars/**")
                   .permitAll();
 
-              if (isDev) {
+              if (isLocal) {
                 authorize.requestMatchers("/actuator/**").permitAll();
               } else {
                 authorize

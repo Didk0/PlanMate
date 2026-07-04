@@ -44,6 +44,5 @@ public class ExpenseParticipant {
 
   @ManyToOne(optional = false, fetch = FetchType.LAZY)
   @JoinColumn(name = "user_id")
-  @Setter
-  User participant;
+  private User participant;
 }
