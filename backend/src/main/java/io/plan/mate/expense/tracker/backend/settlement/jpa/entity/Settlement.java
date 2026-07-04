@@ -12,6 +12,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import lombok.AllArgsConstructor;
@@ -20,7 +21,13 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @Entity
-@Table(name = "settlements", schema = "planmate")
+@Table(
+    name = "settlements",
+    schema = "planmate",
+    uniqueConstraints =
+        @UniqueConstraint(
+            name = "uq_settlements_group_from_to",
+            columnNames = {"group_id", "from_user_id", "to_user_id"}))
 @AllArgsConstructor
 @NoArgsConstructor
 @Getter

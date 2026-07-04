@@ -9,6 +9,6 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface ExpenseRepository extends JpaRepository<Expense, Long> {
 
-  @EntityGraph(attributePaths = {"participants", "participants.participant"})
+  @EntityGraph(attributePaths = {"participants", "participants.participant", "paidBy"})
   List<Expense> findByGroupId(Long groupId);
 }

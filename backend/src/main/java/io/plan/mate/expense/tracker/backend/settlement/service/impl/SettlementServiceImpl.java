@@ -3,6 +3,7 @@ package io.plan.mate.expense.tracker.backend.settlement.service.impl;
 import io.plan.mate.expense.tracker.backend.settlement.service.dto.SettlementDto;
 import io.plan.mate.expense.tracker.backend.expense.jpa.entity.Expense;
 import io.plan.mate.expense.tracker.backend.expense.jpa.entity.ExpenseParticipant;
+import io.plan.mate.expense.tracker.backend.expense.jpa.repository.ExpenseRepository;
 import io.plan.mate.expense.tracker.backend.group.jpa.entity.Group;
 import io.plan.mate.expense.tracker.backend.settlement.jpa.entity.Settlement;
 import io.plan.mate.expense.tracker.backend.user.jpa.entity.User;
@@ -11,6 +12,7 @@ import io.plan.mate.expense.tracker.backend.settlement.jpa.repository.Settlement
 import io.plan.mate.expense.tracker.backend.commons.exception.handling.exception.ResourceNotFoundException;
 import io.plan.mate.expense.tracker.backend.settlement.service.SettlementService;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -33,6 +35,7 @@ public class SettlementServiceImpl implements SettlementService {
 
   private final SettlementRepository settlementRepository;
   private final GroupRepository groupRepository;
+  private final ExpenseRepository expenseRepository;
   private final ModelMapper modelMapper;
 
   @Override
@@ -58,12 +61,13 @@ public class SettlementServiceImpl implements SettlementService {
           .toList();
     }
 
-    final List<Expense> expenses =
+    final Group group =
         groupRepository
             .findById(groupId)
-            .map(Group::getExpenses)
             .orElseThrow(
                 () -> new ResourceNotFoundException("Group with id " + groupId + " not found"));
+
+    final List<Expense> expenses = expenseRepository.findByGroupId(groupId);
 
     if (expenses.isEmpty()) {
       return Collections.emptyList();
@@ -114,10 +118,11 @@ public class SettlementServiceImpl implements SettlementService {
 
     populateCreditorsAndDebtors(userIdToNetBalanceMap, creditors, userCache, debtors);
 
-    final Group group = expenses.get(0).getGroup();
-
     // match creditors and debtors, then persist as the L2 cache
     final List<Settlement> settlements = calculateSettlements(creditors, debtors, group);
+
+    // Idempotent recompute; the unique constraint is the hard guarantee under a concurrent race.
+    settlementRepository.deleteByGroupId(groupId);
 
     final List<Settlement> saved = settlementRepository.saveAll(settlements);
 
@@ -163,7 +168,7 @@ public class SettlementServiceImpl implements SettlementService {
               .group(group)
               .fromUser(debtor.user)
               .toUser(creditor.user)
-              .amount(minAmount)
+              .amount(minAmount.setScale(2, RoundingMode.HALF_UP))
               .settledAt(LocalDateTime.now())
               .build());
 

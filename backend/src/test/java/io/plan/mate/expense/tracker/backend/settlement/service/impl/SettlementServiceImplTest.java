@@ -14,6 +14,7 @@ import static org.mockito.Mockito.when;
 
 import io.plan.mate.expense.tracker.backend.settlement.service.dto.SettlementDto;
 import io.plan.mate.expense.tracker.backend.expense.jpa.entity.Expense;
+import io.plan.mate.expense.tracker.backend.expense.jpa.repository.ExpenseRepository;
 import io.plan.mate.expense.tracker.backend.group.jpa.entity.Group;
 import io.plan.mate.expense.tracker.backend.settlement.jpa.entity.Settlement;
 import io.plan.mate.expense.tracker.backend.user.jpa.entity.User;
@@ -21,19 +22,28 @@ import io.plan.mate.expense.tracker.backend.group.jpa.repository.GroupRepository
 import io.plan.mate.expense.tracker.backend.settlement.jpa.repository.SettlementRepository;
 import io.plan.mate.expense.tracker.backend.commons.exception.handling.exception.ResourceNotFoundException;
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
+import org.mockito.InOrder;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.modelmapper.ModelMapper;
+import org.springframework.dao.DataIntegrityViolationException;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("SettlementServiceImpl")
@@ -41,6 +51,7 @@ class SettlementServiceImplTest {
 
   @Mock private SettlementRepository settlementRepository;
   @Mock private GroupRepository groupRepository;
+  @Mock private ExpenseRepository expenseRepository;
   @Mock private ModelMapper modelMapper;
 
   @InjectMocks private SettlementServiceImpl settlementService;
@@ -71,6 +82,7 @@ class SettlementServiceImplTest {
       Group group = groupWithExpenses(1L);
       when(settlementRepository.findByGroupId(1L)).thenReturn(List.of());
       when(groupRepository.findById(1L)).thenReturn(Optional.of(group));
+      when(expenseRepository.findByGroupId(1L)).thenReturn(List.of());
 
       List<SettlementDto> result = settlementService.calculateSettlements(1L);
 
@@ -120,6 +132,7 @@ class SettlementServiceImplTest {
 
       when(settlementRepository.findByGroupId(1L)).thenReturn(List.of());
       when(groupRepository.findById(1L)).thenReturn(Optional.of(groupWithExpense));
+      when(expenseRepository.findByGroupId(1L)).thenReturn(List.of(expense));
       when(settlementRepository.saveAll(any())).thenAnswer(inv -> inv.getArgument(0));
       when(modelMapper.map(any(Settlement.class), eq(SettlementDto.class)))
           .thenReturn(SettlementDto.builder().build());
@@ -157,6 +170,7 @@ class SettlementServiceImplTest {
 
       when(settlementRepository.findByGroupId(1L)).thenReturn(List.of());
       when(groupRepository.findById(1L)).thenReturn(Optional.of(groupWithExpense));
+      when(expenseRepository.findByGroupId(1L)).thenReturn(List.of(expense));
       when(settlementRepository.saveAll(any())).thenAnswer(inv -> inv.getArgument(0));
       when(modelMapper.map(any(Settlement.class), eq(SettlementDto.class)))
           .thenReturn(SettlementDto.builder().build());
@@ -188,6 +202,7 @@ class SettlementServiceImplTest {
 
       when(settlementRepository.findByGroupId(1L)).thenReturn(List.of());
       when(groupRepository.findById(1L)).thenReturn(Optional.of(groupWithBothExpenses));
+      when(expenseRepository.findByGroupId(1L)).thenReturn(List.of(expense1, expense2));
       when(settlementRepository.saveAll(any())).thenAnswer(inv -> inv.getArgument(0));
 
       List<SettlementDto> result = settlementService.calculateSettlements(1L);
@@ -209,6 +224,7 @@ class SettlementServiceImplTest {
 
       when(settlementRepository.findByGroupId(1L)).thenReturn(List.of());
       when(groupRepository.findById(1L)).thenReturn(Optional.of(groupWithExpense));
+      when(expenseRepository.findByGroupId(1L)).thenReturn(List.of(expense));
       when(settlementRepository.saveAll(any())).thenAnswer(inv -> inv.getArgument(0));
 
       List<SettlementDto> result = settlementService.calculateSettlements(1L);
@@ -233,6 +249,7 @@ class SettlementServiceImplTest {
 
       when(settlementRepository.findByGroupId(1L)).thenReturn(List.of());
       when(groupRepository.findById(1L)).thenReturn(Optional.of(groupWithExpense));
+      when(expenseRepository.findByGroupId(1L)).thenReturn(List.of(expense));
       when(settlementRepository.saveAll(any())).thenAnswer(inv -> inv.getArgument(0));
       when(modelMapper.map(any(Settlement.class), eq(SettlementDto.class)))
           .thenReturn(SettlementDto.builder().build());
@@ -271,6 +288,7 @@ class SettlementServiceImplTest {
 
       when(settlementRepository.findByGroupId(1L)).thenReturn(List.of());
       when(groupRepository.findById(1L)).thenReturn(Optional.of(groupWithBothExpenses));
+      when(expenseRepository.findByGroupId(1L)).thenReturn(List.of(expense1, expense2));
       when(settlementRepository.saveAll(any())).thenAnswer(inv -> inv.getArgument(0));
       when(modelMapper.map(any(Settlement.class), eq(SettlementDto.class)))
           .thenReturn(SettlementDto.builder().build());
@@ -286,6 +304,105 @@ class SettlementServiceImplTest {
       assertThat(saved.stream().map(settlement -> settlement.getFromUser().getId()).toList())
           .containsExactlyInAnyOrder(bob.getId(), charlie.getId());
       assertThat(saved).allMatch(settlement -> settlement.getAmount().compareTo(new BigDecimal("15.00")) == 0);
+    }
+
+    @Test
+    @DisplayName("deletes previously persisted rows before saving the recomputed settlements")
+    void calculateSettlements_shouldDeletePersistedRowsBeforeSaving_whenRecomputing() {
+      User alice = user(1L, "Alice", "Smith");
+      User bob = user(2L, "Bob", "Jones");
+      Group group = Group.builder().id(1L).name("Trip").build();
+      Expense expense = expense(1L, group, alice, participant(bob, "30.00"));
+      Group groupWithExpense = groupWithExpenses(1L, expense);
+
+      when(settlementRepository.findByGroupId(1L)).thenReturn(List.of());
+      when(groupRepository.findById(1L)).thenReturn(Optional.of(groupWithExpense));
+      when(expenseRepository.findByGroupId(1L)).thenReturn(List.of(expense));
+      when(settlementRepository.saveAll(any())).thenAnswer(inv -> inv.getArgument(0));
+      when(modelMapper.map(any(Settlement.class), eq(SettlementDto.class)))
+          .thenReturn(SettlementDto.builder().build());
+
+      settlementService.calculateSettlements(1L);
+
+      InOrder inOrder = Mockito.inOrder(settlementRepository);
+      inOrder.verify(settlementRepository).deleteByGroupId(1L);
+      inOrder.verify(settlementRepository).saveAll(any());
+    }
+
+    @Test
+    @DisplayName("scales computed amounts to two decimals even when shares have fewer decimals")
+    void calculateSettlements_shouldScaleAmountsToTwoDecimals_whenSharesHaveFewerDecimals() {
+      User alice = user(1L, "Alice", "Smith");
+      User bob = user(2L, "Bob", "Jones");
+      Group group = Group.builder().id(1L).name("Trip").build();
+      Expense expense = expense(1L, group, alice, participant(bob, "30"));
+      Group groupWithExpense = groupWithExpenses(1L, expense);
+
+      when(settlementRepository.findByGroupId(1L)).thenReturn(List.of());
+      when(groupRepository.findById(1L)).thenReturn(Optional.of(groupWithExpense));
+      when(expenseRepository.findByGroupId(1L)).thenReturn(List.of(expense));
+      when(settlementRepository.saveAll(any())).thenAnswer(inv -> inv.getArgument(0));
+      when(modelMapper.map(any(Settlement.class), eq(SettlementDto.class)))
+          .thenReturn(SettlementDto.builder().build());
+
+      settlementService.calculateSettlements(1L);
+
+      ArgumentCaptor<List<Settlement>> captor = settlementListCaptor();
+      verify(settlementRepository).saveAll(captor.capture());
+      assertThat(captor.getValue().getFirst().getAmount().scale()).isEqualTo(2);
+    }
+
+    @Test
+    @DisplayName(
+        "concurrent cold-cache recomputes are idempotent: the racing insert fails cleanly instead of duplicating rows")
+    void calculateSettlements_shouldFailRacingInsertCleanly_whenRecomputedConcurrently()
+        throws Exception {
+      User alice = user(1L, "Alice", "Smith");
+      User bob = user(2L, "Bob", "Jones");
+      Group group = Group.builder().id(1L).name("Trip").build();
+      Expense expense = expense(1L, group, alice, participant(bob, "30.00"));
+      Group groupWithExpense = groupWithExpenses(1L, expense);
+
+      when(settlementRepository.findByGroupId(1L)).thenReturn(List.of());
+      when(groupRepository.findById(1L)).thenReturn(Optional.of(groupWithExpense));
+      when(expenseRepository.findByGroupId(1L)).thenReturn(List.of(expense));
+      when(modelMapper.map(any(Settlement.class), eq(SettlementDto.class)))
+          .thenReturn(SettlementDto.builder().build());
+
+      // Simulate two transactions racing past the cold-cache check: the first saveAll to
+      // reach the DB wins, the second hits the unique constraint and fails, mirroring
+      // DataIntegrityViolationException from a concurrent recompute of the same group.
+      AtomicBoolean winnerDecided = new AtomicBoolean(false);
+      when(settlementRepository.saveAll(any()))
+          .thenAnswer(
+              inv -> {
+                if (winnerDecided.compareAndSet(false, true)) {
+                  return inv.getArgument(0);
+                }
+                throw new DataIntegrityViolationException("duplicate key");
+              });
+
+      Callable<Boolean> raceAttempt =
+          () -> {
+            try {
+              settlementService.calculateSettlements(1L);
+              return true;
+            } catch (DataIntegrityViolationException e) {
+              return false;
+            }
+          };
+
+      ExecutorService executor = Executors.newFixedThreadPool(2);
+      List<Future<Boolean>> futures = executor.invokeAll(List.of(raceAttempt, raceAttempt));
+      List<Boolean> results = new ArrayList<>();
+      for (Future<Boolean> future : futures) {
+        results.add(future.get());
+      }
+      executor.shutdown();
+
+      assertThat(results).containsExactlyInAnyOrder(true, false);
+      verify(settlementRepository, Mockito.times(2)).deleteByGroupId(1L);
+      verify(settlementRepository, Mockito.times(2)).saveAll(any());
     }
   }
 
