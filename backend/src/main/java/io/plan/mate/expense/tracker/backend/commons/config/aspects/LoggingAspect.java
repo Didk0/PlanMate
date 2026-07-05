@@ -1,7 +1,5 @@
 package io.plan.mate.expense.tracker.backend.commons.config.aspects;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.Duration;
 import java.time.Instant;
 import lombok.RequiredArgsConstructor;
@@ -12,6 +10,8 @@ import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.annotation.Pointcut;
 import org.aspectj.lang.reflect.MethodSignature;
 import org.springframework.stereotype.Component;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
 
 @Aspect
 @Component
@@ -73,7 +73,7 @@ public class LoggingAspect {
 
     try {
       return objectMapper.writeValueAsString(obj);
-    } catch (final JsonProcessingException e) {
+    } catch (final JacksonException e) {
       return "[unserializable]";
     }
   }

@@ -15,7 +15,6 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
@@ -56,9 +55,8 @@ public class SettlementServiceImpl implements SettlementService {
     // group has not been mutated (mutations clear these rows via clearSettlementCache).
     final List<Settlement> persisted = settlementRepository.findByGroupId(groupId);
     if (!persisted.isEmpty()) {
-      return persisted.stream()
-          .map(settlement -> modelMapper.map(settlement, SettlementDto.class))
-          .toList();
+      return new ArrayList<>(persisted.stream()
+                  .map(settlement -> modelMapper.map(settlement, SettlementDto.class)).toList());
     }
 
     final Group group =
@@ -70,7 +68,7 @@ public class SettlementServiceImpl implements SettlementService {
     final List<Expense> expenses = expenseRepository.findByGroupId(groupId);
 
     if (expenses.isEmpty()) {
-      return Collections.emptyList();
+      return new ArrayList<>();
     }
 
     // Calculate net balance per user (net balance = amount paid - amount owed)
@@ -126,9 +124,8 @@ public class SettlementServiceImpl implements SettlementService {
 
     final List<Settlement> saved = settlementRepository.saveAll(settlements);
 
-    return saved.stream()
-        .map(settlement -> modelMapper.map(settlement, SettlementDto.class))
-        .toList();
+    return new ArrayList<>(saved.stream()
+                .map(settlement -> modelMapper.map(settlement, SettlementDto.class)).toList());
   }
 
   private void populateCreditorsAndDebtors(

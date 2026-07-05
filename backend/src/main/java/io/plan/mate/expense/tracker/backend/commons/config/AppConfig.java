@@ -1,6 +1,5 @@
 package io.plan.mate.expense.tracker.backend.commons.config;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.plan.mate.expense.tracker.backend.expense.service.converter.ExpenseParticipantToDtoConverter;
 import io.plan.mate.expense.tracker.backend.member.service.converter.MemberToMemberDtoConverter;
 import io.swagger.v3.oas.models.ExternalDocumentation;
@@ -13,14 +12,16 @@ import io.swagger.v3.oas.models.security.SecurityRequirement;
 import io.swagger.v3.oas.models.security.SecurityScheme;
 import java.time.Duration;
 import org.modelmapper.ModelMapper;
-import org.springframework.boot.autoconfigure.cache.RedisCacheManagerBuilderCustomizer;
+import org.springframework.boot.cache.autoconfigure.RedisCacheManagerBuilderCustomizer;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.EnableAspectJAutoProxy;
 import org.springframework.data.redis.cache.RedisCacheConfiguration;
-import org.springframework.data.redis.serializer.GenericJackson2JsonRedisSerializer;
+import org.springframework.data.redis.serializer.GenericJacksonJsonRedisSerializer;
 import org.springframework.data.redis.serializer.RedisSerializationContext.SerializationPair;
+import tools.jackson.databind.jsontype.BasicPolymorphicTypeValidator;
+import tools.jackson.databind.jsontype.PolymorphicTypeValidator;
 
 @Configuration
 @EnableAspectJAutoProxy
@@ -70,13 +71,11 @@ public class AppConfig {
     return RedisCacheConfiguration.defaultCacheConfig()
         .entryTtl(Duration.ofDays(1))
         .disableCachingNullValues()
-        .serializeValuesWith(
-            SerializationPair.fromSerializer(new GenericJackson2JsonRedisSerializer()));
+        .serializeValuesWith(SerializationPair.fromSerializer(redisValueSerializer()));
   }
 
   @Bean
-  public RedisCacheManagerBuilderCustomizer redisCacheManagerBuilderCustomizer(
-      final ObjectMapper objectMapper) {
+  public RedisCacheManagerBuilderCustomizer redisCacheManagerBuilderCustomizer() {
 
     return builder ->
         builder.withCacheConfiguration(
@@ -84,8 +83,22 @@ public class AppConfig {
             RedisCacheConfiguration.defaultCacheConfig()
                 .entryTtl(Duration.ofDays(1))
                 .disableCachingNullValues()
-                .serializeValuesWith(
-                    SerializationPair.fromSerializer(
-                        new GenericJackson2JsonRedisSerializer(objectMapper))));
+                .serializeValuesWith(SerializationPair.fromSerializer(redisValueSerializer())));
+  }
+
+  private GenericJacksonJsonRedisSerializer redisValueSerializer() {
+
+    final PolymorphicTypeValidator typeValidator =
+        BasicPolymorphicTypeValidator.builder()
+            .allowIfSubType("io.plan.mate.expense.tracker.backend.")
+            .allowIfSubType("java.util.")
+            .allowIfSubType("java.time.")
+            .allowIfSubType("java.math.")
+            .build();
+
+    return GenericJacksonJsonRedisSerializer.builder()
+        .enableSpringCacheNullValueSupport()
+        .enableDefaultTyping(typeValidator)
+        .build();
   }
 }
