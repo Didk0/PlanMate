@@ -1,4 +1,3 @@
-import "./App.css";
 import AddExpenseForm from "./components/expenses/AddExpenseForm";
 import ApiTokenSetter from "./components/auth/ApiTokenSetter";
 import AuthSync from "./components/auth/AuthSync";
