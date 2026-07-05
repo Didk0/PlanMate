@@ -89,7 +89,7 @@ export const calculateSettlements = (groupId) => async (dispatch) => {
     console.log(error);
     dispatch({
       type: "IS_ERROR",
-      payload: error.message || "Failed to remove member from group",
+      payload: error.message || "Failed to calculate settlements",
     });
   }
 };

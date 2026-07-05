@@ -1,5 +1,5 @@
-import ExpensesSection from "@/components/expenses/ExpensesSection";
-import MembersSection from "@/components/members/MembersSection";
+import ExpensesSection from "@/components/group/ExpensesSection";
+import MembersSection from "@/components/group/MembersSection";
 import { AnimatePresence } from "framer-motion";
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";

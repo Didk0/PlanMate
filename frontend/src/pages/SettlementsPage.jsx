@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate, useParams } from "react-router-dom";
 import { calculateSettlements } from "@/store/actions";
@@ -15,14 +15,14 @@ const SettlementsPage = () => {
   const dispatch = useDispatch();
 
   useEffect(() => {
-    dispatch(calculateSettlements(groupId)).then(setSettlements);
-  }, []);
+    dispatch(calculateSettlements(groupId)).then((data) => setSettlements(data ?? []));
+  }, [dispatch, groupId]);
 
   useGroupWebSocket(groupId, (topic, message) => {
     if (!topic.endsWith("/settlements")) return;
     const payload = JSON.parse(message.body);
     if (payload.changeType === "SETTLEMENTS_INVALIDATED") {
-      dispatch(calculateSettlements(groupId)).then(setSettlements);
+      dispatch(calculateSettlements(groupId)).then((data) => setSettlements(data ?? []));
     }
   });
 

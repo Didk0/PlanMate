@@ -1,6 +1,6 @@
 import ApiTokenSetter from "@/components/auth/ApiTokenSetter";
 import AuthSync from "@/components/auth/AuthSync";
-import Navbar from "@/components/shared/Navbar";
+import Navbar from "@/components/layout/Navbar";
 import AddExpensePage from "@/pages/AddExpensePage";
 import GroupDetailsPage from "@/pages/GroupDetailsPage";
 import GroupsPage from "@/pages/GroupsPage";

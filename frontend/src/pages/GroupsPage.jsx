@@ -1,6 +1,5 @@
-import React, { useEffect, useState } from "react";
-import { AnimatePresence } from "framer-motion";
-import { motion } from "motion/react";
+import { useEffect, useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 import { useDispatch, useSelector } from "react-redux";
 import { Link } from "react-router-dom";
 import { createGroup, loadAllGroups } from "@/store/actions";
