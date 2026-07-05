@@ -10,14 +10,17 @@ import io.plan.mate.expense.tracker.backend.member.jpa.repository.MemberReposito
 import io.plan.mate.expense.tracker.backend.user.controller.payload.request.CreateUserRequest;
 import io.plan.mate.expense.tracker.backend.user.service.UserService;
 import io.plan.mate.expense.tracker.backend.user.service.keycloak.KeycloakService;
+import jakarta.ws.rs.WebApplicationException;
 import java.time.LocalDateTime;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class UserServiceImpl implements UserService {
@@ -37,17 +40,24 @@ public class UserServiceImpl implements UserService {
 
     if (existingUser != null) {
 
-      final UserRepresentation userRepresentation =
-          keycloakService.getUser(createUserRequest.keycloakId());
+      try {
+        final UserRepresentation userRepresentation =
+            keycloakService.getUser(createUserRequest.keycloakId());
 
-      existingUser.setEmail(userRepresentation.getEmail());
-      existingUser.setUsername(userRepresentation.getUsername());
-      existingUser.setFirstName(userRepresentation.getFirstName());
-      existingUser.setLastName(userRepresentation.getLastName());
+        existingUser.setEmail(userRepresentation.getEmail());
+        existingUser.setUsername(userRepresentation.getUsername());
+        existingUser.setFirstName(userRepresentation.getFirstName());
+        existingUser.setLastName(userRepresentation.getLastName());
 
-      final User updatedUser = userRepository.save(existingUser);
+        userRepository.save(existingUser);
+      } catch (final WebApplicationException ex) {
+        log.warn(
+            "Skipping Keycloak profile sync for user {}: {}",
+            createUserRequest.keycloakId(),
+            ex.getMessage());
+      }
 
-      return modelMapper.map(updatedUser, UserDto.class);
+      return modelMapper.map(existingUser, UserDto.class);
     }
 
     final User user =
