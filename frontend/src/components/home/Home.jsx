@@ -1,10 +1,17 @@
+import { useContext } from "react";
+import { AuthContext } from "react-oauth2-code-pkce";
 import { useNavigate } from "react-router-dom";
 
 const Home = () => {
+  const { token, logIn } = useContext(AuthContext);
   const navigate = useNavigate();
 
   const handleGetStarted = () => {
-    navigate("/groups");
+    if (token) {
+      navigate("/groups");
+    } else {
+      logIn();
+    }
   };
 
   return (
