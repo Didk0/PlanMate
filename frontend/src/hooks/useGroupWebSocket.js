@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { createStompClient } from "./stompClient";
+import { createStompClient } from "@/lib/stompClient";
 
 export function useGroupWebSocket(groupId, onMessageReceived) {
   const clientRef = useRef(null);

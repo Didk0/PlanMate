@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate, useParams } from "react-router-dom";
-import { createExpense, getGroupMembers } from "../../store/actions";
+import { createExpense, getGroupMembers } from "@/store/actions";
 
-const AddExpenseForm = () => {
+const AddExpensePage = () => {
   const { id } = useParams();
   const groupId = id;
   const navigate = useNavigate();
@@ -179,4 +179,4 @@ const AddExpenseForm = () => {
   );
 };
 
-export default AddExpenseForm;
+export default AddExpensePage;

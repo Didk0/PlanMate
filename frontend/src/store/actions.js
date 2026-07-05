@@ -1,6 +1,6 @@
-import expenseService from "../../api/services/expenseService";
-import groupService from "../../api/services/groupService";
-import userService from "../../api/services/userService";
+import expenseService from "@/api/expenseService";
+import groupService from "@/api/groupService";
+import userService from "@/api/userService";
 
 export const loadAllGroups = () => async (dispatch) => {
   dispatch({ type: "IS_LOADING" });

@@ -1,4 +1,4 @@
-import api from "../api";
+import api from "./client";
 
 const groupService = {
   getAllGroups: () => api.get("/groups").then((res) => res.data),

@@ -1,30 +1,27 @@
-import AddExpenseForm from "./components/expenses/AddExpenseForm";
-import ApiTokenSetter from "./components/auth/ApiTokenSetter";
-import AuthSync from "./components/auth/AuthSync";
-import GroupDetails from "./components/group/GroupDetails";
-import Groups from "./components/group/Groups";
-import Home from "./components/home/Home";
-import Navbar from "./components/shared/Navbar";
-import React from "react";
-import SettlementsForm from "./components/settlements/SettlementsForm";
+import ApiTokenSetter from "@/components/auth/ApiTokenSetter";
+import AuthSync from "@/components/auth/AuthSync";
+import Navbar from "@/components/shared/Navbar";
+import AddExpensePage from "@/pages/AddExpensePage";
+import GroupDetailsPage from "@/pages/GroupDetailsPage";
+import GroupsPage from "@/pages/GroupsPage";
+import HomePage from "@/pages/HomePage";
+import SettlementsPage from "@/pages/SettlementsPage";
 import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
 
 function App() {
   return (
-    <React.Fragment>
-      <Router>
-        <AuthSync />
-        <ApiTokenSetter />
-        <Navbar />
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/groups" element={<Groups />} />
-          <Route path="/groups/:id" element={<GroupDetails />} />
-          <Route path="/groups/:id/expense" element={<AddExpenseForm />} />
-          <Route path="/groups/:id/settlements" element={<SettlementsForm />} />
-        </Routes>
-      </Router>
-    </React.Fragment>
+    <Router>
+      <AuthSync />
+      <ApiTokenSetter />
+      <Navbar />
+      <Routes>
+        <Route path="/" element={<HomePage />} />
+        <Route path="/groups" element={<GroupsPage />} />
+        <Route path="/groups/:id" element={<GroupDetailsPage />} />
+        <Route path="/groups/:id/expense" element={<AddExpensePage />} />
+        <Route path="/groups/:id/settlements" element={<SettlementsPage />} />
+      </Routes>
+    </Router>
   );
 }
 

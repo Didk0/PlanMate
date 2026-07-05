@@ -1,7 +1,7 @@
 import { useContext, useEffect } from "react";
 import { AuthContext } from "react-oauth2-code-pkce";
 import { useDispatch } from "react-redux";
-import { clearAuthData, setAuthData } from "../../store/actions/index";
+import { clearAuthData, setAuthData } from "@/store/actions";
 
 const AuthSync = () => {
   const { tokenData, token } = useContext(AuthContext);

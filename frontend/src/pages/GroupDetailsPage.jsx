@@ -1,15 +1,15 @@
-import ExpensesSection from "../expenses/ExpensesSection";
-import MembersSection from "../members/MembersSection";
+import ExpensesSection from "@/components/expenses/ExpensesSection";
+import MembersSection from "@/components/members/MembersSection";
 import { AnimatePresence } from "framer-motion";
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate, useParams } from "react-router-dom";
-import { useGroupWebSocket } from "../../websocket/useGroupWebSocket";
+import { useGroupWebSocket } from "@/hooks/useGroupWebSocket";
 
-import { addMemberToGroup, loadGroupDetailsData, removeMemberFromGroup } from "../../store/actions";
+import { addMemberToGroup, loadGroupDetailsData, removeMemberFromGroup } from "@/store/actions";
 
-const GroupDetails = () => {
+const GroupDetailsPage = () => {
   const { id } = useParams();
   const groupId = id;
 
@@ -147,4 +147,4 @@ const GroupDetails = () => {
   );
 };
 
-export default GroupDetails;
+export default GroupDetailsPage;

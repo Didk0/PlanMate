@@ -2,7 +2,7 @@ import { useContext } from "react";
 import { AuthContext } from "react-oauth2-code-pkce";
 import { useNavigate } from "react-router-dom";
 
-const Home = () => {
+const HomePage = () => {
   const { token, logIn } = useContext(AuthContext);
   const navigate = useNavigate();
 
@@ -34,4 +34,4 @@ const Home = () => {
   );
 };
 
-export default Home;
+export default HomePage;

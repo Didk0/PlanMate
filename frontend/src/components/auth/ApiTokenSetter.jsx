@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { useSelector } from "react-redux";
-import { setAuthToken } from "../../api/api";
+import { setAuthToken } from "@/api/client";
 
 const ApiTokenSetter = () => {
   const token = useSelector((state) => state.auth.token);

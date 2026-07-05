@@ -1,4 +1,4 @@
-import api from "../api";
+import api from "./client";
 
 const expenseService = {
   getGroupExpenses: (groupId) => api.get(`groups/${groupId}/expenses`).then((res) => res.data),

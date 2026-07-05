@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate, useParams } from "react-router-dom";
-import { calculateSettlements } from "../../store/actions";
-import { useGroupWebSocket } from "../../websocket/useGroupWebSocket";
+import { calculateSettlements } from "@/store/actions";
+import { useGroupWebSocket } from "@/hooks/useGroupWebSocket";
 
-const SettlementsForm = () => {
+const SettlementsPage = () => {
   const { id } = useParams();
   const groupId = id;
   const navigate = useNavigate();
@@ -81,4 +81,4 @@ const SettlementsForm = () => {
   );
 };
 
-export default SettlementsForm;
+export default SettlementsPage;

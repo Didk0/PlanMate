@@ -3,9 +3,9 @@ import { AnimatePresence } from "framer-motion";
 import { motion } from "motion/react";
 import { useDispatch, useSelector } from "react-redux";
 import { Link } from "react-router-dom";
-import { createGroup, loadAllGroups } from "../../store/actions";
+import { createGroup, loadAllGroups } from "@/store/actions";
 
-const Groups = () => {
+const GroupsPage = () => {
   const { isLoading, errorMessage } = useSelector((state) => state.errors);
 
   const [groups, setGroups] = useState([]);
@@ -144,4 +144,4 @@ const Groups = () => {
   );
 };
 
-export default Groups;
+export default GroupsPage;

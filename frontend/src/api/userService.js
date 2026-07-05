@@ -1,4 +1,4 @@
-import api from "../api";
+import api from "./client";
 
 const userService = {
   getGroupMembers: (groupId) => api.get(`groups/${groupId}/users`).then((res) => res.data),
