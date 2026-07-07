@@ -1,13 +1,16 @@
 import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { useNavigate, useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
+import BackButton from "@/components/shared/BackButton";
+import ErrorScreen from "@/components/shared/ErrorScreen";
+import LoadingScreen from "@/components/shared/LoadingScreen";
+import PageShell from "@/components/shared/PageShell";
 import { calculateSettlements } from "@/store/actions";
 import { useGroupWebSocket } from "@/hooks/useGroupWebSocket";
 
 const SettlementsPage = () => {
   const { id } = useParams();
   const groupId = id;
-  const navigate = useNavigate();
   const [settlements, setSettlements] = useState([]);
 
   const { isLoading, errorMessage } = useSelector((state) => state.errors);
@@ -26,58 +29,42 @@ const SettlementsPage = () => {
     }
   });
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center text-yellow-900 font-semibold text-xl">
-        Loading settlements...
-      </div>
-    );
+  if (errorMessage) {
+    return <ErrorScreen message={errorMessage} />;
   }
 
-  if (errorMessage) {
-    return (
-      <div className="min-h-screen flex items-center justify-center text-red-700 font-semibold text-lg px-4">
-        {errorMessage}
-      </div>
-    );
+  if (isLoading) {
+    return <LoadingScreen message="Loading settlements..." />;
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-r from-yellow-400 via-yellow-300 to-yellow-200 p-6 flex flex-col items-center">
-      <div className="w-full max-w-lg bg-yellow-100 bg-opacity-90 rounded-lg shadow-lg p-8">
-        <h1 className="text-3xl font-extrabold text-yellow-900 mb-6 drop-shadow-md">Settlements</h1>
+    <PageShell maxWidth="max-w-lg">
+      <h1 className="text-3xl font-extrabold text-yellow-900 mb-6 drop-shadow-md">Settlements</h1>
 
-        {settlements.length === 0 ? (
-          <p className="text-yellow-900 text-lg">No settlements calculated yet.</p>
-        ) : (
-          <ul className="space-y-3">
-            {settlements.map((settlement, index) => (
-              <li
-                key={index}
-                className="p-4 border border-yellow-300 rounded-md bg-yellow-200 shadow-sm text-yellow-900 font-semibold"
-              >
-                <span className="font-bold">
-                  {settlement.fromUserFirstName} {settlement.fromUserLastName}
-                </span>{" "}
-                pays{" "}
-                <span className="font-bold">
-                  {settlement.toUserFirstName} {settlement.toUserLastName}
-                </span>{" "}
-                <span className="text-yellow-700">${settlement.amount.toFixed(2)}</span>
-              </li>
-            ))}
-          </ul>
-        )}
+      {settlements.length === 0 ? (
+        <p className="text-yellow-900 text-lg">No settlements calculated yet.</p>
+      ) : (
+        <ul className="space-y-3">
+          {settlements.map((settlement, index) => (
+            <li
+              key={index}
+              className="p-4 border border-yellow-300 rounded-md bg-yellow-200 shadow-sm text-yellow-900 font-semibold"
+            >
+              <span className="font-bold">
+                {settlement.fromUserFirstName} {settlement.fromUserLastName}
+              </span>{" "}
+              pays{" "}
+              <span className="font-bold">
+                {settlement.toUserFirstName} {settlement.toUserLastName}
+              </span>{" "}
+              <span className="text-yellow-700">${settlement.amount.toFixed(2)}</span>
+            </li>
+          ))}
+        </ul>
+      )}
 
-        <button
-          type="button"
-          onClick={() => navigate(`/groups/${groupId}`)}
-          className="mt-6 text-yellow-700 font-semibold hover:text-yellow-900 transition"
-        >
-          &larr; Back
-        </button>
-      </div>
-    </div>
+      <BackButton to={`/groups/${groupId}`} className="mt-6" />
+    </PageShell>
   );
 };
 

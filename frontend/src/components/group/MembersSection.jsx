@@ -1,5 +1,7 @@
-import { AnimatePresence, motion } from "framer-motion";
 import { useState } from "react";
+import Button from "@/components/shared/Button";
+import CollapsibleSection from "@/components/shared/CollapsibleSection";
+import TextInput from "@/components/shared/TextInput";
 
 const MembersSection = ({ members, onAddMember, onRemoveMember }) => {
   const [showAddForm, setShowAddForm] = useState(false);
@@ -43,41 +45,23 @@ const MembersSection = ({ members, onAddMember, onRemoveMember }) => {
       )}
 
       {/* Toggle Add Member form */}
-      <button
-        onClick={() => setShowAddForm(!showAddForm)}
-        className="mt-8 bg-yellow-600 hover:bg-yellow-700 text-yellow-50 px-5 py-3 font-semibold rounded-md shadow-md transition w-34"
-      >
+      <Button onClick={() => setShowAddForm(!showAddForm)} className="mt-8 w-34">
         {showAddForm ? "Cancel" : "Add Member"}
-      </button>
+      </Button>
 
       {/* Animated Add Member form */}
-      <AnimatePresence>
-        {showAddForm && (
-          <motion.div
-            key="addForm"
-            initial={{ opacity: 0, scaleY: 0, height: 0 }}
-            animate={{ opacity: 1, scaleY: 1, height: "auto" }}
-            exit={{ opacity: 0, scaleY: 0, height: 0 }}
-            transition={{ duration: 0.4 }}
-            style={{ originY: 0 }}
-            className="mt-6 p-6 rounded-md bg-yellow-100 border border-yellow-300 shadow-inner overflow-hidden"
-          >
-            <input
-              type="text"
-              placeholder="Username"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              className="w-full md:w-auto border border-yellow-400 rounded-md p-3 mb-4 md:mb-0 md:mr-4 text-yellow-900 font-semibold focus:outline-yellow-500 focus:ring-2 focus:ring-yellow-400 transition"
-            />
-            <button
-              onClick={handleAdd}
-              className="mt-2 md:mt-0 inline-block bg-yellow-600 hover:bg-yellow-700 text-yellow-50 px-6 py-3 rounded-md font-semibold shadow-md transition"
-            >
-              Add Member
-            </button>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      <CollapsibleSection show={showAddForm} className="mt-6">
+        <TextInput
+          type="text"
+          placeholder="Username"
+          value={username}
+          onChange={(e) => setUsername(e.target.value)}
+          className="w-full md:w-auto mb-4 md:mb-0 md:mr-4"
+        />
+        <Button onClick={handleAdd} className="mt-2 md:mt-0 inline-block">
+          Add Member
+        </Button>
+      </CollapsibleSection>
     </section>
   );
 };
