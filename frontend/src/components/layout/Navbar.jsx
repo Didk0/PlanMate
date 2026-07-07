@@ -1,12 +1,11 @@
-import userService from "@/api/userService";
-import { useContext, useEffect } from "react";
+import { useContext } from "react";
 import { AuthContext } from "react-oauth2-code-pkce";
 import { useDispatch, useSelector } from "react-redux";
 import { Link, useNavigate } from "react-router-dom";
 import { logoutUser } from "@/store/authSlice";
 
 const Navbar = () => {
-  const { token, tokenData, logIn, logOut } = useContext(AuthContext);
+  const { token, logIn, logOut } = useContext(AuthContext);
   const dispatch = useDispatch();
   const { user } = useSelector((state) => state.auth);
   const navigate = useNavigate();
@@ -14,26 +13,6 @@ const Navbar = () => {
   const handleLogin = () => {
     logIn();
   };
-
-  useEffect(() => {
-    if (token && tokenData) {
-      const userCreatedKey = "userCreated";
-      const isCreated = localStorage.getItem(userCreatedKey);
-
-      if (!isCreated) {
-        const userData = {
-          username: tokenData.preferred_username,
-          email: tokenData.email,
-          firstName: tokenData.given_name,
-          lastName: tokenData.family_name,
-          keycloakId: tokenData.sub,
-        };
-        userService.createUser(userData).then(() => {
-          localStorage.setItem(userCreatedKey, "true");
-        });
-      }
-    }
-  }, [token, tokenData]);
 
   const handleLogout = async () => {
     await logOut({

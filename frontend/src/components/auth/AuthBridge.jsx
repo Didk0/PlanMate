@@ -3,10 +3,13 @@ import { AuthContext } from "react-oauth2-code-pkce";
 import { useDispatch } from "react-redux";
 import { setAuthToken } from "@/api/client";
 import { loginUser, logoutUser } from "@/store/authSlice";
+import { useProvisionUser } from "./useProvisionUser";
 
 const AuthBridge = () => {
   const { token, tokenData } = useContext(AuthContext);
   const dispatch = useDispatch();
+
+  useProvisionUser(token, tokenData);
 
   useEffect(() => {
     setAuthToken(token);
