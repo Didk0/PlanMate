@@ -43,13 +43,13 @@ const AddExpensePage = () => {
     e.preventDefault();
     const expenseData = {
       description,
-      amount: parseFloat(amount),
+      amount,
       paidByUsername: effectivePaidBy,
       participants: participants
-        .filter((p) => parseFloat(p.shareAmount || 0) > 0)
+        .filter((p) => parseFloat(p.shareAmount) > 0)
         .map((p) => ({
           userName: p.userName,
-          shareAmount: parseFloat(p.shareAmount || 0),
+          shareAmount: p.shareAmount,
         })),
     };
     setIsSubmitting(true);

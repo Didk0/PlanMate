@@ -42,9 +42,9 @@ const SettlementsPage = () => {
         <p className="text-yellow-900 text-lg">No settlements calculated yet.</p>
       ) : (
         <ul className="space-y-3">
-          {settlements.map((settlement, index) => (
+          {settlements.map((settlement) => (
             <li
-              key={index}
+              key={settlement.id}
               className="p-4 border border-yellow-300 rounded-md bg-yellow-200 shadow-sm text-yellow-900 font-semibold"
             >
               <span className="font-bold">

@@ -28,7 +28,9 @@ export function useGroupWebSocket(groupId, onMessageReceived) {
 
     clientRef.current = createStompClient({
       onConnect: handleConnect,
-      onDisconnect: () => console.log("[WS] Disconnected"),
+      onDisconnect: () => {
+        if (import.meta.env.DEV) console.log("[WS] Disconnected");
+      },
       onError: (frame) => console.error("[WS] Error", frame),
     });
 

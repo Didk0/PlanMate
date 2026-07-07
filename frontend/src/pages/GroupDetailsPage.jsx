@@ -2,12 +2,14 @@ import ExpensesSection from "@/components/group/ExpensesSection";
 import MembersSection from "@/components/group/MembersSection";
 import { AnimatePresence } from "framer-motion";
 import { motion } from "framer-motion";
-import { useCallback, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useCallback, useContext, useState } from "react";
+import { AuthContext } from "react-oauth2-code-pkce";
+import { useNavigate, useParams } from "react-router-dom";
 import groupService from "@/api/groupService";
 import userService from "@/api/userService";
 import BackButton from "@/components/shared/BackButton";
 import Button from "@/components/shared/Button";
+import ConfirmDialog from "@/components/shared/ConfirmDialog";
 import ErrorScreen from "@/components/shared/ErrorScreen";
 import LoadingScreen from "@/components/shared/LoadingScreen";
 import PageShell from "@/components/shared/PageShell";
@@ -17,9 +19,11 @@ import { useGroupWebSocket } from "@/hooks/useGroupWebSocket";
 const GroupDetailsPage = () => {
   const { id } = useParams();
   const groupId = id;
+  const navigate = useNavigate();
+  const { tokenData } = useContext(AuthContext);
 
   const fetchDetails = useCallback(() => groupService.getGroupDetails(groupId), [groupId]);
-  const { data, isLoading, error } = useAsyncData(fetchDetails, [groupId]);
+  const { data, isLoading, error, reload } = useAsyncData(fetchDetails, [groupId]);
 
   const [loadedData, setLoadedData] = useState(null);
   const [members, setMembers] = useState([]);
@@ -27,6 +31,7 @@ const GroupDetailsPage = () => {
   const [memberError, setMemberError] = useState(null);
 
   const [showExpenses, setShowExpenses] = useState(false);
+  const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
 
   if (data && data !== loadedData) {
     setLoadedData(data);
@@ -34,28 +39,9 @@ const GroupDetailsPage = () => {
     setExpenses(data.expensesData);
   }
 
-  useGroupWebSocket(groupId, (_, message) => {
-    const payload = JSON.parse(message.body);
-    switch (payload.changeType) {
-      case "ADD_MEMBER":
-        setMembers((prevMembers) =>
-          prevMembers.some((m) => m.id === payload.member.id)
-            ? prevMembers
-            : [...prevMembers, payload.member]
-        );
-        break;
-      case "REMOVE_MEMBER":
-        setMembers((prevMembers) => prevMembers.filter((m) => m.id !== payload.member.id));
-        break;
-      case "ADD_EXPENSE":
-        setExpenses((prevExpenses) =>
-          prevExpenses.some((e) => e.id === payload.expense.id)
-            ? prevExpenses
-            : [...prevExpenses, payload.expense]
-        );
-        break;
-      default:
-        break;
+  useGroupWebSocket(groupId, (topic) => {
+    if (topic.endsWith("/users") || topic.endsWith("/expenses")) {
+      reload();
     }
   });
 
@@ -78,6 +64,19 @@ const GroupDetailsPage = () => {
       setMembers((prev) => prev.filter((m) => m.id !== memberId));
     } catch (err) {
       setMemberError(err.response?.data?.message || err.message || "Failed to remove member");
+    }
+  };
+
+  const currentMember = members.find((m) => m.username === tokenData?.preferred_username);
+
+  const handleConfirmLeaveGroup = async () => {
+    if (!currentMember) return;
+    setShowLeaveConfirm(false);
+    try {
+      await userService.removeMemberFromGroup(groupId, currentMember.id);
+      navigate("/groups");
+    } catch (err) {
+      setMemberError(err.response?.data?.message || err.message || "Failed to leave group");
     }
   };
 
@@ -139,9 +138,22 @@ const GroupDetailsPage = () => {
       </AnimatePresence>
 
       {/* Leave Group Button */}
-      <div className="absolute bottom-6 right-6">
-        <Button className="mt-6">Leave Group</Button>
-      </div>
+      {currentMember && (
+        <div className="absolute bottom-6 right-6">
+          <Button onClick={() => setShowLeaveConfirm(true)} className="mt-6">
+            Leave Group
+          </Button>
+        </div>
+      )}
+
+      <ConfirmDialog
+        open={showLeaveConfirm}
+        title="Leave group?"
+        message="Are you sure you want to leave this group?"
+        confirmLabel="Leave"
+        onConfirm={handleConfirmLeaveGroup}
+        onCancel={() => setShowLeaveConfirm(false)}
+      />
     </PageShell>
   );
 };

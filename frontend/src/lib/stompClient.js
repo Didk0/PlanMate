@@ -3,13 +3,15 @@ import { Client } from "@stomp/stompjs";
 
 export function createStompClient({ onConnect, onDisconnect, onError } = {}) {
   const wsUrl = import.meta.env.VITE_WS_URL;
+  const log = import.meta.env.DEV ? console.log : () => {};
+  const warn = import.meta.env.DEV ? console.warn : () => {};
 
   const client = new Client({
     webSocketFactory: () => new SockJS(wsUrl),
     reconnectDelay: 5000,
-    debug: (str) => console.log("[STOMP]", str),
+    debug: (str) => log("[STOMP]", str),
     onConnect: (frame) => {
-      console.log("[STOMP] connected", frame.headers);
+      log("[STOMP] connected", frame.headers);
       onConnect?.(client, frame);
     },
     onStompError: (frame) => {
@@ -17,7 +19,7 @@ export function createStompClient({ onConnect, onDisconnect, onError } = {}) {
       onError?.(frame);
     },
     onWebSocketClose: (event) => {
-      console.warn("[STOMP] websocket closed", event);
+      warn("[STOMP] websocket closed", event);
       onDisconnect?.();
     },
   });

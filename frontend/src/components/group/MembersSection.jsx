@@ -6,12 +6,14 @@ import TextInput from "@/components/shared/TextInput";
 const MembersSection = ({ members, onAddMember, onRemoveMember, error }) => {
   const [showAddForm, setShowAddForm] = useState(false);
   const [username, setUsername] = useState("");
+  const [validationError, setValidationError] = useState(null);
 
   const handleAdd = () => {
     if (!username.trim()) {
-      alert("Please enter a name");
+      setValidationError("Please enter a name");
       return;
     }
+    setValidationError(null);
     onAddMember(username);
     setUsername("");
     setShowAddForm(false);
@@ -61,6 +63,8 @@ const MembersSection = ({ members, onAddMember, onRemoveMember, error }) => {
         <Button onClick={handleAdd} className="mt-2 md:mt-0 inline-block">
           Add Member
         </Button>
+
+        {validationError && <p className="text-red-700 font-semibold mt-4">{validationError}</p>}
       </CollapsibleSection>
 
       {error && <p className="text-red-700 font-semibold mt-4">{error}</p>}

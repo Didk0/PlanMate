@@ -9,11 +9,10 @@ const AuthBridge = () => {
   const { token, tokenData } = useContext(AuthContext);
   const dispatch = useDispatch();
 
+  setAuthToken(token);
   useProvisionUser(token, tokenData);
 
   useEffect(() => {
-    setAuthToken(token);
-
     if (token && tokenData) {
       const user = {
         name: tokenData.preferred_username,
