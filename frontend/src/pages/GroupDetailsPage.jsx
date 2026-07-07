@@ -2,74 +2,94 @@ import ExpensesSection from "@/components/group/ExpensesSection";
 import MembersSection from "@/components/group/MembersSection";
 import { AnimatePresence } from "framer-motion";
 import { motion } from "framer-motion";
-import { useEffect, useState } from "react";
-import { useDispatch, useSelector } from "react-redux";
+import { useCallback, useState } from "react";
 import { useParams } from "react-router-dom";
+import groupService from "@/api/groupService";
+import userService from "@/api/userService";
 import BackButton from "@/components/shared/BackButton";
 import Button from "@/components/shared/Button";
 import ErrorScreen from "@/components/shared/ErrorScreen";
 import LoadingScreen from "@/components/shared/LoadingScreen";
 import PageShell from "@/components/shared/PageShell";
+import { useAsyncData } from "@/hooks/useAsyncData";
 import { useGroupWebSocket } from "@/hooks/useGroupWebSocket";
-
-import { addMemberToGroup, loadGroupDetailsData, removeMemberFromGroup } from "@/store/actions";
 
 const GroupDetailsPage = () => {
   const { id } = useParams();
   const groupId = id;
 
-  const { isLoading, errorMessage } = useSelector((state) => state.errors);
+  const fetchDetails = useCallback(() => groupService.getGroupDetails(groupId), [groupId]);
+  const { data, isLoading, error } = useAsyncData(fetchDetails, [groupId]);
 
-  const [group, setGroup] = useState(null);
+  const [loadedData, setLoadedData] = useState(null);
   const [members, setMembers] = useState([]);
   const [expenses, setExpenses] = useState([]);
+  const [memberError, setMemberError] = useState(null);
 
   const [showExpenses, setShowExpenses] = useState(false);
 
-  const dispatch = useDispatch();
-
-  useEffect(() => {
-    dispatch(loadGroupDetailsData(groupId)).then((data) => {
-      if (data) {
-        setGroup(data.groupData);
-        setMembers(data.membersData);
-        setExpenses(data.expensesData);
-      }
-    });
-  }, [dispatch, groupId]);
+  if (data && data !== loadedData) {
+    setLoadedData(data);
+    setMembers(data.membersData);
+    setExpenses(data.expensesData);
+  }
 
   useGroupWebSocket(groupId, (_, message) => {
     const payload = JSON.parse(message.body);
     switch (payload.changeType) {
       case "ADD_MEMBER":
-        setMembers((prevMembers) => [...prevMembers, payload.member]);
+        setMembers((prevMembers) =>
+          prevMembers.some((m) => m.id === payload.member.id)
+            ? prevMembers
+            : [...prevMembers, payload.member]
+        );
         break;
       case "REMOVE_MEMBER":
         setMembers((prevMembers) => prevMembers.filter((m) => m.id !== payload.member.id));
         break;
       case "ADD_EXPENSE":
-        setExpenses((prevExpenses) => [...prevExpenses, payload.expense]);
+        setExpenses((prevExpenses) =>
+          prevExpenses.some((e) => e.id === payload.expense.id)
+            ? prevExpenses
+            : [...prevExpenses, payload.expense]
+        );
         break;
       default:
         break;
     }
   });
 
-  const handleAddMember = (username) => {
-    dispatch(addMemberToGroup(groupId, { username }));
+  const handleAddMember = async (username) => {
+    setMemberError(null);
+    try {
+      const addedMember = await userService.addMemberToGroup(groupId, { username });
+      setMembers((prev) =>
+        prev.some((m) => m.id === addedMember.id) ? prev : [...prev, addedMember]
+      );
+    } catch (err) {
+      setMemberError(err.response?.data?.message || err.message || "Failed to add member");
+    }
   };
 
   const handleRemoveMember = async (memberId) => {
-    dispatch(removeMemberFromGroup(groupId, memberId));
+    setMemberError(null);
+    try {
+      await userService.removeMemberFromGroup(groupId, memberId);
+      setMembers((prev) => prev.filter((m) => m.id !== memberId));
+    } catch (err) {
+      setMemberError(err.response?.data?.message || err.message || "Failed to remove member");
+    }
   };
 
-  if (errorMessage) {
-    return <ErrorScreen message={errorMessage} />;
+  if (error) {
+    return <ErrorScreen message={error} />;
   }
 
-  if (isLoading || !group || !members || !expenses) {
+  if (isLoading || !data) {
     return <LoadingScreen message="Loading group..." />;
   }
+
+  const group = data.groupData;
 
   return (
     <PageShell maxWidth="max-w-5xl" cardClassName="flex flex-col relative">
@@ -90,6 +110,7 @@ const GroupDetailsPage = () => {
           members={members}
           onAddMember={handleAddMember}
           onRemoveMember={handleRemoveMember}
+          error={memberError}
         />
       </section>
 

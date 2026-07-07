@@ -1,36 +1,33 @@
-import { useEffect, useState } from "react";
-import { useDispatch, useSelector } from "react-redux";
+import { useCallback } from "react";
 import { useParams } from "react-router-dom";
+import expenseService from "@/api/expenseService";
 import BackButton from "@/components/shared/BackButton";
 import ErrorScreen from "@/components/shared/ErrorScreen";
 import LoadingScreen from "@/components/shared/LoadingScreen";
 import PageShell from "@/components/shared/PageShell";
-import { calculateSettlements } from "@/store/actions";
+import { useAsyncData } from "@/hooks/useAsyncData";
 import { useGroupWebSocket } from "@/hooks/useGroupWebSocket";
 
 const SettlementsPage = () => {
   const { id } = useParams();
   const groupId = id;
-  const [settlements, setSettlements] = useState([]);
 
-  const { isLoading, errorMessage } = useSelector((state) => state.errors);
-
-  const dispatch = useDispatch();
-
-  useEffect(() => {
-    dispatch(calculateSettlements(groupId)).then((data) => setSettlements(data ?? []));
-  }, [dispatch, groupId]);
+  const fetchSettlements = useCallback(
+    () => expenseService.calculateSettlements(groupId),
+    [groupId]
+  );
+  const { data: settlements, isLoading, error, reload } = useAsyncData(fetchSettlements, [groupId]);
 
   useGroupWebSocket(groupId, (topic, message) => {
     if (!topic.endsWith("/settlements")) return;
     const payload = JSON.parse(message.body);
     if (payload.changeType === "SETTLEMENTS_INVALIDATED") {
-      dispatch(calculateSettlements(groupId)).then((data) => setSettlements(data ?? []));
+      reload();
     }
   });
 
-  if (errorMessage) {
-    return <ErrorScreen message={errorMessage} />;
+  if (error) {
+    return <ErrorScreen message={error} />;
   }
 
   if (isLoading) {

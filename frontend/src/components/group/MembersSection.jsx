@@ -3,7 +3,7 @@ import Button from "@/components/shared/Button";
 import CollapsibleSection from "@/components/shared/CollapsibleSection";
 import TextInput from "@/components/shared/TextInput";
 
-const MembersSection = ({ members, onAddMember, onRemoveMember }) => {
+const MembersSection = ({ members, onAddMember, onRemoveMember, error }) => {
   const [showAddForm, setShowAddForm] = useState(false);
   const [username, setUsername] = useState("");
 
@@ -62,6 +62,8 @@ const MembersSection = ({ members, onAddMember, onRemoveMember }) => {
           Add Member
         </Button>
       </CollapsibleSection>
+
+      {error && <p className="text-red-700 font-semibold mt-4">{error}</p>}
     </section>
   );
 };

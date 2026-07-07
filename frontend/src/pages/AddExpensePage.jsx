@@ -1,40 +1,34 @@
-import { useEffect, useState } from "react";
-import { useDispatch, useSelector } from "react-redux";
+import { useCallback, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import expenseService from "@/api/expenseService";
+import userService from "@/api/userService";
 import BackButton from "@/components/shared/BackButton";
 import Button from "@/components/shared/Button";
 import ErrorScreen from "@/components/shared/ErrorScreen";
 import LoadingScreen from "@/components/shared/LoadingScreen";
 import PageShell from "@/components/shared/PageShell";
 import TextInput, { inputClasses } from "@/components/shared/TextInput";
-import { createExpense, getGroupMembers } from "@/store/actions";
+import { useAsyncData } from "@/hooks/useAsyncData";
 
 const AddExpensePage = () => {
   const { id } = useParams();
   const groupId = id;
   const navigate = useNavigate();
 
-  const { isLoading, errorMessage } = useSelector((state) => state.errors);
+  const fetchMembers = useCallback(() => userService.getGroupMembers(groupId), [groupId]);
+  const { data: members, isLoading, error } = useAsyncData(fetchMembers, [groupId]);
 
   const [description, setDescription] = useState("");
   const [amount, setAmount] = useState("");
   const [paidByUsername, setPaidByUsername] = useState("");
   const [shareAmounts, setShareAmounts] = useState({});
-  const [members, setMembers] = useState([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState(null);
 
-  const dispatch = useDispatch();
+  const effectivePaidBy = paidByUsername || members?.[0]?.username || "";
 
-  useEffect(() => {
-    dispatch(getGroupMembers(groupId)).then((membersData) => {
-      setMembers(membersData ?? []);
-      if (membersData?.length > 0) {
-        setPaidByUsername(membersData[0].username);
-      }
-    });
-  }, [dispatch, groupId]);
-
-  const participants = members
-    .filter((member) => member.username !== paidByUsername)
+  const participants = (members ?? [])
+    .filter((member) => member.username !== effectivePaidBy)
     .map((member) => ({
       memberId: member.id,
       userName: member.username,
@@ -50,18 +44,27 @@ const AddExpensePage = () => {
     const expenseData = {
       description,
       amount: parseFloat(amount),
-      paidByUsername,
-      participants: participants.map((p) => ({
-        userName: p.userName,
-        shareAmount: parseFloat(p.shareAmount || 0),
-      })),
+      paidByUsername: effectivePaidBy,
+      participants: participants
+        .filter((p) => parseFloat(p.shareAmount || 0) > 0)
+        .map((p) => ({
+          userName: p.userName,
+          shareAmount: parseFloat(p.shareAmount || 0),
+        })),
     };
-    await dispatch(createExpense(groupId, expenseData));
-    navigate(`/groups/${groupId}`);
+    setIsSubmitting(true);
+    setSubmitError(null);
+    try {
+      await expenseService.createExpense(groupId, expenseData);
+      navigate(`/groups/${groupId}`);
+    } catch (err) {
+      setSubmitError(err.response?.data?.message || err.message || "Failed to create expense");
+      setIsSubmitting(false);
+    }
   };
 
-  if (errorMessage) {
-    return <ErrorScreen message={errorMessage} />;
+  if (error) {
+    return <ErrorScreen message={error} />;
   }
 
   if (isLoading) {
@@ -100,12 +103,12 @@ const AddExpensePage = () => {
       </label>
       <select
         id="paidBy"
-        value={paidByUsername}
+        value={effectivePaidBy}
         onChange={(event) => setPaidByUsername(event.target.value)}
         className={`${inputClasses} w-full mb-6`}
         required
       >
-        {members.map((member) => (
+        {(members ?? []).map((member) => (
           <option key={member.id} value={member.username}>
             {member.username}
           </option>
@@ -134,8 +137,10 @@ const AddExpensePage = () => {
         ))}
       </div>
 
-      <Button type="submit" className="w-full">
-        Save Expense
+      {submitError && <p className="text-red-700 font-semibold mb-4">{submitError}</p>}
+
+      <Button type="submit" disabled={isSubmitting} className="w-full">
+        {isSubmitting ? "Saving..." : "Save Expense"}
       </Button>
     </PageShell>
   );

@@ -1,37 +1,22 @@
-import { useEffect, useState } from "react";
-import { useDispatch, useSelector } from "react-redux";
+import { useCallback, useState } from "react";
 import { Link } from "react-router-dom";
+import groupService from "@/api/groupService";
 import Button from "@/components/shared/Button";
 import CollapsibleSection from "@/components/shared/CollapsibleSection";
 import ErrorScreen from "@/components/shared/ErrorScreen";
 import LoadingScreen from "@/components/shared/LoadingScreen";
 import PageShell from "@/components/shared/PageShell";
 import TextInput from "@/components/shared/TextInput";
-import { createGroup, loadAllGroups } from "@/store/actions";
+import { useAsyncData } from "@/hooks/useAsyncData";
 
 const GroupsPage = () => {
-  const { isLoading, errorMessage } = useSelector((state) => state.errors);
-
-  const [groups, setGroups] = useState([]);
-
-  const dispatch = useDispatch();
-
-  useEffect(() => {
-    const fetchGroups = async () => {
-      try {
-        const data = await dispatch(loadAllGroups());
-        if (data) {
-          setGroups(data);
-        }
-      } catch (error) {
-        console.error("Failed to refresh token or load groups", error);
-      }
-    };
-    fetchGroups();
-  }, [dispatch]);
+  const fetchGroups = useCallback(() => groupService.getAllGroups(), []);
+  const { data: groups, setData: setGroups, isLoading, error } = useAsyncData(fetchGroups, []);
 
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [newGroup, setNewGroup] = useState({ name: "", description: "" });
+  const [isCreating, setIsCreating] = useState(false);
+  const [createError, setCreateError] = useState(null);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -41,26 +26,28 @@ const GroupsPage = () => {
   const handleCreateGroup = async () => {
     const { name, description } = newGroup;
     if (!name.trim() || !description.trim()) {
-      alert("Please enter both a group name and description.");
+      setCreateError("Please enter both a group name and description.");
       return;
     }
+    setIsCreating(true);
+    setCreateError(null);
     try {
-      const createdGroup = await dispatch(createGroup(newGroup));
-      if (createdGroup) {
-        setGroups((prev) => [...prev, createdGroup]);
-        setNewGroup({ name: "", description: "" });
-        setShowCreateForm(false);
-      }
-    } catch (error) {
-      console.error("Create group failed", error);
+      const createdGroup = await groupService.createGroup(newGroup);
+      setGroups((prev) => [...(prev ?? []), createdGroup]);
+      setNewGroup({ name: "", description: "" });
+      setShowCreateForm(false);
+    } catch (err) {
+      setCreateError(err.response?.data?.message || err.message || "Failed to create group");
+    } finally {
+      setIsCreating(false);
     }
   };
 
-  if (errorMessage) {
-    return <ErrorScreen message={errorMessage} />;
+  if (error) {
+    return <ErrorScreen message={error} />;
   }
 
-  if (isLoading || !groups) {
+  if (isLoading) {
     return <LoadingScreen message="Loading groups..." />;
   }
 
@@ -113,9 +100,15 @@ const GroupsPage = () => {
           className="w-full md:w-auto mb-4 md:mb-0 md:mr-4"
         />
 
-        <Button onClick={handleCreateGroup} className="mt-2 md:mt-0 inline-block">
-          Create Group
+        <Button
+          onClick={handleCreateGroup}
+          disabled={isCreating}
+          className="mt-2 md:mt-0 inline-block"
+        >
+          {isCreating ? "Creating..." : "Create Group"}
         </Button>
+
+        {createError && <p className="text-red-700 font-semibold mt-4">{createError}</p>}
       </CollapsibleSection>
     </PageShell>
   );
