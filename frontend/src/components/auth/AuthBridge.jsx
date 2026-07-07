@@ -1,13 +1,16 @@
 import { useContext, useEffect } from "react";
 import { AuthContext } from "react-oauth2-code-pkce";
 import { useDispatch } from "react-redux";
-import { clearAuthData, setAuthData } from "@/store/actions";
+import { setAuthToken } from "@/api/client";
+import { loginUser, logoutUser } from "@/store/authSlice";
 
-const AuthSync = () => {
-  const { tokenData, token } = useContext(AuthContext);
+const AuthBridge = () => {
+  const { token, tokenData } = useContext(AuthContext);
   const dispatch = useDispatch();
 
   useEffect(() => {
+    setAuthToken(token);
+
     if (token && tokenData) {
       const user = {
         name: tokenData.preferred_username,
@@ -15,13 +18,13 @@ const AuthSync = () => {
         firstName: tokenData.given_name,
         lastName: tokenData.family_name,
       };
-      dispatch(setAuthData(user, token));
+      dispatch(loginUser({ user, token }));
     } else {
-      dispatch(clearAuthData());
+      dispatch(logoutUser());
     }
   }, [token, tokenData, dispatch]);
 
   return null;
 };
 
-export default AuthSync;
+export default AuthBridge;

@@ -1,5 +1,4 @@
-import ApiTokenSetter from "@/components/auth/ApiTokenSetter";
-import AuthSync from "@/components/auth/AuthSync";
+import AuthBridge from "@/components/auth/AuthBridge";
 import Navbar from "@/components/layout/Navbar";
 import AddExpensePage from "@/pages/AddExpensePage";
 import GroupDetailsPage from "@/pages/GroupDetailsPage";
@@ -11,8 +10,7 @@ import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
 function App() {
   return (
     <Router>
-      <AuthSync />
-      <ApiTokenSetter />
+      <AuthBridge />
       <Navbar />
       <Routes>
         <Route path="/" element={<HomePage />} />

@@ -5,12 +5,19 @@ const api = axios.create({
   timeout: 10000,
 });
 
+let authToken = null;
+
 export const setAuthToken = (token) => {
-  if (token) {
-    api.defaults.headers.common["Authorization"] = `Bearer ${token}`;
-  } else {
-    delete api.defaults.headers.common["Authorization"];
-  }
+  authToken = token;
 };
+
+api.interceptors.request.use((config) => {
+  if (authToken) {
+    config.headers.Authorization = `Bearer ${authToken}`;
+  } else {
+    delete config.headers.Authorization;
+  }
+  return config;
+});
 
 export default api;

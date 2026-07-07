@@ -3,7 +3,7 @@ import { useContext, useEffect } from "react";
 import { AuthContext } from "react-oauth2-code-pkce";
 import { useDispatch, useSelector } from "react-redux";
 import { Link, useNavigate } from "react-router-dom";
-import { clearAuthData } from "@/store/actions";
+import { logoutUser } from "@/store/authSlice";
 
 const Navbar = () => {
   const { token, tokenData, logIn, logOut } = useContext(AuthContext);
@@ -28,7 +28,7 @@ const Navbar = () => {
           lastName: tokenData.family_name,
           keycloakId: tokenData.sub,
         };
-        userService.createUser(userData, token).then(() => {
+        userService.createUser(userData).then(() => {
           localStorage.setItem(userCreatedKey, "true");
         });
       }
@@ -41,7 +41,7 @@ const Navbar = () => {
         returnTo: "/",
       },
     });
-    dispatch(clearAuthData());
+    dispatch(logoutUser());
     navigate("/");
   };
 

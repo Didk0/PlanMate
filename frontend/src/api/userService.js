@@ -8,12 +8,7 @@ const userService = {
 
   removeMemberFromGroup: (groupId, memberId) => api.delete(`groups/${groupId}/users/${memberId}`),
 
-  createUser: (userData, token) =>
-    api
-      .post("users", userData, {
-        headers: { Authorization: `Bearer ${token}` },
-      })
-      .then((res) => res.data),
+  createUser: (userData) => api.post("users", userData).then((res) => res.data),
 };
 
 export default userService;
