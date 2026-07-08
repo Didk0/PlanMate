@@ -1,3 +1,10 @@
+import { motion } from "framer-motion";
+
+const MOTION_TAGS = {
+  div: motion.div,
+  form: motion.form,
+};
+
 const PageShell = ({
   as: Tag = "div",
   maxWidth = "max-w-4xl",
@@ -7,18 +14,23 @@ const PageShell = ({
   children,
   ...rest
 }) => {
+  const MotionTag = MOTION_TAGS[Tag] ?? motion.div;
+
   return (
     <div
-      className={`min-h-screen bg-gradient-to-r from-yellow-400 via-yellow-300 to-yellow-200 px-6 py-12 flex flex-col items-center ${
+      className={`min-h-screen bg-canvas px-4 sm:px-6 py-10 flex flex-col items-center ${
         center ? "justify-center" : ""
       }`}
     >
-      <Tag
-        className={`w-full ${maxWidth} bg-yellow-100 bg-opacity-80 rounded-lg shadow-lg ${padding} ${cardClassName}`}
+      <MotionTag
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.25, ease: "easeOut" }}
+        className={`w-full ${maxWidth} bg-surface rounded-xl border border-slate-700 shadow-sm ${padding} ${cardClassName}`}
         {...rest}
       >
         {children}
-      </Tag>
+      </MotionTag>
     </div>
   );
 };

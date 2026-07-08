@@ -1,69 +1,56 @@
 import { motion } from "framer-motion";
-import { Link } from "react-router-dom";
-
-const listVariants = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: {
-      staggerChildren: 0.12,
-      delayChildren: 0.1,
-    },
-  },
-};
-
-const itemVariants = {
-  hidden: { opacity: 0, y: 20 },
-  visible: {
-    opacity: 1,
-    y: 0,
-    transition: { type: "spring", stiffness: 300, damping: 24 },
-  },
-};
+import EmptyState from "@/components/shared/EmptyState";
+import LinkButton from "@/components/shared/LinkButton";
+import { itemVariants, listVariants } from "@/lib/motion";
 
 const ExpensesSection = ({ expenses, groupId }) => {
   return (
     <section>
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-2xl font-extrabold text-yellow-900 drop-shadow-md">Expenses</h2>
-        <Link
-          to={`/groups/${groupId}/expense`}
-          className="px-5 py-2 mb-2 bg-yellow-600 text-yellow-50 rounded-md shadow hover:bg-yellow-700 transition"
-        >
+        <h2 className="text-xl font-semibold text-slate-100">Expenses</h2>
+        <LinkButton to={`/groups/${groupId}/expense`} size="sm">
           Create Expense
-        </Link>
+        </LinkButton>
       </div>
       {expenses.length === 0 ? (
-        <p className="text-yellow-900 text-lg">No expenses yet</p>
+        <EmptyState
+          title="No expenses yet"
+          description="Add an expense to start splitting costs."
+          action={
+            <LinkButton to={`/groups/${groupId}/expense`} size="sm">
+              Create Expense
+            </LinkButton>
+          }
+        />
       ) : (
-        <motion.ul className="space-y-4" variants={listVariants} initial="hidden" animate="visible">
+        <motion.ul className="space-y-3" variants={listVariants} initial="hidden" animate="visible">
           {expenses.map((expense) => (
             <motion.li
               key={expense.id}
-              className="bg-yellow-100 rounded-md p-4 shadow hover:shadow-lg transition cursor-default"
+              className="rounded-xl border border-slate-700 bg-surface p-4 shadow-sm transition hover:shadow-md"
               variants={itemVariants}
-              whileHover={{ scale: 1.03 }}
+              whileHover={{ scale: 1.01 }}
             >
               <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-4">
                 {/* Expense main info */}
                 <div className="flex-1">
-                  <div className="font-semibold text-yellow-900 text-lg">{expense.description}</div>
-                  <div className="flex flex-wrap gap-6 text-yellow-800 text-sm mt-2">
-                    <div>Amount: ${expense.amount.toFixed(2)}</div>
+                  <div className="font-semibold text-slate-100 text-lg">{expense.description}</div>
+                  <div className="flex flex-wrap gap-x-6 gap-y-1 text-slate-400 text-sm mt-1">
+                    <div className="font-semibold text-slate-100">${expense.amount.toFixed(2)}</div>
                     <div>
-                      Paid by: {expense.paidByFirstName} {expense.paidByLastName}
+                      Paid by {expense.paidByFirstName} {expense.paidByLastName}
                     </div>
                   </div>
                 </div>
                 {/* Participants list */}
                 {expense.participants?.length > 0 && (
-                  <div className="mt-4 md:mt-0 md:ml-6 min-w-[180px] bg-yellow-200 rounded p-3">
-                    <h4 className="font-semibold mb-2 text-yellow-900">Participants:</h4>
-                    <ul className="list-disc list-inside space-y-1 text-yellow-900 text-sm">
+                  <div className="mt-4 md:mt-0 md:ml-6 min-w-[180px] bg-slate-900 rounded-lg p-3">
+                    <h4 className="font-semibold mb-2 text-slate-300 text-sm">Participants</h4>
+                    <ul className="space-y-1 text-slate-300 text-sm">
                       {expense.participants
                         .filter((participant) => participant.shareAmount > 0)
                         .map((participant) => (
-                          <li key={participant.id} className="flex justify-between">
+                          <li key={participant.id} className="flex justify-between gap-4">
                             <span>
                               {participant.firstName} {participant.lastName}
                             </span>
@@ -82,12 +69,9 @@ const ExpensesSection = ({ expenses, groupId }) => {
       )}
 
       {/* Settle Debts button */}
-      <Link
-        to={`/groups/${groupId}/settlements`}
-        className="mt-10 inline-block bg-yellow-600 text-yellow-50 px-6 py-3 rounded-md shadow hover:bg-yellow-700 transition font-semibold"
-      >
+      <LinkButton to={`/groups/${groupId}/settlements`} variant="secondary" className="mt-8">
         Settle Debts
-      </Link>
+      </LinkButton>
     </section>
   );
 };

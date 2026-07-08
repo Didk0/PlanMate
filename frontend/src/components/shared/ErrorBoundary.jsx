@@ -19,8 +19,8 @@ class ErrorBoundary extends Component {
   render() {
     if (this.state.hasError) {
       return (
-        <div className="min-h-screen flex flex-col items-center justify-center gap-6 px-4">
-          <p className="text-red-700 font-semibold text-lg text-center">
+        <div className="min-h-screen bg-canvas flex flex-col items-center justify-center gap-6 px-4">
+          <p className="text-slate-100 font-semibold text-lg text-center">
             Something went wrong. Please reload the page.
           </p>
           <Button onClick={this.handleReload}>Reload</Button>

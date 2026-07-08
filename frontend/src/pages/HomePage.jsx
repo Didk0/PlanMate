@@ -18,13 +18,11 @@ const HomePage = () => {
 
   return (
     <PageShell center maxWidth="max-w-3xl" padding="p-20" cardClassName="text-center">
-      <h1 className="text-4xl md:text-5xl font-extrabold text-yellow-900 mb-8 drop-shadow-md">
-        Welcome To PlanMate
-      </h1>
-      <p className="text-lg md:text-xl text-yellow-900 mb-8 max-w-xl mx-auto">
+      <h1 className="text-4xl md:text-5xl font-bold text-slate-100 mb-6">Welcome to PlanMate</h1>
+      <p className="text-lg md:text-xl text-slate-400 mb-8 max-w-xl mx-auto">
         Track group expenses, view settlements, and keep everything balanced easily.
       </p>
-      <Button onClick={handleGetStarted} className="mt-6">
+      <Button size="lg" onClick={handleGetStarted}>
         Get Started
       </Button>
     </PageShell>

@@ -7,7 +7,7 @@ const BackButton = ({ to, className = "" }) => {
     <button
       type="button"
       onClick={() => navigate(to)}
-      className={`font-semibold text-yellow-700 hover:text-yellow-900 transition ${className}`}
+      className={`inline-flex items-center gap-1 text-sm font-medium text-slate-400 hover:text-slate-100 transition ${className}`}
     >
       &larr; Back
     </button>

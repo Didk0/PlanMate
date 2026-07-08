@@ -1,10 +1,24 @@
-const Button = ({ type = "button", className = "", children, ...rest }) => {
+import Spinner from "@/components/shared/Spinner";
+import { buttonClasses } from "@/lib/buttonClasses";
+
+const Button = ({
+  type = "button",
+  variant = "primary",
+  size = "md",
+  isLoading = false,
+  disabled,
+  className = "",
+  children,
+  ...rest
+}) => {
   return (
     <button
       type={type}
-      className={`bg-yellow-600 hover:bg-yellow-700 text-yellow-50 px-6 py-3 font-semibold rounded-md shadow-md transition ${className}`}
+      disabled={isLoading || disabled}
+      className={`${buttonClasses(variant, size)} ${className}`}
       {...rest}
     >
+      {isLoading && <Spinner size="sm" />}
       {children}
     </button>
   );

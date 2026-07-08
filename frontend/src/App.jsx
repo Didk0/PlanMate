@@ -1,4 +1,5 @@
 import { lazy, Suspense } from "react";
+import { Toaster } from "react-hot-toast";
 import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
 import AuthBridge from "@/components/auth/AuthBridge";
 import RequireAuth from "@/components/auth/RequireAuth";
@@ -18,6 +19,18 @@ function App() {
     <Router>
       <AuthBridge />
       <Navbar />
+      <Toaster
+        position="top-right"
+        toastOptions={{
+          className: "rounded-lg border border-slate-700 bg-slate-800 text-slate-100 shadow-md",
+          success: {
+            iconTheme: { primary: "var(--color-success-500)", secondary: "var(--color-surface)" },
+          },
+          error: {
+            iconTheme: { primary: "var(--color-danger-500)", secondary: "var(--color-surface)" },
+          },
+        }}
+      />
       <ErrorBoundary>
         <Suspense fallback={<LoadingScreen />}>
           <Routes>

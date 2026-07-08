@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { getErrorMessage } from "@/lib/getErrorMessage";
 
 export function useAsyncData(fetcher, deps) {
   const [reloadIndex, setReloadIndex] = useState(0);
@@ -29,7 +30,7 @@ export function useAsyncData(fetcher, deps) {
             ? {
                 ...prev,
                 data: null,
-                error: err.response?.data?.message || err.message || "Something went wrong",
+                error: getErrorMessage(err),
                 isLoading: false,
               }
             : prev

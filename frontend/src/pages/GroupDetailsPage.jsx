@@ -11,10 +11,11 @@ import BackButton from "@/components/shared/BackButton";
 import Button from "@/components/shared/Button";
 import ConfirmDialog from "@/components/shared/ConfirmDialog";
 import ErrorScreen from "@/components/shared/ErrorScreen";
-import LoadingScreen from "@/components/shared/LoadingScreen";
 import PageShell from "@/components/shared/PageShell";
+import Skeleton from "@/components/shared/Skeleton";
 import { useAsyncData } from "@/hooks/useAsyncData";
 import { useGroupWebSocket } from "@/hooks/useGroupWebSocket";
+import { notifyError, notifySuccess } from "@/lib/notify";
 
 const GroupDetailsPage = () => {
   const { id } = useParams();
@@ -28,7 +29,6 @@ const GroupDetailsPage = () => {
   const [loadedData, setLoadedData] = useState(null);
   const [members, setMembers] = useState([]);
   const [expenses, setExpenses] = useState([]);
-  const [memberError, setMemberError] = useState(null);
 
   const [showExpenses, setShowExpenses] = useState(false);
   const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
@@ -46,24 +46,24 @@ const GroupDetailsPage = () => {
   });
 
   const handleAddMember = async (username) => {
-    setMemberError(null);
     try {
       const addedMember = await userService.addMemberToGroup(groupId, { username });
       setMembers((prev) =>
         prev.some((m) => m.id === addedMember.id) ? prev : [...prev, addedMember]
       );
+      notifySuccess("Member added");
     } catch (err) {
-      setMemberError(err.response?.data?.message || err.message || "Failed to add member");
+      notifyError(err, "Failed to add member");
     }
   };
 
   const handleRemoveMember = async (memberId) => {
-    setMemberError(null);
     try {
       await userService.removeMemberFromGroup(groupId, memberId);
       setMembers((prev) => prev.filter((m) => m.id !== memberId));
+      notifySuccess("Member removed");
     } catch (err) {
-      setMemberError(err.response?.data?.message || err.message || "Failed to remove member");
+      notifyError(err, "Failed to remove member");
     }
   };
 
@@ -74,33 +74,46 @@ const GroupDetailsPage = () => {
     setShowLeaveConfirm(false);
     try {
       await userService.removeMemberFromGroup(groupId, currentMember.id);
+      notifySuccess("You left the group");
       navigate("/groups");
     } catch (err) {
-      setMemberError(err.response?.data?.message || err.message || "Failed to leave group");
+      notifyError(err, "Failed to leave group");
     }
   };
 
   if (error) {
-    return <ErrorScreen message={error} />;
+    return <ErrorScreen message={error} onRetry={reload} />;
   }
 
   if (isLoading || !data) {
-    return <LoadingScreen message="Loading group..." />;
+    return (
+      <PageShell maxWidth="max-w-5xl" cardClassName="flex flex-col">
+        <Skeleton className="h-4 w-24 mb-6" />
+        <Skeleton className="h-9 w-2/3 mb-3" />
+        <Skeleton className="h-5 w-1/2 mb-8" />
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mb-8">
+          <Skeleton className="h-16 w-full" />
+          <Skeleton className="h-16 w-full" />
+          <Skeleton className="h-16 w-full" />
+        </div>
+        <Skeleton className="h-10 w-40 mx-auto" />
+      </PageShell>
+    );
   }
 
   const group = data.groupData;
 
   return (
-    <PageShell maxWidth="max-w-5xl" cardClassName="flex flex-col relative">
+    <PageShell maxWidth="max-w-5xl" cardClassName="flex flex-col">
       {/* Back Button */}
       <div className="flex justify-start mb-3">
         <BackButton to="/groups" />
       </div>
 
       {/* Header */}
-      <header className="space-y-4 mb-6">
-        <h1 className="text-4xl font-extrabold text-yellow-900 drop-shadow-md">{group.name}</h1>
-        {group.description && <p className="text-yellow-900 text-lg">{group.description}</p>}
+      <header className="space-y-2 mb-6">
+        <h1 className="text-3xl font-bold text-slate-100">{group.name}</h1>
+        {group.description && <p className="text-slate-400">{group.description}</p>}
       </header>
 
       {/* Members Section */}
@@ -109,13 +122,12 @@ const GroupDetailsPage = () => {
           members={members}
           onAddMember={handleAddMember}
           onRemoveMember={handleRemoveMember}
-          error={memberError}
         />
       </section>
 
       {/* Toggle Expenses Button */}
       <div className="flex justify-center">
-        <Button onClick={() => setShowExpenses(!showExpenses)} className="mb-6">
+        <Button variant="secondary" onClick={() => setShowExpenses(!showExpenses)} className="mb-6">
           {showExpenses ? "Hide Expenses" : "Show Expenses"}
         </Button>
       </div>
@@ -125,11 +137,10 @@ const GroupDetailsPage = () => {
         {showExpenses && (
           <motion.div
             key="expenses"
-            initial={{ opacity: 0, height: 0, scaleY: 0, overflow: "hidden" }}
-            animate={{ opacity: 1, height: "auto", scaleY: 1 }}
-            exit={{ opacity: 0, height: 0, scaleY: 0, overflow: "hidden" }}
-            transition={{ duration: 0.4, ease: "easeInOut" }}
-            style={{ transformOrigin: "top" }}
+            initial={{ opacity: 0, height: 0, overflow: "hidden" }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0, overflow: "hidden" }}
+            transition={{ duration: 0.3, ease: "easeInOut" }}
             className="overflow-hidden"
           >
             <ExpensesSection expenses={expenses} groupId={groupId} />
@@ -137,10 +148,10 @@ const GroupDetailsPage = () => {
         )}
       </AnimatePresence>
 
-      {/* Leave Group Button */}
+      {/* Leave Group */}
       {currentMember && (
-        <div className="absolute bottom-6 right-6">
-          <Button onClick={() => setShowLeaveConfirm(true)} className="mt-6">
+        <div className="mt-8 pt-6 border-t border-slate-700 flex justify-end">
+          <Button variant="danger" onClick={() => setShowLeaveConfirm(true)}>
             Leave Group
           </Button>
         </div>
@@ -148,6 +159,7 @@ const GroupDetailsPage = () => {
 
       <ConfirmDialog
         open={showLeaveConfirm}
+        variant="danger"
         title="Leave group?"
         message="Are you sure you want to leave this group?"
         confirmLabel="Leave"

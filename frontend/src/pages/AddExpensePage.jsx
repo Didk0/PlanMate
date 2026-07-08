@@ -5,10 +5,11 @@ import userService from "@/api/userService";
 import BackButton from "@/components/shared/BackButton";
 import Button from "@/components/shared/Button";
 import ErrorScreen from "@/components/shared/ErrorScreen";
-import LoadingScreen from "@/components/shared/LoadingScreen";
 import PageShell from "@/components/shared/PageShell";
+import Skeleton from "@/components/shared/Skeleton";
 import TextInput, { inputClasses } from "@/components/shared/TextInput";
 import { useAsyncData } from "@/hooks/useAsyncData";
+import { notifyError, notifySuccess } from "@/lib/notify";
 
 const AddExpensePage = () => {
   const { id } = useParams();
@@ -16,14 +17,13 @@ const AddExpensePage = () => {
   const navigate = useNavigate();
 
   const fetchMembers = useCallback(() => userService.getGroupMembers(groupId), [groupId]);
-  const { data: members, isLoading, error } = useAsyncData(fetchMembers, [groupId]);
+  const { data: members, isLoading, error, reload } = useAsyncData(fetchMembers, [groupId]);
 
   const [description, setDescription] = useState("");
   const [amount, setAmount] = useState("");
   const [paidByUsername, setPaidByUsername] = useState("");
   const [shareAmounts, setShareAmounts] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [submitError, setSubmitError] = useState(null);
 
   const effectivePaidBy = paidByUsername || members?.[0]?.username || "";
 
@@ -53,22 +53,32 @@ const AddExpensePage = () => {
         })),
     };
     setIsSubmitting(true);
-    setSubmitError(null);
     try {
       await expenseService.createExpense(groupId, expenseData);
+      notifySuccess("Expense created");
       navigate(`/groups/${groupId}`);
     } catch (err) {
-      setSubmitError(err.response?.data?.message || err.message || "Failed to create expense");
+      notifyError(err, "Failed to create expense");
       setIsSubmitting(false);
     }
   };
 
   if (error) {
-    return <ErrorScreen message={error} />;
+    return <ErrorScreen message={error} onRetry={reload} />;
   }
 
   if (isLoading) {
-    return <LoadingScreen />;
+    return (
+      <PageShell maxWidth="max-w-lg">
+        <Skeleton className="h-4 w-24 mb-6" />
+        <Skeleton className="h-9 w-1/2 mb-6" />
+        <Skeleton className="h-11 w-full mb-5" />
+        <Skeleton className="h-11 w-full mb-5" />
+        <Skeleton className="h-11 w-full mb-6" />
+        <Skeleton className="h-24 w-full mb-6" />
+        <Skeleton className="h-11 w-full" />
+      </PageShell>
+    );
   }
 
   return (
@@ -76,9 +86,13 @@ const AddExpensePage = () => {
       {/* Back Button */}
       <BackButton to={`/groups/${groupId}`} className="mb-6" />
 
-      <h1 className="text-3xl font-extrabold text-yellow-900 mb-6 drop-shadow-md">Add Expense</h1>
+      <h1 className="text-3xl font-bold text-slate-100 mb-6">Add Expense</h1>
 
+      <label htmlFor="description" className="block mb-2 font-medium text-slate-300 text-sm">
+        Description
+      </label>
       <TextInput
+        id="description"
         type="text"
         placeholder="Description"
         value={description}
@@ -87,7 +101,11 @@ const AddExpensePage = () => {
         required
       />
 
+      <label htmlFor="amount" className="block mb-2 font-medium text-slate-300 text-sm">
+        Amount
+      </label>
       <TextInput
+        id="amount"
         type="number"
         placeholder="Amount"
         value={amount}
@@ -98,8 +116,8 @@ const AddExpensePage = () => {
         required
       />
 
-      <label htmlFor="paidBy" className="block mb-2 font-semibold text-yellow-900">
-        Select payer
+      <label htmlFor="paidBy" className="block mb-2 font-medium text-slate-300 text-sm">
+        Paid by
       </label>
       <select
         id="paidBy"
@@ -115,15 +133,15 @@ const AddExpensePage = () => {
         ))}
       </select>
 
-      <h3 className="text-xl font-semibold mb-4 text-yellow-900 drop-shadow-sm">Participants:</h3>
+      <h3 className="text-xl font-semibold mb-3 text-slate-100">Participants</h3>
 
-      <div className="space-y-4 mb-6">
+      <div className="space-y-3 mb-6 rounded-lg border border-slate-700 bg-slate-900 p-4">
         {participants.map((participant) => (
           <div
             key={participant.memberId}
             className="flex items-center gap-4 flex-wrap md:flex-nowrap"
           >
-            <span className="w-32 font-medium text-yellow-900">{participant.userName}</span>
+            <span className="w-32 font-medium text-slate-300 text-sm">{participant.userName}</span>
             <TextInput
               type="number"
               placeholder="Share Amount"
@@ -137,10 +155,8 @@ const AddExpensePage = () => {
         ))}
       </div>
 
-      {submitError && <p className="text-red-700 font-semibold mb-4">{submitError}</p>}
-
-      <Button type="submit" disabled={isSubmitting} className="w-full">
-        {isSubmitting ? "Saving..." : "Save Expense"}
+      <Button type="submit" isLoading={isSubmitting} className="w-full">
+        Save Expense
       </Button>
     </PageShell>
   );

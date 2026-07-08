@@ -2,6 +2,7 @@ import { useContext } from "react";
 import { AuthContext } from "react-oauth2-code-pkce";
 import { useDispatch, useSelector } from "react-redux";
 import { Link, useNavigate } from "react-router-dom";
+import Button from "@/components/shared/Button";
 import { logoutUser } from "@/store/authSlice";
 
 const Navbar = () => {
@@ -25,19 +26,16 @@ const Navbar = () => {
   };
 
   return (
-    <nav className="bg-yellow-600 text-white p-4 shadow-md">
-      <div className="max-w-6xl mx-auto flex space-x-15">
-        <Link
-          to="/"
-          className="text-lg font-medium hover:text-yellow-300 hover:underline transition-colors duration-200"
-        >
-          Home
+    <nav className="sticky top-0 z-40 border-b border-slate-800 bg-slate-900">
+      <div className="mx-auto flex max-w-6xl items-center gap-6 px-4 py-3 sm:px-6">
+        <Link to="/" className="text-lg font-bold text-slate-100">
+          Plan<span className="text-primary-400">Mate</span>
         </Link>
 
         {token && (
           <Link
             to="/groups"
-            className="text-lg font-medium hover:text-yellow-300 hover:underline transition-colors duration-200"
+            className="text-sm font-medium text-slate-400 transition hover:text-slate-100"
           >
             Groups
           </Link>
@@ -45,19 +43,13 @@ const Navbar = () => {
 
         <div className="ml-auto">
           {token ? (
-            <button
-              onClick={handleLogout}
-              className="text-lg font-medium hover:text-yellow-300 hover:underline transition-colors duration-200 bg-transparent border-none cursor-pointer"
-            >
+            <Button variant="ghost" size="sm" onClick={handleLogout}>
               Logout ({user?.name})
-            </button>
+            </Button>
           ) : (
-            <button
-              onClick={handleLogin}
-              className="text-lg font-medium hover:text-yellow-300 hover:underline transition-colors duration-200 bg-transparent border-none cursor-pointer"
-            >
+            <Button size="sm" onClick={handleLogin}>
               Login
-            </button>
+            </Button>
           )}
         </div>
       </div>

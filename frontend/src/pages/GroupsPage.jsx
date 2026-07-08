@@ -1,17 +1,28 @@
+import { motion } from "framer-motion";
 import { useCallback, useState } from "react";
 import { Link } from "react-router-dom";
 import groupService from "@/api/groupService";
+import Alert from "@/components/shared/Alert";
 import Button from "@/components/shared/Button";
 import CollapsibleSection from "@/components/shared/CollapsibleSection";
+import EmptyState from "@/components/shared/EmptyState";
 import ErrorScreen from "@/components/shared/ErrorScreen";
-import LoadingScreen from "@/components/shared/LoadingScreen";
 import PageShell from "@/components/shared/PageShell";
+import Skeleton from "@/components/shared/Skeleton";
 import TextInput from "@/components/shared/TextInput";
 import { useAsyncData } from "@/hooks/useAsyncData";
+import { itemVariants, listVariants } from "@/lib/motion";
+import { notifyError, notifySuccess } from "@/lib/notify";
 
 const GroupsPage = () => {
   const fetchGroups = useCallback(() => groupService.getAllGroups(), []);
-  const { data: groups, setData: setGroups, isLoading, error } = useAsyncData(fetchGroups, []);
+  const {
+    data: groups,
+    setData: setGroups,
+    isLoading,
+    error,
+    reload,
+  } = useAsyncData(fetchGroups, []);
 
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [newGroup, setNewGroup] = useState({ name: "", description: "" });
@@ -36,79 +47,84 @@ const GroupsPage = () => {
       setGroups((prev) => [...(prev ?? []), createdGroup]);
       setNewGroup({ name: "", description: "" });
       setShowCreateForm(false);
+      notifySuccess("Group created");
     } catch (err) {
-      setCreateError(err.response?.data?.message || err.message || "Failed to create group");
+      notifyError(err, "Failed to create group");
     } finally {
       setIsCreating(false);
     }
   };
 
   if (error) {
-    return <ErrorScreen message={error} />;
-  }
-
-  if (isLoading) {
-    return <LoadingScreen message="Loading groups..." />;
+    return <ErrorScreen message={error} onRetry={reload} />;
   }
 
   return (
     <PageShell maxWidth="max-w-4xl">
-      <h1 className="text-3xl font-extrabold text-yellow-900 mb-6 drop-shadow-md">Groups</h1>
+      <div className="mb-6 flex items-center justify-between">
+        <h1 className="text-3xl font-bold text-slate-100">Groups</h1>
+        <Button onClick={() => setShowCreateForm((show) => !show)}>
+          {showCreateForm ? "Cancel" : "Create Group"}
+        </Button>
+      </div>
 
-      {groups.length === 0 ? (
-        <p className="text-yellow-900 text-lg">You are not member of any groups.</p>
+      {isLoading ? (
+        <div className="space-y-3">
+          <Skeleton className="h-16 w-full" />
+          <Skeleton className="h-16 w-full" />
+          <Skeleton className="h-16 w-full" />
+        </div>
+      ) : groups.length === 0 ? (
+        <EmptyState
+          title="No groups yet"
+          description="Create a group to start tracking shared expenses."
+        />
       ) : (
-        <ul className="space-y-4">
+        <motion.ul className="space-y-3" variants={listVariants} initial="hidden" animate="visible">
           {groups.map((group) => (
-            <li
-              key={group.id}
-              className="bg-yellow-200 rounded-md p-4 shadow hover:shadow-lg transition cursor-pointer"
-            >
+            <motion.li key={group.id} variants={itemVariants}>
               <Link
                 to={`/groups/${group.id}`}
-                className="text-yellow-900 font-semibold text-lg hover:underline"
+                className="block rounded-xl border border-slate-700 bg-surface p-4 shadow-sm transition hover:border-primary-500 hover:shadow-md"
               >
-                {group.name}
+                <span className="font-semibold text-slate-100">{group.name}</span>
               </Link>
-            </li>
+            </motion.li>
           ))}
-        </ul>
+        </motion.ul>
       )}
 
-      {/* Create Group button */}
-      <Button onClick={() => setShowCreateForm((show) => !show)} className="mt-8 mb-6 w-35">
-        {showCreateForm ? "Cancel" : "Create Group"}
-      </Button>
-
       {/* Create Group form */}
-      <CollapsibleSection show={showCreateForm} className="mb-8">
-        <TextInput
-          name="name"
-          type="text"
-          placeholder="Group Name"
-          value={newGroup.name}
-          onChange={handleInputChange}
-          className="w-full md:w-auto mb-4 md:mb-0 md:mr-4"
-        />
+      <CollapsibleSection show={showCreateForm} className="mt-6">
+        <div className="flex flex-col gap-4 md:flex-row md:items-start">
+          <TextInput
+            name="name"
+            type="text"
+            placeholder="Group Name"
+            value={newGroup.name}
+            onChange={handleInputChange}
+            className="w-full"
+          />
 
-        <TextInput
-          name="description"
-          type="text"
-          placeholder="Group Description"
-          value={newGroup.description}
-          onChange={handleInputChange}
-          className="w-full md:w-auto mb-4 md:mb-0 md:mr-4"
-        />
+          <TextInput
+            name="description"
+            type="text"
+            placeholder="Group Description"
+            value={newGroup.description}
+            onChange={handleInputChange}
+            className="w-full"
+          />
 
-        <Button
-          onClick={handleCreateGroup}
-          disabled={isCreating}
-          className="mt-2 md:mt-0 inline-block"
-        >
-          {isCreating ? "Creating..." : "Create Group"}
-        </Button>
+          <Button onClick={handleCreateGroup} isLoading={isCreating} className="shrink-0">
+            Create Group
+          </Button>
+        </div>
 
-        {createError && <p className="text-red-700 font-semibold mt-4">{createError}</p>}
+        {createError && (
+          <Alert variant="error" className="mt-4">
+            {createError}
+          </Alert>
+        )}
       </CollapsibleSection>
     </PageShell>
   );

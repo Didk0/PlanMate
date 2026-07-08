@@ -7,6 +7,7 @@ const ConfirmDialog = ({
   message,
   confirmLabel = "Confirm",
   cancelLabel = "Cancel",
+  variant = "default",
   onConfirm,
   onCancel,
 }) => {
@@ -18,7 +19,7 @@ const ConfirmDialog = ({
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.2 }}
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4"
           onClick={onCancel}
         >
           <motion.div
@@ -26,20 +27,18 @@ const ConfirmDialog = ({
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 10 }}
             transition={{ duration: 0.2 }}
-            className="w-full max-w-sm bg-yellow-100 rounded-lg shadow-lg p-6"
+            className="bg-slate-800 rounded-xl shadow-xl border border-slate-700 p-6 w-full max-w-sm"
             onClick={(event) => event.stopPropagation()}
           >
-            <h2 className="text-xl font-extrabold text-yellow-900 mb-3 drop-shadow-sm">{title}</h2>
-            <p className="text-yellow-900 mb-6">{message}</p>
-            <div className="flex justify-end items-center gap-4">
-              <button
-                type="button"
-                onClick={onCancel}
-                className="font-semibold text-yellow-700 hover:text-yellow-900 transition"
-              >
+            <h2 className="text-lg font-semibold text-slate-100">{title}</h2>
+            <p className="text-slate-400 text-sm mt-2">{message}</p>
+            <div className="mt-6 flex justify-end gap-3">
+              <Button variant="ghost" onClick={onCancel}>
                 {cancelLabel}
-              </button>
-              <Button onClick={onConfirm}>{confirmLabel}</Button>
+              </Button>
+              <Button variant={variant === "danger" ? "danger" : "primary"} onClick={onConfirm}>
+                {confirmLabel}
+              </Button>
             </div>
           </motion.div>
         </motion.div>
