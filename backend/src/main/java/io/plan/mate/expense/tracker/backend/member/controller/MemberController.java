@@ -15,6 +15,7 @@ import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -46,9 +47,11 @@ public class MemberController {
             description = "User is already a member of the given group",
             content = @Content(schema = @Schema(implementation = ApiError.class))),
         @ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content(schema = @Schema(implementation = ApiError.class))),
+        @ApiResponse(responseCode = "403", description = "Caller is not the owner of the group", content = @Content(schema = @Schema(implementation = ApiError.class))),
         @ApiResponse(responseCode = "404", description = "Group or user not found", content = @Content(schema = @Schema(implementation = ApiError.class))),
         @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content(schema = @Schema(implementation = ApiError.class)))
       })
+  @PreAuthorize("@groupAccess.isOwner(#groupId)")
   @PostMapping("/groups/{groupId}/users")
   public ResponseEntity<MemberDto> addUserToGroup(
       @PathVariable final Long groupId, @Valid @RequestBody final AddUserRequest addUserRequest) {
@@ -64,9 +67,12 @@ public class MemberController {
       responses = {
         @ApiResponse(responseCode = "204", description = "User successfully removed from group"),
         @ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content(schema = @Schema(implementation = ApiError.class))),
+        @ApiResponse(responseCode = "403", description = "Caller is neither the group owner nor the member being removed", content = @Content(schema = @Schema(implementation = ApiError.class))),
         @ApiResponse(responseCode = "404", description = "Group or user not found", content = @Content(schema = @Schema(implementation = ApiError.class))),
+        @ApiResponse(responseCode = "409", description = "Cannot remove the last owner of the group", content = @Content(schema = @Schema(implementation = ApiError.class))),
         @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content(schema = @Schema(implementation = ApiError.class)))
       })
+  @PreAuthorize("@groupAccess.isOwner(#groupId) or @groupAccess.isOwnMembership(#groupId, #memberId)")
   @DeleteMapping("/groups/{groupId}/users/{memberId}")
   public ResponseEntity<Void> removeUserFromGroup(
       @PathVariable final Long groupId, @PathVariable final Long memberId) {
@@ -85,9 +91,11 @@ public class MemberController {
             description = "List of group members",
             content = @Content(schema = @Schema(implementation = MemberDto.class, type = "array"))),
         @ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content(schema = @Schema(implementation = ApiError.class))),
+        @ApiResponse(responseCode = "403", description = "Caller is not a member of the group", content = @Content(schema = @Schema(implementation = ApiError.class))),
         @ApiResponse(responseCode = "404", description = "Group not found", content = @Content(schema = @Schema(implementation = ApiError.class))),
         @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content(schema = @Schema(implementation = ApiError.class)))
       })
+  @PreAuthorize("@groupAccess.isMember(#groupId)")
   @GetMapping("/groups/{groupId}/users")
   public ResponseEntity<List<MemberDto>> getGroupMembers(@PathVariable final Long groupId) {
 
@@ -103,9 +111,11 @@ public class MemberController {
             description = "List of groups for the user",
             content = @Content(schema = @Schema(implementation = GroupDto.class, type = "array"))),
         @ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content(schema = @Schema(implementation = ApiError.class))),
+        @ApiResponse(responseCode = "403", description = "Caller may only list their own groups", content = @Content(schema = @Schema(implementation = ApiError.class))),
         @ApiResponse(responseCode = "404", description = "User not found", content = @Content(schema = @Schema(implementation = ApiError.class))),
         @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content(schema = @Schema(implementation = ApiError.class)))
       })
+  @PreAuthorize("@groupAccess.isSelf(#userId)")
   @GetMapping("/users/{userId}/groups")
   public ResponseEntity<List<GroupDto>> getUserGroups(@PathVariable final Long userId) {
 

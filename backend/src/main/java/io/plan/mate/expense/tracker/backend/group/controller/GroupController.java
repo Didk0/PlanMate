@@ -14,6 +14,7 @@ import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -58,9 +59,11 @@ public class GroupController {
             description = "Group found",
             content = @Content(schema = @Schema(implementation = GroupDto.class))),
         @ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content(schema = @Schema(implementation = ApiError.class))),
+        @ApiResponse(responseCode = "403", description = "Caller is not a member of the group", content = @Content(schema = @Schema(implementation = ApiError.class))),
         @ApiResponse(responseCode = "404", description = "Group not found", content = @Content(schema = @Schema(implementation = ApiError.class))),
         @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content(schema = @Schema(implementation = ApiError.class)))
       })
+  @PreAuthorize("@groupAccess.isMember(#groupId)")
   @GetMapping("/{groupId}")
   public ResponseEntity<GroupDto> getGroupById(@PathVariable final Long groupId) {
 
@@ -69,7 +72,8 @@ public class GroupController {
 
   @Operation(
       summary = "Get all groups",
-      description = "Returns a list of all groups",
+      description =
+          "Returns the caller's groups, or every group in the system for an ADMIN caller",
       responses = {
         @ApiResponse(
             responseCode = "200",
@@ -90,9 +94,11 @@ public class GroupController {
       responses = {
         @ApiResponse(responseCode = "204", description = "Group deleted"),
         @ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content(schema = @Schema(implementation = ApiError.class))),
+        @ApiResponse(responseCode = "403", description = "Caller is not the owner of the group", content = @Content(schema = @Schema(implementation = ApiError.class))),
         @ApiResponse(responseCode = "404", description = "Group not found", content = @Content(schema = @Schema(implementation = ApiError.class))),
         @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content(schema = @Schema(implementation = ApiError.class)))
       })
+  @PreAuthorize("@groupAccess.isOwner(#groupId)")
   @DeleteMapping("/{groupId}")
   public ResponseEntity<Void> deleteGroup(@PathVariable final Long groupId) {
 

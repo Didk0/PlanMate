@@ -11,6 +11,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
 /** Resolves the authenticated caller's Keycloak identity and the app {@code User} row it maps to. */
 @Service
@@ -22,7 +23,7 @@ public class CurrentUserService {
   private final UserRepository userRepository;
 
   public UUID getKeycloakId() {
-    return UUID.fromString(requireCurrentJwt().getSubject());
+    return requireSubject(requireCurrentJwt());
   }
 
   public Jwt requireCurrentJwt() {
@@ -32,7 +33,8 @@ public class CurrentUserService {
 
   public Optional<Long> findCurrentUserId() {
     return currentJwt()
-        .flatMap(jwt -> userRepository.findByKeycloakId(UUID.fromString(jwt.getSubject())))
+        .map(this::requireSubject)
+        .flatMap(userRepository::findByKeycloakId)
         .map(User::getId);
   }
 
@@ -54,5 +56,13 @@ public class CurrentUserService {
     final boolean isJwtAuthentication =
         authentication != null && authentication.getPrincipal() instanceof Jwt;
     return isJwtAuthentication ? Optional.of((Jwt) authentication.getPrincipal()) : Optional.empty();
+  }
+
+  private UUID requireSubject(final Jwt jwt) {
+    final String subject = jwt.getSubject();
+    if (!StringUtils.hasText(subject)) {
+      throw new BadRequestException("Authenticated JWT is missing a subject claim");
+    }
+    return UUID.fromString(subject);
   }
 }

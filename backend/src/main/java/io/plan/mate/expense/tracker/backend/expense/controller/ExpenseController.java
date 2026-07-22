@@ -14,6 +14,7 @@ import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -39,9 +40,11 @@ public class ExpenseController {
             content = @Content(schema = @Schema(implementation = ExpenseDto.class))),
         @ApiResponse(responseCode = "400", description = "Invalid field for expense provided", content = @Content(schema = @Schema(implementation = ApiError.class))),
         @ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content(schema = @Schema(implementation = ApiError.class))),
+        @ApiResponse(responseCode = "403", description = "Caller is not a member of the group", content = @Content(schema = @Schema(implementation = ApiError.class))),
         @ApiResponse(responseCode = "404", description = "User or group not found", content = @Content(schema = @Schema(implementation = ApiError.class))),
         @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content(schema = @Schema(implementation = ApiError.class)))
       })
+  @PreAuthorize("@groupAccess.isMember(#groupId)")
   @PostMapping("/{groupId}/expenses")
   public ResponseEntity<ExpenseDto> createExpense(
       @PathVariable final Long groupId,
@@ -62,9 +65,11 @@ public class ExpenseController {
             content =
                 @Content(schema = @Schema(implementation = ExpenseDto.class, type = "array"))),
         @ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content(schema = @Schema(implementation = ApiError.class))),
+        @ApiResponse(responseCode = "403", description = "Caller is not a member of the group", content = @Content(schema = @Schema(implementation = ApiError.class))),
         @ApiResponse(responseCode = "404", description = "Group not found", content = @Content(schema = @Schema(implementation = ApiError.class))),
         @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content(schema = @Schema(implementation = ApiError.class)))
       })
+  @PreAuthorize("@groupAccess.isMember(#groupId)")
   @GetMapping("/{groupId}/expenses")
   public ResponseEntity<List<ExpenseDto>> getGroupExpenses(@PathVariable final Long groupId) {
 
