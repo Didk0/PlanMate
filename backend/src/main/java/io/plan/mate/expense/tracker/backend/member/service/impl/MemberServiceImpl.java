@@ -4,11 +4,13 @@ import io.plan.mate.expense.tracker.backend.group.service.dto.GroupDto;
 import io.plan.mate.expense.tracker.backend.member.service.dto.MemberDto;
 import io.plan.mate.expense.tracker.backend.group.jpa.entity.Group;
 import io.plan.mate.expense.tracker.backend.member.jpa.entity.Member;
+import io.plan.mate.expense.tracker.backend.member.jpa.entity.MemberRole;
 import io.plan.mate.expense.tracker.backend.user.jpa.entity.User;
 import io.plan.mate.expense.tracker.backend.group.jpa.repository.GroupRepository;
 import io.plan.mate.expense.tracker.backend.member.jpa.repository.MemberRepository;
 import io.plan.mate.expense.tracker.backend.user.jpa.repository.UserRepository;
 import io.plan.mate.expense.tracker.backend.commons.exception.handling.exception.BadRequestException;
+import io.plan.mate.expense.tracker.backend.commons.exception.handling.exception.ConflictException;
 import io.plan.mate.expense.tracker.backend.commons.exception.handling.exception.ResourceNotFoundException;
 import io.plan.mate.expense.tracker.backend.member.controller.payload.event.MemberChangeEnum;
 import io.plan.mate.expense.tracker.backend.member.controller.payload.event.MemberChangedEvent;
@@ -59,7 +61,13 @@ public class MemberServiceImpl implements MemberService {
           "User with id " + user.getId() + " is already a member in group with id " + groupId);
     }
 
-    Member member = Member.builder().user(user).group(group).joinedAt(LocalDateTime.now()).build();
+    Member member =
+        Member.builder()
+            .user(user)
+            .group(group)
+            .role(MemberRole.MEMBER)
+            .joinedAt(LocalDateTime.now())
+            .build();
 
     member = memberRepository.save(member);
 
@@ -83,6 +91,15 @@ public class MemberServiceImpl implements MemberService {
         memberRepository
             .findByGroupIdAndId(groupId, memberId)
             .orElseThrow(() -> new ResourceNotFoundException("Membership not found"));
+
+    final boolean isRemovingLastOwner =
+        member.getRole() == MemberRole.OWNER
+            && memberRepository.countByGroupIdAndRole(groupId, MemberRole.OWNER) == 1L;
+
+    if (isRemovingLastOwner) {
+      throw new ConflictException(
+          "Group with id " + groupId + " must keep at least one owner");
+    }
 
     memberRepository.delete(member);
 
