@@ -23,6 +23,7 @@ public class MemberToMemberDtoConverter implements Converter<Member, MemberDto> 
         .lastName(member.getUser().getLastName())
         .groupName(member.getGroup().getName())
         .joinedAt(member.getJoinedAt())
+        .role(member.getRole())
         .build();
   }
 }
