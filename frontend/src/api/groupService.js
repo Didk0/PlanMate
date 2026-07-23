@@ -9,6 +9,8 @@ const groupService = {
 
   createGroup: (group) => api.post(`groups`, group).then((res) => res.data),
 
+  deleteGroup: (groupId) => api.delete(`groups/${groupId}`),
+
   getGroupDetails: async (groupId) => {
     const [groupData, membersData, expensesData] = await Promise.all([
       groupService.getGroupById(groupId),

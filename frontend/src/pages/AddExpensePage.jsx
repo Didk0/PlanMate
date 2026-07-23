@@ -17,7 +17,13 @@ const AddExpensePage = () => {
   const navigate = useNavigate();
 
   const fetchMembers = useCallback(() => userService.getGroupMembers(groupId), [groupId]);
-  const { data: members, isLoading, error, reload } = useAsyncData(fetchMembers, [groupId]);
+  const {
+    data: members,
+    isLoading,
+    error,
+    errorStatus,
+    reload,
+  } = useAsyncData(fetchMembers, [groupId]);
 
   const [description, setDescription] = useState("");
   const [amount, setAmount] = useState("");
@@ -64,7 +70,7 @@ const AddExpensePage = () => {
   };
 
   if (error) {
-    return <ErrorScreen message={error} onRetry={reload} />;
+    return <ErrorScreen message={error} status={errorStatus} onRetry={reload} />;
   }
 
   if (isLoading) {

@@ -4,6 +4,7 @@ import { AnimatePresence } from "framer-motion";
 import { motion } from "framer-motion";
 import { useCallback, useContext, useState } from "react";
 import { AuthContext } from "react-oauth2-code-pkce";
+import { useSelector } from "react-redux";
 import { useNavigate, useParams } from "react-router-dom";
 import groupService from "@/api/groupService";
 import userService from "@/api/userService";
@@ -16,15 +17,17 @@ import Skeleton from "@/components/shared/Skeleton";
 import { useAsyncData } from "@/hooks/useAsyncData";
 import { useGroupWebSocket } from "@/hooks/useGroupWebSocket";
 import { notifyError, notifySuccess } from "@/lib/notify";
+import { selectIsAdmin } from "@/store/authSlice";
 
 const GroupDetailsPage = () => {
   const { id } = useParams();
   const groupId = id;
   const navigate = useNavigate();
   const { tokenData } = useContext(AuthContext);
+  const isAdmin = useSelector(selectIsAdmin);
 
   const fetchDetails = useCallback(() => groupService.getGroupDetails(groupId), [groupId]);
-  const { data, isLoading, error, reload } = useAsyncData(fetchDetails, [groupId]);
+  const { data, isLoading, error, errorStatus, reload } = useAsyncData(fetchDetails, [groupId]);
 
   const [loadedData, setLoadedData] = useState(null);
   const [members, setMembers] = useState([]);
@@ -32,6 +35,7 @@ const GroupDetailsPage = () => {
 
   const [showExpenses, setShowExpenses] = useState(false);
   const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   if (data && data !== loadedData) {
     setLoadedData(data);
@@ -68,6 +72,8 @@ const GroupDetailsPage = () => {
   };
 
   const currentMember = members.find((m) => m.username === tokenData?.preferred_username);
+  const canManageGroup = isAdmin || currentMember?.role === "OWNER";
+  const canAddMembers = isAdmin || Boolean(currentMember);
 
   const handleConfirmLeaveGroup = async () => {
     if (!currentMember) return;
@@ -81,8 +87,19 @@ const GroupDetailsPage = () => {
     }
   };
 
+  const handleConfirmDeleteGroup = async () => {
+    setShowDeleteConfirm(false);
+    try {
+      await groupService.deleteGroup(groupId);
+      notifySuccess("Group deleted");
+      navigate("/groups");
+    } catch (err) {
+      notifyError(err, "Failed to delete group");
+    }
+  };
+
   if (error) {
-    return <ErrorScreen message={error} onRetry={reload} />;
+    return <ErrorScreen message={error} status={errorStatus} onRetry={reload} />;
   }
 
   if (isLoading || !data) {
@@ -122,6 +139,9 @@ const GroupDetailsPage = () => {
           members={members}
           onAddMember={handleAddMember}
           onRemoveMember={handleRemoveMember}
+          canManage={canManageGroup}
+          canAddMember={canAddMembers}
+          currentMemberId={currentMember?.id}
         />
       </section>
 
@@ -148,12 +168,19 @@ const GroupDetailsPage = () => {
         )}
       </AnimatePresence>
 
-      {/* Leave Group */}
-      {currentMember && (
-        <div className="mt-8 pt-6 border-t border-slate-700 flex justify-end">
-          <Button variant="danger" onClick={() => setShowLeaveConfirm(true)}>
-            Leave Group
-          </Button>
+      {/* Leave / Delete Group */}
+      {(currentMember || canManageGroup) && (
+        <div className="mt-8 pt-6 border-t border-slate-700 flex justify-end gap-3">
+          {canManageGroup && (
+            <Button variant="danger" onClick={() => setShowDeleteConfirm(true)}>
+              Delete Group
+            </Button>
+          )}
+          {currentMember && (
+            <Button variant="danger" onClick={() => setShowLeaveConfirm(true)}>
+              Leave Group
+            </Button>
+          )}
         </div>
       )}
 
@@ -165,6 +192,16 @@ const GroupDetailsPage = () => {
         confirmLabel="Leave"
         onConfirm={handleConfirmLeaveGroup}
         onCancel={() => setShowLeaveConfirm(false)}
+      />
+
+      <ConfirmDialog
+        open={showDeleteConfirm}
+        variant="danger"
+        title="Delete group?"
+        message="This will permanently delete the group and all its data. This action cannot be undone."
+        confirmLabel="Delete"
+        onConfirm={handleConfirmDeleteGroup}
+        onCancel={() => setShowDeleteConfirm(false)}
       />
     </PageShell>
   );

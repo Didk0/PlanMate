@@ -7,10 +7,16 @@ export function useAsyncData(fetcher, deps) {
 
   const key = JSON.stringify([...deps, reloadIndex]);
 
-  const [state, setState] = useState({ key, data: null, error: null, isLoading: true });
+  const [state, setState] = useState({
+    key,
+    data: null,
+    error: null,
+    errorStatus: null,
+    isLoading: true,
+  });
 
   if (state.key !== key) {
-    setState({ key, data: null, error: null, isLoading: true });
+    setState({ key, data: null, error: null, errorStatus: null, isLoading: true });
   }
 
   useEffect(() => {
@@ -20,7 +26,9 @@ export function useAsyncData(fetcher, deps) {
       .then((data) => {
         if (cancelled) return;
         setState((prev) =>
-          prev.key === key ? { ...prev, data, error: null, isLoading: false } : prev
+          prev.key === key
+            ? { ...prev, data, error: null, errorStatus: null, isLoading: false }
+            : prev
         );
       })
       .catch((err) => {
@@ -31,6 +39,7 @@ export function useAsyncData(fetcher, deps) {
                 ...prev,
                 data: null,
                 error: getErrorMessage(err),
+                errorStatus: err.response?.status ?? null,
                 isLoading: false,
               }
             : prev
@@ -50,5 +59,12 @@ export function useAsyncData(fetcher, deps) {
     }));
   }, []);
 
-  return { data: state.data, setData, isLoading: state.isLoading, error: state.error, reload };
+  return {
+    data: state.data,
+    setData,
+    isLoading: state.isLoading,
+    error: state.error,
+    errorStatus: state.errorStatus,
+    reload,
+  };
 }

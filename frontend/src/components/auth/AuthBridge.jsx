@@ -17,6 +17,7 @@ const AuthBridge = () => {
         email: tokenData.email,
         firstName: tokenData.given_name,
         lastName: tokenData.family_name,
+        roles: tokenData.realm_access?.roles ?? [],
       };
       dispatch(loginUser({ user, token }));
     } else {

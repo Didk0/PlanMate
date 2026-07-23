@@ -1,6 +1,9 @@
 import Button from "@/components/shared/Button";
+import LinkButton from "@/components/shared/LinkButton";
 
-const ErrorScreen = ({ message, onRetry }) => {
+const ErrorScreen = ({ message, status, onRetry }) => {
+  const isForbidden = status === 403;
+
   return (
     <div className="min-h-screen bg-canvas flex items-center justify-center px-4">
       <div className="w-full max-w-sm bg-surface rounded-xl border border-slate-700 shadow-sm p-8 text-center">
@@ -20,14 +23,32 @@ const ErrorScreen = ({ message, onRetry }) => {
             <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
           </svg>
         </div>
-        <h2 className="text-slate-100 font-semibold">Something went wrong</h2>
-        {message && <p className="text-slate-400 text-sm mt-2">{message}</p>}
-        {onRetry && (
-          <div className="mt-6">
-            <Button variant="secondary" onClick={onRetry}>
-              Try again
-            </Button>
-          </div>
+        {isForbidden ? (
+          <>
+            <h2 className="text-slate-100 font-semibold">
+              You don&apos;t have access to this group
+            </h2>
+            <p className="text-slate-400 text-sm mt-2">
+              It may have been deleted, or you may have been removed from it.
+            </p>
+            <div className="mt-6">
+              <LinkButton to="/groups" variant="secondary">
+                Back to groups
+              </LinkButton>
+            </div>
+          </>
+        ) : (
+          <>
+            <h2 className="text-slate-100 font-semibold">Something went wrong</h2>
+            {message && <p className="text-slate-400 text-sm mt-2">{message}</p>}
+            {onRetry && (
+              <div className="mt-6">
+                <Button variant="secondary" onClick={onRetry}>
+                  Try again
+                </Button>
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>

@@ -8,7 +8,14 @@ import TextInput from "@/components/shared/TextInput";
 const initials = (member) =>
   `${member.firstName?.[0] ?? ""}${member.lastName?.[0] ?? ""}`.toUpperCase();
 
-const MembersSection = ({ members, onAddMember, onRemoveMember }) => {
+const MembersSection = ({
+  members,
+  onAddMember,
+  onRemoveMember,
+  canManage,
+  canAddMember,
+  currentMemberId,
+}) => {
   const [showAddForm, setShowAddForm] = useState(false);
   const [username, setUsername] = useState("");
   const [validationError, setValidationError] = useState(null);
@@ -43,45 +50,56 @@ const MembersSection = ({ members, onAddMember, onRemoveMember }) => {
                 <span className="truncate font-medium text-slate-100">
                   {member.firstName} {member.lastName}
                 </span>
+                {member.role === "OWNER" && (
+                  <span className="shrink-0 rounded-full bg-primary-900/50 px-2 py-0.5 text-xs font-semibold text-primary-300">
+                    OWNER
+                  </span>
+                )}
               </div>
-              <button
-                onClick={() => onRemoveMember(member.id)}
-                className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-slate-500 transition hover:bg-danger-900/40 hover:text-danger-400"
-                aria-label={`Remove member ${member.username}`}
-              >
-                &times;
-              </button>
+              {canManage && member.id !== currentMemberId && (
+                <button
+                  onClick={() => onRemoveMember(member.id)}
+                  className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-slate-500 transition hover:bg-danger-900/40 hover:text-danger-400"
+                  aria-label={`Remove member ${member.username}`}
+                >
+                  &times;
+                </button>
+              )}
             </li>
           ))}
         </ul>
       )}
 
-      {/* Toggle Add Member form */}
-      <Button variant="secondary" onClick={() => setShowAddForm(!showAddForm)} className="mt-6">
-        {showAddForm ? "Cancel" : "Add Member"}
-      </Button>
-
-      {/* Animated Add Member form */}
-      <CollapsibleSection show={showAddForm} className="mt-4">
-        <div className="flex flex-col gap-4 md:flex-row md:items-start">
-          <TextInput
-            type="text"
-            placeholder="Username"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            className="w-full"
-          />
-          <Button onClick={handleAdd} className="shrink-0">
-            Add Member
+      {canAddMember && (
+        <>
+          {/* Toggle Add Member form */}
+          <Button variant="secondary" onClick={() => setShowAddForm(!showAddForm)} className="mt-6">
+            {showAddForm ? "Cancel" : "Add Member"}
           </Button>
-        </div>
 
-        {validationError && (
-          <Alert variant="error" className="mt-4">
-            {validationError}
-          </Alert>
-        )}
-      </CollapsibleSection>
+          {/* Animated Add Member form */}
+          <CollapsibleSection show={showAddForm} className="mt-4">
+            <div className="flex flex-col gap-4 md:flex-row md:items-start">
+              <TextInput
+                type="text"
+                placeholder="Username"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                className="w-full"
+              />
+              <Button onClick={handleAdd} className="shrink-0">
+                Add Member
+              </Button>
+            </div>
+
+            {validationError && (
+              <Alert variant="error" className="mt-4">
+                {validationError}
+              </Alert>
+            )}
+          </CollapsibleSection>
+        </>
+      )}
     </section>
   );
 };
