@@ -100,11 +100,14 @@ public class GroupServiceImpl implements GroupService {
           .toList();
     }
 
-    final Long userId = currentUserService.requireCurrentUserId();
-
-    return memberRepository.findByUserId(userId).stream()
-        .map(member -> modelMapper.map(member.getGroup(), GroupDto.class))
-        .toList();
+    return currentUserService
+        .findCurrentUserId()
+        .map(
+            userId ->
+                memberRepository.findByUserId(userId).stream()
+                    .map(member -> modelMapper.map(member.getGroup(), GroupDto.class))
+                    .toList())
+        .orElseGet(List::of);
   }
 
   @Override

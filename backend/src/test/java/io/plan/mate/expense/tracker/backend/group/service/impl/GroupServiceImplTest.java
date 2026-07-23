@@ -156,7 +156,7 @@ class GroupServiceImplTest {
       List<GroupDto> groups = groupService.getAllGroups();
 
       assertThat(groups).hasSize(1);
-      verify(currentUserService, never()).requireCurrentUserId();
+      verify(currentUserService, never()).findCurrentUserId();
     }
 
     @Test
@@ -166,7 +166,7 @@ class GroupServiceImplTest {
       Member member = Member.builder().id(1L).group(group).build();
 
       when(currentUserService.isAdmin()).thenReturn(false);
-      when(currentUserService.requireCurrentUserId()).thenReturn(7L);
+      when(currentUserService.findCurrentUserId()).thenReturn(Optional.of(7L));
       when(memberRepository.findByUserId(7L)).thenReturn(List.of(member));
       when(modelMapper.map(group, GroupDto.class)).thenReturn(GroupDto.builder().id(1L).build());
 
@@ -174,6 +174,18 @@ class GroupServiceImplTest {
 
       assertThat(groups).hasSize(1);
       verify(groupRepository, never()).findAll();
+    }
+
+    @Test
+    @DisplayName("returns an empty list when the caller is not provisioned")
+    void getAllGroups_shouldReturnEmptyList_whenCallerIsNotProvisioned() {
+      when(currentUserService.isAdmin()).thenReturn(false);
+      when(currentUserService.findCurrentUserId()).thenReturn(Optional.empty());
+
+      List<GroupDto> groups = groupService.getAllGroups();
+
+      assertThat(groups).isEmpty();
+      verify(memberRepository, never()).findByUserId(any());
     }
   }
 }
