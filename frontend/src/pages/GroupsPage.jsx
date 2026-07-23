@@ -21,6 +21,7 @@ const GroupsPage = () => {
     setData: setGroups,
     isLoading,
     error,
+    errorStatus,
     reload,
   } = useAsyncData(fetchGroups, []);
 
@@ -56,7 +57,7 @@ const GroupsPage = () => {
   };
 
   if (error) {
-    return <ErrorScreen message={error} onRetry={reload} />;
+    return <ErrorScreen message={error} status={errorStatus} onRetry={reload} />;
   }
 
   return (

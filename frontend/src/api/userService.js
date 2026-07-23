@@ -9,6 +9,10 @@ const userService = {
   removeMemberFromGroup: (groupId, memberId) => api.delete(`groups/${groupId}/users/${memberId}`),
 
   createUser: () => api.post("users").then((res) => res.data),
+
+  getAllUsers: () => api.get("users").then((res) => res.data),
+
+  deleteUser: (userId) => api.delete(`users/${userId}`),
 };
 
 export default userService;

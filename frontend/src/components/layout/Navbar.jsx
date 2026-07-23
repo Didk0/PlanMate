@@ -3,12 +3,13 @@ import { AuthContext } from "react-oauth2-code-pkce";
 import { useDispatch, useSelector } from "react-redux";
 import { Link, useNavigate } from "react-router-dom";
 import Button from "@/components/shared/Button";
-import { logoutUser } from "@/store/authSlice";
+import { logoutUser, selectIsAdmin } from "@/store/authSlice";
 
 const Navbar = () => {
   const { token, logIn, logOut } = useContext(AuthContext);
   const dispatch = useDispatch();
   const { user } = useSelector((state) => state.auth);
+  const isAdmin = useSelector(selectIsAdmin);
   const navigate = useNavigate();
 
   const handleLogin = () => {
@@ -38,6 +39,15 @@ const Navbar = () => {
             className="text-sm font-medium text-slate-400 transition hover:text-slate-100"
           >
             Groups
+          </Link>
+        )}
+
+        {token && isAdmin && (
+          <Link
+            to="/admin/users"
+            className="text-sm font-medium text-slate-400 transition hover:text-slate-100"
+          >
+            Users
           </Link>
         )}
 

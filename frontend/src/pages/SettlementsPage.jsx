@@ -19,7 +19,13 @@ const SettlementsPage = () => {
     () => expenseService.calculateSettlements(groupId),
     [groupId]
   );
-  const { data: settlements, isLoading, error, reload } = useAsyncData(fetchSettlements, [groupId]);
+  const {
+    data: settlements,
+    isLoading,
+    error,
+    errorStatus,
+    reload,
+  } = useAsyncData(fetchSettlements, [groupId]);
 
   useGroupWebSocket(groupId, (topic, message) => {
     if (!topic.endsWith("/settlements")) return;
@@ -30,7 +36,7 @@ const SettlementsPage = () => {
   });
 
   if (error) {
-    return <ErrorScreen message={error} onRetry={reload} />;
+    return <ErrorScreen message={error} status={errorStatus} onRetry={reload} />;
   }
 
   return (

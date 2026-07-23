@@ -1,8 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useDispatch } from "react-redux";
 import userService from "@/api/userService";
 import { getErrorMessage } from "@/lib/getErrorMessage";
+import { setAppUserId } from "@/store/authSlice";
 
 export function useProvisionUser(token, tokenData) {
+  const dispatch = useDispatch();
   const provisionedSubRef = useRef(null);
   const [attempt, setAttempt] = useState(0);
   const [state, setState] = useState({ status: "pending", error: null });
@@ -13,9 +16,8 @@ export function useProvisionUser(token, tokenData) {
     if (!token || !tokenData) return;
 
     const sub = tokenData.sub;
-    const sessionKey = `userCreated:${sub}`;
 
-    if (provisionedSubRef.current === sub || sessionStorage.getItem(sessionKey)) {
+    if (provisionedSubRef.current === sub) {
       setState({ status: "ready", error: null });
       return;
     }
@@ -25,27 +27,21 @@ export function useProvisionUser(token, tokenData) {
 
     userService
       .createUser()
-      .then(() => {
+      .then((dto) => {
         if (cancelled) return;
         provisionedSubRef.current = sub;
-        sessionStorage.setItem(sessionKey, "true");
+        dispatch(setAppUserId(dto.id));
         setState({ status: "ready", error: null });
       })
       .catch((err) => {
         if (cancelled) return;
-        if (err.response?.status === 409) {
-          provisionedSubRef.current = sub;
-          sessionStorage.setItem(sessionKey, "true");
-          setState({ status: "ready", error: null });
-          return;
-        }
         setState({ status: "error", error: getErrorMessage(err, "Failed to set up your account") });
       });
 
     return () => {
       cancelled = true;
     };
-  }, [token, tokenData, attempt]);
+  }, [token, tokenData, attempt, dispatch]);
 
   return { ...state, retry };
 }

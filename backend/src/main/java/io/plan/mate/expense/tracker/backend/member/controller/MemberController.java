@@ -47,11 +47,11 @@ public class MemberController {
             description = "User is already a member of the given group",
             content = @Content(schema = @Schema(implementation = ApiError.class))),
         @ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content(schema = @Schema(implementation = ApiError.class))),
-        @ApiResponse(responseCode = "403", description = "Caller is not the owner of the group", content = @Content(schema = @Schema(implementation = ApiError.class))),
+        @ApiResponse(responseCode = "403", description = "Caller is not a member of the group", content = @Content(schema = @Schema(implementation = ApiError.class))),
         @ApiResponse(responseCode = "404", description = "Group or user not found", content = @Content(schema = @Schema(implementation = ApiError.class))),
         @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content(schema = @Schema(implementation = ApiError.class)))
       })
-  @PreAuthorize("@groupAccess.isOwner(#groupId)")
+  @PreAuthorize("@groupAccess.isMember(#groupId)")
   @PostMapping("/groups/{groupId}/users")
   public ResponseEntity<MemberDto> addUserToGroup(
       @PathVariable final Long groupId, @Valid @RequestBody final AddUserRequest addUserRequest) {
