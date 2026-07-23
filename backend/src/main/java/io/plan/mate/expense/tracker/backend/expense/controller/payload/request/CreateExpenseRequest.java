@@ -24,5 +24,4 @@ public record CreateExpenseRequest(
     @Schema(description = "List of participants who share the expense")
         @NotNull(message = "Participants list cannot be null")
         @Size(min = 1, message = "At least one participant is required")
-        @Valid
-        List<CreateExpenseParticipant> participants) {}
+        List<@Valid CreateExpenseParticipant> participants) {}

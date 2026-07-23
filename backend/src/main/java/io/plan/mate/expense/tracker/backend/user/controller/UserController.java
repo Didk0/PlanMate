@@ -2,23 +2,21 @@ package io.plan.mate.expense.tracker.backend.user.controller;
 
 import io.plan.mate.expense.tracker.backend.user.service.dto.UserDto;
 import io.plan.mate.expense.tracker.backend.commons.exception.handling.dto.ApiError;
-import io.plan.mate.expense.tracker.backend.user.controller.payload.request.CreateUserRequest;
 import io.plan.mate.expense.tracker.backend.user.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.validation.Valid;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -31,8 +29,9 @@ public class UserController {
   private final UserService userService;
 
   @Operation(
-      summary = "Create a new user",
-      description = "Creates a new user with the provided details",
+      summary = "Provision the authenticated user",
+      description =
+          "Creates (or re-syncs) the PlanMate user for the caller's own Keycloak identity",
       responses = {
         @ApiResponse(
             responseCode = "201",
@@ -46,10 +45,9 @@ public class UserController {
         @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content(schema = @Schema(implementation = ApiError.class)))
       })
   @PostMapping
-  public ResponseEntity<UserDto> createUser(
-      @Valid @RequestBody final CreateUserRequest createUserRequest) {
+  public ResponseEntity<UserDto> createUser() {
 
-    final UserDto userDto = userService.createUser(createUserRequest);
+    final UserDto userDto = userService.provisionCurrentUser();
 
     return ResponseEntity.status(HttpStatus.CREATED).body(userDto);
   }
@@ -63,9 +61,11 @@ public class UserController {
             description = "User found",
             content = @Content(schema = @Schema(implementation = UserDto.class))),
         @ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content(schema = @Schema(implementation = ApiError.class))),
+        @ApiResponse(responseCode = "403", description = "Caller may only look up their own user", content = @Content(schema = @Schema(implementation = ApiError.class))),
         @ApiResponse(responseCode = "404", description = "User not found", content = @Content(schema = @Schema(implementation = ApiError.class))),
         @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content(schema = @Schema(implementation = ApiError.class)))
       })
+  @PreAuthorize("@groupAccess.isSelf(#userId)")
   @GetMapping("/{userId}")
   public ResponseEntity<UserDto> getUserById(@PathVariable final Long userId) {
 
@@ -82,8 +82,10 @@ public class UserController {
             description = "List of users",
             content = @Content(schema = @Schema(implementation = UserDto.class, type = "array"))),
         @ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content(schema = @Schema(implementation = ApiError.class))),
+        @ApiResponse(responseCode = "403", description = "Caller is not an ADMIN", content = @Content(schema = @Schema(implementation = ApiError.class))),
         @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content(schema = @Schema(implementation = ApiError.class)))
       })
+  @PreAuthorize("hasRole('ADMIN')")
   @GetMapping
   public ResponseEntity<List<UserDto>> getAllUsers() {
 
@@ -97,10 +99,12 @@ public class UserController {
       responses = {
         @ApiResponse(responseCode = "204", description = "User deleted"),
         @ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content(schema = @Schema(implementation = ApiError.class))),
+        @ApiResponse(responseCode = "403", description = "Caller is not an ADMIN", content = @Content(schema = @Schema(implementation = ApiError.class))),
         @ApiResponse(responseCode = "404", description = "User not found", content = @Content(schema = @Schema(implementation = ApiError.class))),
         @ApiResponse(responseCode = "409", description = "User has group memberships or expense history", content = @Content(schema = @Schema(implementation = ApiError.class))),
         @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content(schema = @Schema(implementation = ApiError.class)))
       })
+  @PreAuthorize("hasRole('ADMIN')")
   @DeleteMapping("/{userId}")
   public ResponseEntity<Void> deleteUser(@PathVariable final Long userId) {
 

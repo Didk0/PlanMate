@@ -2,6 +2,7 @@ package io.plan.mate.expense.tracker.backend.commons.config;
 
 import io.plan.mate.expense.tracker.backend.commons.config.application.properties.FrontendProperties;
 import io.plan.mate.expense.tracker.backend.commons.config.application.properties.KeycloakProperties;
+import io.plan.mate.expense.tracker.backend.commons.config.converters.JwtConverter;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.keycloak.OAuth2Constants;
@@ -11,7 +12,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.core.env.Environment;
-import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -31,10 +31,10 @@ public class SecurityConfig {
   private final FrontendProperties frontendProperties;
   private final KeycloakProperties keycloakProperties;
   private final Environment environment;
+  private final JwtConverter jwtConverter;
 
   @Bean
-  public SecurityFilterChain resourceServerSecurityFilterChain(final HttpSecurity http)
-      throws Exception {
+  public SecurityFilterChain resourceServerSecurityFilterChain(final HttpSecurity http) {
 
     final boolean isLocal = List.of(environment.getActiveProfiles()).contains("local");
 
@@ -58,12 +58,13 @@ public class SecurityConfig {
                     .requestMatchers("/actuator/health", "/actuator/info")
                     .permitAll()
                     .requestMatchers("/actuator/**")
-                    .authenticated();
+                    .hasRole("ADMIN");
               }
 
               authorize.anyRequest().authenticated();
             })
-        .oauth2ResourceServer(oauth2 -> oauth2.jwt(Customizer.withDefaults()))
+        .oauth2ResourceServer(
+            oauth2 -> oauth2.jwt(jwt -> jwt.jwtAuthenticationConverter(jwtConverter)))
         .sessionManagement(
             session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
 

@@ -5,18 +5,20 @@ import io.plan.mate.expense.tracker.backend.user.jpa.entity.User;
 import io.plan.mate.expense.tracker.backend.user.jpa.repository.UserRepository;
 import io.plan.mate.expense.tracker.backend.commons.exception.handling.exception.ConflictException;
 import io.plan.mate.expense.tracker.backend.commons.exception.handling.exception.ResourceNotFoundException;
+import io.plan.mate.expense.tracker.backend.commons.security.CurrentUserService;
 import io.plan.mate.expense.tracker.backend.expense.jpa.repository.ExpenseRepository;
 import io.plan.mate.expense.tracker.backend.member.jpa.repository.MemberRepository;
-import io.plan.mate.expense.tracker.backend.user.controller.payload.request.CreateUserRequest;
 import io.plan.mate.expense.tracker.backend.user.service.UserService;
 import io.plan.mate.expense.tracker.backend.user.service.keycloak.KeycloakService;
 import jakarta.ws.rs.WebApplicationException;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.modelmapper.ModelMapper;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -30,19 +32,21 @@ public class UserServiceImpl implements UserService {
   private final ExpenseRepository expenseRepository;
   private final ModelMapper modelMapper;
   private final KeycloakService keycloakService;
+  private final CurrentUserService currentUserService;
 
   @Override
   @Transactional
-  public UserDto createUser(final CreateUserRequest createUserRequest) {
+  public UserDto provisionCurrentUser() {
 
-    final User existingUser =
-        userRepository.findByKeycloakId(createUserRequest.keycloakId()).orElse(null);
+    final Jwt jwt = currentUserService.requireCurrentJwt();
+    final UUID keycloakId = currentUserService.getKeycloakId();
+
+    final User existingUser = userRepository.findByKeycloakId(keycloakId).orElse(null);
 
     if (existingUser != null) {
 
       try {
-        final UserRepresentation userRepresentation =
-            keycloakService.getUser(createUserRequest.keycloakId());
+        final UserRepresentation userRepresentation = keycloakService.getUser(keycloakId);
 
         existingUser.setEmail(userRepresentation.getEmail());
         existingUser.setUsername(userRepresentation.getUsername());
@@ -51,10 +55,7 @@ public class UserServiceImpl implements UserService {
 
         userRepository.save(existingUser);
       } catch (final WebApplicationException ex) {
-        log.warn(
-            "Skipping Keycloak profile sync for user {}: {}",
-            createUserRequest.keycloakId(),
-            ex.getMessage());
+        log.warn("Skipping Keycloak profile sync for user {}: {}", keycloakId, ex.getMessage());
       }
 
       return modelMapper.map(existingUser, UserDto.class);
@@ -62,12 +63,12 @@ public class UserServiceImpl implements UserService {
 
     final User user =
         User.builder()
-            .username(createUserRequest.username())
-            .email(createUserRequest.email())
-            .firstName(createUserRequest.firstName())
-            .lastName(createUserRequest.lastName())
+            .username(jwt.getClaimAsString("preferred_username"))
+            .email(jwt.getClaimAsString("email"))
+            .firstName(jwt.getClaimAsString("given_name"))
+            .lastName(jwt.getClaimAsString("family_name"))
             .createdAt(LocalDateTime.now())
-            .keycloakId(createUserRequest.keycloakId())
+            .keycloakId(keycloakId)
             .build();
 
     final User createdUser = userRepository.save(user);

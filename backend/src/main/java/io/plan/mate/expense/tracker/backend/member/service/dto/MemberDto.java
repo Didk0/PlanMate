@@ -1,5 +1,6 @@
 package io.plan.mate.expense.tracker.backend.member.service.dto;
 
+import io.plan.mate.expense.tracker.backend.member.jpa.entity.MemberRole;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.LocalDateTime;
 import lombok.AllArgsConstructor;
@@ -33,4 +34,7 @@ public class MemberDto {
 
   @Schema(description = "Join timestamp (UTC)", example = "2025-08-01T10:00:00")
   private LocalDateTime joinedAt;
+
+  @Schema(description = "Membership role", example = "OWNER")
+  private MemberRole role;
 }

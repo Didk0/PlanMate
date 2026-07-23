@@ -1,5 +1,6 @@
 import SockJS from "sockjs-client";
 import { Client } from "@stomp/stompjs";
+import { getAuthToken } from "@/api/client";
 
 export function createStompClient({ onConnect, onDisconnect, onError } = {}) {
   const wsUrl = import.meta.env.VITE_WS_URL;
@@ -10,6 +11,9 @@ export function createStompClient({ onConnect, onDisconnect, onError } = {}) {
     webSocketFactory: () => new SockJS(wsUrl),
     reconnectDelay: 5000,
     debug: (str) => log("[STOMP]", str),
+    beforeConnect: () => {
+      client.connectHeaders = { Authorization: `Bearer ${getAuthToken() ?? ""}` };
+    },
     onConnect: (frame) => {
       log("[STOMP] connected", frame.headers);
       onConnect?.(client, frame);

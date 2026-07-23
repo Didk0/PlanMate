@@ -13,12 +13,16 @@ import io.plan.mate.expense.tracker.backend.expense.service.ExpenseService;
 import io.plan.mate.expense.tracker.backend.expense.service.dto.ExpenseDto;
 import io.plan.mate.expense.tracker.backend.group.jpa.entity.Group;
 import io.plan.mate.expense.tracker.backend.group.jpa.repository.GroupRepository;
+import io.plan.mate.expense.tracker.backend.member.jpa.entity.Member;
+import io.plan.mate.expense.tracker.backend.member.jpa.entity.MemberRole;
+import io.plan.mate.expense.tracker.backend.member.jpa.repository.MemberRepository;
 import io.plan.mate.expense.tracker.backend.settlement.jpa.repository.SettlementRepository;
 import io.plan.mate.expense.tracker.backend.settlement.service.SettlementService;
 import io.plan.mate.expense.tracker.backend.user.jpa.entity.User;
 import io.plan.mate.expense.tracker.backend.user.jpa.repository.UserRepository;
 import jakarta.persistence.EntityManager;
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Objects;
 import org.junit.jupiter.api.BeforeEach;
@@ -44,6 +48,7 @@ class ExpenseServiceImplIntegrationTest {
   @Autowired private GroupRepository groupRepository;
   @Autowired private ExpenseRepository expenseRepository;
   @Autowired private SettlementRepository settlementRepository;
+  @Autowired private MemberRepository memberRepository;
   @Autowired private CacheManager cacheManager;
   @Autowired private EntityManager entityManager;
 
@@ -65,12 +70,24 @@ class ExpenseServiceImplIntegrationTest {
     return groupRepository.save(Group.builder().name(name).build());
   }
 
+  private void persistMember(User user, Group group) {
+    memberRepository.save(
+        Member.builder()
+            .user(user)
+            .group(group)
+            .role(MemberRole.MEMBER)
+            .joinedAt(LocalDateTime.now())
+            .build());
+  }
+
   @Test
   @DisplayName("persists the expense with its participants when the request is valid")
   void createExpense_shouldPersistExpenseWithParticipants_whenRequestIsValid() {
     User alice = persistUser("Alice", "Smith");
     User bob = persistUser("Bob", "Jones");
     Group group = persistGroup("Trip");
+    persistMember(alice, group);
+    persistMember(bob, group);
     flushAndClear();
 
     CreateExpenseRequest request =
@@ -96,6 +113,8 @@ class ExpenseServiceImplIntegrationTest {
     User alice = persistUser("Alice", "Smith");
     User bob = persistUser("Bob", "Jones");
     Group group = persistGroup("Trip");
+    persistMember(alice, group);
+    persistMember(bob, group);
     flushAndClear();
 
     CreateExpenseRequest request =
@@ -116,6 +135,7 @@ class ExpenseServiceImplIntegrationTest {
   void createExpense_shouldThrowResourceNotFoundExceptionAndPersistNothing_whenParticipantMissing() {
     User alice = persistUser("Alice", "Smith");
     Group group = persistGroup("Trip");
+    persistMember(alice, group);
     flushAndClear();
 
     CreateExpenseRequest request =
@@ -138,6 +158,8 @@ class ExpenseServiceImplIntegrationTest {
     User alice = persistUser("Alice", "Smith");
     User bob = persistUser("Bob", "Jones");
     Group group = persistGroup("Trip");
+    persistMember(alice, group);
+    persistMember(bob, group);
     flushAndClear();
 
     CreateExpenseRequest firstExpense =
