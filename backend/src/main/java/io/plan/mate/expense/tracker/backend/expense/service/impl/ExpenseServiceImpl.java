@@ -7,6 +7,7 @@ import io.plan.mate.expense.tracker.backend.group.jpa.entity.Group;
 import io.plan.mate.expense.tracker.backend.user.jpa.entity.User;
 import io.plan.mate.expense.tracker.backend.expense.jpa.repository.ExpenseRepository;
 import io.plan.mate.expense.tracker.backend.group.jpa.repository.GroupRepository;
+import io.plan.mate.expense.tracker.backend.member.jpa.repository.MemberRepository;
 import io.plan.mate.expense.tracker.backend.user.jpa.repository.UserRepository;
 import io.plan.mate.expense.tracker.backend.commons.exception.handling.exception.BadRequestException;
 import io.plan.mate.expense.tracker.backend.commons.exception.handling.exception.ResourceNotFoundException;
@@ -39,6 +40,7 @@ public class ExpenseServiceImpl implements ExpenseService {
   private final ExpenseRepository expenseRepository;
   private final UserRepository userRepository;
   private final GroupRepository groupRepository;
+  private final MemberRepository memberRepository;
   private final ModelMapper modelMapper;
   private final SettlementService settlementService;
   private final ApplicationEventPublisher eventPublisher;
@@ -68,6 +70,22 @@ public class ExpenseServiceImpl implements ExpenseService {
     missingUsernames.removeAll(usersByUsername.keySet());
     if (!missingUsernames.isEmpty()) {
       throw new ResourceNotFoundException("Users not found: " + missingUsernames);
+    }
+
+    final Set<Long> userIds =
+        usersByUsername.values().stream().map(User::getId).collect(Collectors.toSet());
+    final Set<Long> memberUserIds =
+        memberRepository.findMemberUserIdsByGroupIdAndUserIdIn(groupId, userIds);
+
+    final Set<String> nonMemberUsernames =
+        usersByUsername.entrySet().stream()
+            .filter(entry -> !memberUserIds.contains(entry.getValue().getId()))
+            .map(Map.Entry::getKey)
+            .collect(Collectors.toCollection(LinkedHashSet::new));
+
+    if (!nonMemberUsernames.isEmpty()) {
+      throw new BadRequestException(
+          "Users are not members of group with id " + groupId + ": " + nonMemberUsernames);
     }
 
     final Expense expense =

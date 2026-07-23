@@ -4,6 +4,7 @@ import static io.plan.mate.expense.tracker.backend.commons.utils.SettlementTestB
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import io.plan.mate.expense.tracker.backend.group.jpa.entity.Group;
@@ -20,6 +21,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.http.MediaType;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -139,5 +141,41 @@ class AuthorizationIntegrationTest {
     mockMvc
         .perform(get("/api/users/{userId}/groups", owner.getId()).with(asUser(owner)))
         .andExpect(status().isOk());
+  }
+
+  private String validExpensePayload() {
+    return """
+        {
+          "description": "Dinner",
+          "amount": 10.00,
+          "paidByUsername": "%s",
+          "participants": [{"userName": "%s", "shareAmount": 10.00}]
+        }
+        """
+        .formatted(member.getUsername(), owner.getUsername());
+  }
+
+  @Test
+  @DisplayName("createExpense returns 403 when the caller is not a member of the group")
+  void createExpense_shouldReturnForbidden_whenCallerIsNotAMember() throws Exception {
+    mockMvc
+        .perform(
+            post("/api/groups/{groupId}/expenses", group.getId())
+                .with(asUser(outsider))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(validExpensePayload()))
+        .andExpect(status().isForbidden());
+  }
+
+  @Test
+  @DisplayName("createExpense returns 201 when the caller is a member of the group")
+  void createExpense_shouldReturnCreated_whenCallerIsAMember() throws Exception {
+    mockMvc
+        .perform(
+            post("/api/groups/{groupId}/expenses", group.getId())
+                .with(asUser(member))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(validExpensePayload()))
+        .andExpect(status().isCreated());
   }
 }

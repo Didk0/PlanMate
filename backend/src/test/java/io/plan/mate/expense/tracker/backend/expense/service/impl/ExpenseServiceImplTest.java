@@ -18,6 +18,7 @@ import io.plan.mate.expense.tracker.backend.expense.jpa.repository.ExpenseReposi
 import io.plan.mate.expense.tracker.backend.expense.service.dto.ExpenseDto;
 import io.plan.mate.expense.tracker.backend.group.jpa.entity.Group;
 import io.plan.mate.expense.tracker.backend.group.jpa.repository.GroupRepository;
+import io.plan.mate.expense.tracker.backend.member.jpa.repository.MemberRepository;
 import io.plan.mate.expense.tracker.backend.settlement.service.SettlementService;
 import io.plan.mate.expense.tracker.backend.settlement.controller.payload.event.SettlementsChangedEvent;
 import io.plan.mate.expense.tracker.backend.user.jpa.entity.User;
@@ -25,6 +26,7 @@ import io.plan.mate.expense.tracker.backend.user.jpa.repository.UserRepository;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -43,6 +45,7 @@ class ExpenseServiceImplTest {
   @Mock private ExpenseRepository expenseRepository;
   @Mock private UserRepository userRepository;
   @Mock private GroupRepository groupRepository;
+  @Mock private MemberRepository memberRepository;
   @Mock private ModelMapper modelMapper;
   @Mock private SettlementService settlementService;
   @Mock private ApplicationEventPublisher eventPublisher;
@@ -121,6 +124,57 @@ class ExpenseServiceImplTest {
     }
 
     @Test
+    @DisplayName("throws BadRequestException naming the payer when they are not a group member")
+    void createExpense_shouldThrowBadRequestException_whenPayerIsNotAGroupMember() {
+      Group group = Group.builder().id(1L).name("Trip").build();
+      User alice = user(1L, "alice");
+      User bob = user(2L, "bob");
+      when(groupRepository.findById(1L)).thenReturn(Optional.of(group));
+      when(userRepository.findByUsernameIn(any())).thenReturn(List.of(alice, bob));
+      when(memberRepository.findMemberUserIdsByGroupIdAndUserIdIn(eq(1L), any()))
+          .thenReturn(Set.of(2L));
+
+      CreateExpenseRequest request =
+          new CreateExpenseRequest(
+              "Dinner",
+              new BigDecimal("30.00"),
+              "alice",
+              List.of(new CreateExpenseParticipant("bob", new BigDecimal("30.00"))));
+
+      assertThatThrownBy(() -> expenseService.createExpense(1L, request))
+          .isInstanceOf(BadRequestException.class)
+          .hasMessageContaining("alice");
+
+      verify(expenseRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName(
+        "throws BadRequestException naming the participant when they are not a group member")
+    void createExpense_shouldThrowBadRequestException_whenParticipantIsNotAGroupMember() {
+      Group group = Group.builder().id(1L).name("Trip").build();
+      User alice = user(1L, "alice");
+      User bob = user(2L, "bob");
+      when(groupRepository.findById(1L)).thenReturn(Optional.of(group));
+      when(userRepository.findByUsernameIn(any())).thenReturn(List.of(alice, bob));
+      when(memberRepository.findMemberUserIdsByGroupIdAndUserIdIn(eq(1L), any()))
+          .thenReturn(Set.of(1L));
+
+      CreateExpenseRequest request =
+          new CreateExpenseRequest(
+              "Dinner",
+              new BigDecimal("30.00"),
+              "alice",
+              List.of(new CreateExpenseParticipant("bob", new BigDecimal("30.00"))));
+
+      assertThatThrownBy(() -> expenseService.createExpense(1L, request))
+          .isInstanceOf(BadRequestException.class)
+          .hasMessageContaining("bob");
+
+      verify(expenseRepository, never()).save(any());
+    }
+
+    @Test
     @DisplayName("looks up all participants and the payer in a single query")
     void createExpense_shouldLookUpUsersInASingleQuery_whenCreatingExpense() {
       Group group = Group.builder().id(1L).name("Trip").build();
@@ -128,6 +182,8 @@ class ExpenseServiceImplTest {
       User bob = user(2L, "bob");
       when(groupRepository.findById(1L)).thenReturn(Optional.of(group));
       when(userRepository.findByUsernameIn(any())).thenReturn(List.of(alice, bob));
+      when(memberRepository.findMemberUserIdsByGroupIdAndUserIdIn(eq(1L), any()))
+          .thenReturn(Set.of(1L, 2L));
       when(expenseRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
       when(modelMapper.map(any(Expense.class), eq(ExpenseDto.class)))
           .thenReturn(ExpenseDto.builder().build());
@@ -161,6 +217,8 @@ class ExpenseServiceImplTest {
       User bob = user(2L, "bob");
       when(groupRepository.findById(1L)).thenReturn(Optional.of(group));
       when(userRepository.findByUsernameIn(any())).thenReturn(List.of(alice, bob));
+      when(memberRepository.findMemberUserIdsByGroupIdAndUserIdIn(eq(1L), any()))
+          .thenReturn(Set.of(1L, 2L));
       when(expenseRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
       when(modelMapper.map(any(Expense.class), eq(ExpenseDto.class)))
           .thenReturn(ExpenseDto.builder().build());
@@ -185,6 +243,8 @@ class ExpenseServiceImplTest {
       User bob = user(2L, "bob");
       when(groupRepository.findById(1L)).thenReturn(Optional.of(group));
       when(userRepository.findByUsernameIn(any())).thenReturn(List.of(alice, bob));
+      when(memberRepository.findMemberUserIdsByGroupIdAndUserIdIn(eq(1L), any()))
+          .thenReturn(Set.of(1L, 2L));
       when(expenseRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
       when(modelMapper.map(any(Expense.class), eq(ExpenseDto.class)))
           .thenReturn(ExpenseDto.builder().build());
