@@ -35,11 +35,6 @@ export function useProvisionUser(token, tokenData) {
       })
       .catch((err) => {
         if (cancelled) return;
-        if (err.response?.status === 409) {
-          provisionedSubRef.current = sub;
-          setState({ status: "ready", error: null });
-          return;
-        }
         setState({ status: "error", error: getErrorMessage(err, "Failed to set up your account") });
       });
 

@@ -25,11 +25,9 @@ const ErrorScreen = ({ message, status, onRetry }) => {
         </div>
         {isForbidden ? (
           <>
-            <h2 className="text-slate-100 font-semibold">
-              You don&apos;t have access to this group
-            </h2>
+            <h2 className="text-slate-100 font-semibold">You don&apos;t have access</h2>
             <p className="text-slate-400 text-sm mt-2">
-              It may have been deleted, or you may have been removed from it.
+              You may not have permission to view this, or it may have been removed.
             </p>
             <div className="mt-6">
               <LinkButton to="/groups" variant="secondary">

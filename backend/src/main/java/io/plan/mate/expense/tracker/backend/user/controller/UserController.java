@@ -101,7 +101,7 @@ public class UserController {
         @ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content(schema = @Schema(implementation = ApiError.class))),
         @ApiResponse(responseCode = "403", description = "Caller is not an ADMIN", content = @Content(schema = @Schema(implementation = ApiError.class))),
         @ApiResponse(responseCode = "404", description = "User not found", content = @Content(schema = @Schema(implementation = ApiError.class))),
-        @ApiResponse(responseCode = "409", description = "User has group memberships or expense history", content = @Content(schema = @Schema(implementation = ApiError.class))),
+        @ApiResponse(responseCode = "409", description = "User has group memberships or expense history, or caller is attempting to delete their own account", content = @Content(schema = @Schema(implementation = ApiError.class))),
         @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content(schema = @Schema(implementation = ApiError.class)))
       })
   @PreAuthorize("hasRole('ADMIN')")

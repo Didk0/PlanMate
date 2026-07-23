@@ -1,10 +1,9 @@
 import { useSelector } from "react-redux";
 import { Navigate, Outlet } from "react-router-dom";
-import { selectIsAdmin } from "@/store/authSlice";
 
 const RequireRole = ({ role }) => {
-  const isAdmin = useSelector(selectIsAdmin);
-  const hasRole = role === "ADMIN" ? isAdmin : false;
+  const roles = useSelector((state) => state.auth.user?.roles ?? []);
+  const hasRole = roles.includes(role);
 
   return hasRole ? <Outlet /> : <Navigate to="/groups" replace />;
 };

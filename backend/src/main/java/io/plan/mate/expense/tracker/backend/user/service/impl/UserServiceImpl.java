@@ -112,6 +112,11 @@ public class UserServiceImpl implements UserService {
                     new ResourceNotFoundException(
                         String.format("No user with id %s found", userId)));
 
+    if (userId.equals(currentUserService.requireCurrentUserId())) {
+      throw new ConflictException(
+          String.format("User with id %s cannot delete their own account", userId));
+    }
+
     final boolean hasMembershipsOrExpenseHistory =
         memberRepository.existsByUserId(userId)
             || expenseRepository.existsByPaidById(userId)

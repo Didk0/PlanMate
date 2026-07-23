@@ -70,6 +70,18 @@ class UserServiceImplTest {
     }
 
     @Test
+    @DisplayName("throws ConflictException when deleting own account")
+    void deleteUser_shouldThrowConflictException_whenDeletingOwnAccount() {
+      User user = User.builder().id(1L).build();
+      when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+      when(currentUserService.requireCurrentUserId()).thenReturn(1L);
+
+      assertThatThrownBy(() -> userService.deleteUser(1L)).isInstanceOf(ConflictException.class);
+
+      verify(userRepository, never()).delete(user);
+    }
+
+    @Test
     @DisplayName("throws ConflictException when user has group memberships")
     void deleteUser_shouldThrowConflictException_whenUserHasMemberships() {
       User user = User.builder().id(1L).build();
