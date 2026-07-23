@@ -11,6 +11,8 @@ export const setAuthToken = (token) => {
   authToken = token;
 };
 
+export const getAuthToken = () => authToken;
+
 api.interceptors.request.use((config) => {
   if (authToken) {
     config.headers.Authorization = `Bearer ${authToken}`;
