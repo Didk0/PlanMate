@@ -25,4 +25,7 @@ public class ExpenseParticipantDto {
   private String firstName;
 
   private String lastName;
+
+  @Schema(description = "Username of the participant", example = "bob")
+  private String username;
 }

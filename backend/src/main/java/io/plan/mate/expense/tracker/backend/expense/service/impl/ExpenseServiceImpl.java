@@ -15,6 +15,7 @@ import io.plan.mate.expense.tracker.backend.expense.controller.payload.event.Exp
 import io.plan.mate.expense.tracker.backend.expense.controller.payload.event.ExpenseCreatedEvent;
 import io.plan.mate.expense.tracker.backend.expense.controller.payload.request.CreateExpenseParticipant;
 import io.plan.mate.expense.tracker.backend.expense.controller.payload.request.CreateExpenseRequest;
+import io.plan.mate.expense.tracker.backend.expense.controller.payload.request.UpdateExpenseRequest;
 import io.plan.mate.expense.tracker.backend.expense.service.ExpenseService;
 import io.plan.mate.expense.tracker.backend.settlement.controller.payload.event.SettlementsChangeEnum;
 import io.plan.mate.expense.tracker.backend.settlement.controller.payload.event.SettlementsChangedEvent;
@@ -50,23 +51,148 @@ public class ExpenseServiceImpl implements ExpenseService {
   public ExpenseDto createExpense(
       final Long groupId, final CreateExpenseRequest createExpenseRequest) {
 
-    final Group group =
-        groupRepository
-            .findById(groupId)
+    final Group group = findGroupOrThrow(groupId);
+
+    checkValidShareTotal(
+        createExpenseRequest.participants(), createExpenseRequest.amount());
+
+    final Map<String, User> usersByUsername =
+        resolveMembersByUsername(
+            groupId,
+            collectUsernames(
+                createExpenseRequest.paidByUsername(), createExpenseRequest.participants()));
+
+    final Expense expense =
+        Expense.builder()
+            .description(createExpenseRequest.description())
+            .amount(createExpenseRequest.amount())
+            .createdAt(LocalDateTime.now())
+            .group(group)
+            .paidBy(usersByUsername.get(createExpenseRequest.paidByUsername()))
+            .build();
+
+    expense.setParticipants(
+        buildParticipants(expense, createExpenseRequest.participants(), usersByUsername));
+
+    final Expense savedExpense = expenseRepository.save(expense);
+    final ExpenseDto expenseDto = modelMapper.map(savedExpense, ExpenseDto.class);
+
+    settlementService.clearSettlementCache(group.getId());
+    eventPublisher.publishEvent(
+        new ExpenseCreatedEvent(ExpenseChangeEnum.ADD_EXPENSE, group.getId(), expenseDto));
+    eventPublisher.publishEvent(
+        new SettlementsChangedEvent(
+            SettlementsChangeEnum.SETTLEMENTS_INVALIDATED, group.getId()));
+
+    return expenseDto;
+  }
+
+  @Override
+  @Transactional
+  public ExpenseDto updateExpense(
+      final Long groupId, final Long expenseId, final UpdateExpenseRequest updateExpenseRequest) {
+
+    final Expense expense = findExpenseInGroupOrThrow(groupId, expenseId);
+
+    checkValidShareTotal(
+        updateExpenseRequest.participants(), updateExpenseRequest.amount());
+
+    final Map<String, User> usersByUsername =
+        resolveMembersByUsername(
+            groupId,
+            collectUsernames(
+                updateExpenseRequest.paidByUsername(), updateExpenseRequest.participants()));
+
+    expense.setDescription(updateExpenseRequest.description());
+    expense.setAmount(updateExpenseRequest.amount());
+    expense.setPaidBy(usersByUsername.get(updateExpenseRequest.paidByUsername()));
+
+    expense.getParticipants().clear();
+
+    expenseRepository.flush();
+
+    expense
+        .getParticipants()
+        .addAll(buildParticipants(expense, updateExpenseRequest.participants(), usersByUsername));
+
+    final Expense savedExpense = expenseRepository.save(expense);
+    final ExpenseDto expenseDto = modelMapper.map(savedExpense, ExpenseDto.class);
+
+    settlementService.clearSettlementCache(groupId);
+    eventPublisher.publishEvent(
+        new ExpenseCreatedEvent(ExpenseChangeEnum.EDIT_EXPENSE, groupId, expenseDto));
+    eventPublisher.publishEvent(
+        new SettlementsChangedEvent(SettlementsChangeEnum.SETTLEMENTS_INVALIDATED, groupId));
+
+    return expenseDto;
+  }
+
+  @Override
+  @Transactional
+  public void deleteExpense(final Long groupId, final Long expenseId) {
+
+    final Expense expense = findExpenseInGroupOrThrow(groupId, expenseId);
+    final ExpenseDto expenseDto = modelMapper.map(expense, ExpenseDto.class);
+
+    expenseRepository.delete(expense);
+
+    settlementService.clearSettlementCache(groupId);
+    eventPublisher.publishEvent(
+        new ExpenseCreatedEvent(ExpenseChangeEnum.DELETE_EXPENSE, groupId, expenseDto));
+    eventPublisher.publishEvent(
+        new SettlementsChangedEvent(SettlementsChangeEnum.SETTLEMENTS_INVALIDATED, groupId));
+  }
+
+  @Override
+  @Transactional(readOnly = true)
+  public List<ExpenseDto> getGroupExpenses(final Long groupId) {
+
+    final List<Expense> expenses = expenseRepository.findByGroupId(groupId);
+
+    return expenses.stream().map(expense -> modelMapper.map(expense, ExpenseDto.class)).toList();
+  }
+
+  private Group findGroupOrThrow(final Long groupId) {
+    return groupRepository
+        .findById(groupId)
+        .orElseThrow(
+            () -> new ResourceNotFoundException("Group with id " + groupId + " not found"));
+  }
+
+  private Expense findExpenseInGroupOrThrow(final Long groupId, final Long expenseId) {
+
+    final Expense expense =
+        expenseRepository
+            .findById(expenseId)
             .orElseThrow(
-                () -> new ResourceNotFoundException("Group with id " + groupId + " not found"));
+                () -> new ResourceNotFoundException("Expense with id " + expenseId + " not found"));
 
-    checkValidShareTotal(createExpenseRequest);
+    final boolean belongsToGroup = expense.getGroup().getId().equals(groupId);
+    if (!belongsToGroup) {
+      throw new ResourceNotFoundException(
+          "Expense with id " + expenseId + " not found in group " + groupId);
+    }
 
-    final Set<String> usernames = new LinkedHashSet<>();
-    usernames.add(createExpenseRequest.paidByUsername());
-    createExpenseRequest.participants().forEach(p -> usernames.add(p.userName()));
+    return expense;
+  }
+
+  private Set<String> collectUsernames(
+      final String paidByUsername, final List<CreateExpenseParticipant> participants) {
+
+    final Set<String> usernames = new LinkedHashSet<>(); // order: payer first, then participants
+    usernames.add(paidByUsername);
+    participants.forEach(p -> usernames.add(p.userName()));
+    return usernames;
+  }
+
+  private Map<String, User> resolveMembersByUsername(
+      final Long groupId, final Set<String> usernames) {
 
     final Map<String, User> usersByUsername =
         userRepository.findByUsernameIn(usernames).stream()
             .collect(Collectors.toMap(User::getUsername, Function.identity()));
 
-    final Set<String> missingUsernames = new LinkedHashSet<>(usernames); //order: payer first, then participants
+    final Set<String> missingUsernames = new LinkedHashSet<>(usernames);
     missingUsernames.removeAll(usersByUsername.keySet());
     if (!missingUsernames.isEmpty()) {
       throw new ResourceNotFoundException("Users not found: " + missingUsernames);
@@ -88,65 +214,36 @@ public class ExpenseServiceImpl implements ExpenseService {
           "Users are not members of group with id " + groupId + ": " + nonMemberUsernames);
     }
 
-    final Expense expense =
-        Expense.builder()
-            .description(createExpenseRequest.description())
-            .amount(createExpenseRequest.amount())
-            .createdAt(LocalDateTime.now())
-            .group(group)
-            .paidBy(usersByUsername.get(createExpenseRequest.paidByUsername()))
-            .build();
-
-    final List<ExpenseParticipant> participants =
-        createExpenseRequest.participants().stream()
-            .map(
-                p ->
-                    ExpenseParticipant.builder()
-                        .expense(expense)
-                        .participant(usersByUsername.get(p.userName()))
-                        .shareAmount(p.shareAmount())
-                        .build())
-            .toList();
-
-    expense.setParticipants(participants);
-
-    final Expense savedExpense = expenseRepository.save(expense);
-
-    final ExpenseDto expenseDto = modelMapper.map(savedExpense, ExpenseDto.class);
-
-    settlementService.clearSettlementCache(group.getId());
-
-    eventPublisher.publishEvent(
-        new ExpenseCreatedEvent(ExpenseChangeEnum.ADD_EXPENSE, group.getId(), expenseDto));
-    eventPublisher.publishEvent(
-        new SettlementsChangedEvent(
-            SettlementsChangeEnum.SETTLEMENTS_INVALIDATED, group.getId()));
-
-    return expenseDto;
+    return usersByUsername;
   }
 
-  @Override
-  @Transactional(readOnly = true)
-  public List<ExpenseDto> getGroupExpenses(final Long groupId) {
+  private List<ExpenseParticipant> buildParticipants(
+      final Expense expense,
+      final List<CreateExpenseParticipant> participants,
+      final Map<String, User> usersByUsername) {
 
-    final List<Expense> expenses = expenseRepository.findByGroupId(groupId);
-
-    return expenses.stream().map(expense -> modelMapper.map(expense, ExpenseDto.class)).toList();
+    return participants.stream()
+        .map(
+            p ->
+                ExpenseParticipant.builder()
+                    .expense(expense)
+                    .participant(usersByUsername.get(p.userName()))
+                    .shareAmount(p.shareAmount())
+                    .build())
+        .toList();
   }
 
-  private void checkValidShareTotal(final CreateExpenseRequest createExpenseRequest) {
+  private void checkValidShareTotal(
+      final List<CreateExpenseParticipant> participants, final BigDecimal amount) {
+
     final BigDecimal shareTotal =
-        createExpenseRequest.participants().stream()
+        participants.stream()
             .map(CreateExpenseParticipant::shareAmount)
             .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-    if (shareTotal.compareTo(createExpenseRequest.amount()) != 0) {
+    if (shareTotal.compareTo(amount) != 0) {
       throw new BadRequestException(
-          "Sum of participant shares ("
-              + shareTotal
-              + ") must equal the expense amount ("
-              + createExpenseRequest.amount()
-              + ")");
+          "Sum of participant shares (" + shareTotal + ") must equal the expense amount (" + amount + ")");
     }
   }
 }

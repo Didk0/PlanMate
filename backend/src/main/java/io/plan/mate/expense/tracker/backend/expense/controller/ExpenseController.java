@@ -3,6 +3,7 @@ package io.plan.mate.expense.tracker.backend.expense.controller;
 import io.plan.mate.expense.tracker.backend.expense.service.dto.ExpenseDto;
 import io.plan.mate.expense.tracker.backend.commons.exception.handling.dto.ApiError;
 import io.plan.mate.expense.tracker.backend.expense.controller.payload.request.CreateExpenseRequest;
+import io.plan.mate.expense.tracker.backend.expense.controller.payload.request.UpdateExpenseRequest;
 import io.plan.mate.expense.tracker.backend.expense.service.ExpenseService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -15,9 +16,11 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -76,5 +79,52 @@ public class ExpenseController {
     final List<ExpenseDto> expenseDtos = expenseService.getGroupExpenses(groupId);
 
     return ResponseEntity.ok(expenseDtos);
+  }
+
+  @Operation(
+      summary = "Update an existing expense",
+      description = "Updates the description, amount, payer and participants of an expense",
+      responses = {
+        @ApiResponse(
+            responseCode = "200",
+            description = "Expense updated successfully",
+            content = @Content(schema = @Schema(implementation = ExpenseDto.class))),
+        @ApiResponse(responseCode = "400", description = "Invalid field for expense provided", content = @Content(schema = @Schema(implementation = ApiError.class))),
+        @ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content(schema = @Schema(implementation = ApiError.class))),
+        @ApiResponse(responseCode = "403", description = "Caller is not a member of the group", content = @Content(schema = @Schema(implementation = ApiError.class))),
+        @ApiResponse(responseCode = "404", description = "User, group or expense not found", content = @Content(schema = @Schema(implementation = ApiError.class))),
+        @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content(schema = @Schema(implementation = ApiError.class)))
+      })
+  @PreAuthorize("@groupAccess.isMember(#groupId)")
+  @PutMapping("/{groupId}/expenses/{expenseId}")
+  public ResponseEntity<ExpenseDto> updateExpense(
+      @PathVariable final Long groupId,
+      @PathVariable final Long expenseId,
+      @Valid @RequestBody final UpdateExpenseRequest updateExpenseRequest) {
+
+    final ExpenseDto expenseDto =
+        expenseService.updateExpense(groupId, expenseId, updateExpenseRequest);
+
+    return ResponseEntity.ok(expenseDto);
+  }
+
+  @Operation(
+      summary = "Delete an expense",
+      description = "Deletes an expense from a group",
+      responses = {
+        @ApiResponse(responseCode = "204", description = "Expense deleted successfully"),
+        @ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content(schema = @Schema(implementation = ApiError.class))),
+        @ApiResponse(responseCode = "403", description = "Caller is not a member of the group", content = @Content(schema = @Schema(implementation = ApiError.class))),
+        @ApiResponse(responseCode = "404", description = "Group or expense not found", content = @Content(schema = @Schema(implementation = ApiError.class))),
+        @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content(schema = @Schema(implementation = ApiError.class)))
+      })
+  @PreAuthorize("@groupAccess.isMember(#groupId)")
+  @DeleteMapping("/{groupId}/expenses/{expenseId}")
+  public ResponseEntity<Void> deleteExpense(
+      @PathVariable final Long groupId, @PathVariable final Long expenseId) {
+
+    expenseService.deleteExpense(groupId, expenseId);
+
+    return ResponseEntity.noContent().build();
   }
 }
