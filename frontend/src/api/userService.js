@@ -10,7 +10,8 @@ const userService = {
 
   createUser: () => api.post("users").then((res) => res.data),
 
-  getAllUsers: () => api.get("users").then((res) => res.data),
+  getAllUsers: (page = 0, size = 10) =>
+    api.get("users", { params: { page, size } }).then((res) => res.data),
 
   deleteUser: (userId) => api.delete(`users/${userId}`),
 };

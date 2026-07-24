@@ -1,9 +1,9 @@
 import api from "./client";
-import expenseService from "./expenseService";
 import userService from "./userService";
 
 const groupService = {
-  getAllGroups: () => api.get("/groups").then((res) => res.data),
+  getAllGroups: (page = 0, size = 5) =>
+    api.get("/groups", { params: { page, size } }).then((res) => res.data),
 
   getGroupById: (groupId) => api.get(`groups/${groupId}`).then((res) => res.data),
 
@@ -12,12 +12,11 @@ const groupService = {
   deleteGroup: (groupId) => api.delete(`groups/${groupId}`),
 
   getGroupDetails: async (groupId) => {
-    const [groupData, membersData, expensesData] = await Promise.all([
+    const [groupData, membersData] = await Promise.all([
       groupService.getGroupById(groupId),
       userService.getGroupMembers(groupId),
-      expenseService.getGroupExpenses(groupId),
     ]);
-    return { groupData, membersData, expensesData };
+    return { groupData, membersData };
   },
 };
 

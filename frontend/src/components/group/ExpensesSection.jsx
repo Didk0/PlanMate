@@ -4,7 +4,14 @@ import EmptyState from "@/components/shared/EmptyState";
 import LinkButton from "@/components/shared/LinkButton";
 import { itemVariants, listVariants } from "@/lib/motion";
 
-const ExpensesSection = ({ expenses, groupId, onDeleteExpense }) => {
+const ExpensesSection = ({
+  expenses,
+  groupId,
+  onDeleteExpense,
+  hasMoreExpenses = false,
+  isLoadingMoreExpenses = false,
+  onLoadMoreExpenses,
+}) => {
   return (
     <section>
       <div className="flex items-center justify-between mb-4">
@@ -83,6 +90,18 @@ const ExpensesSection = ({ expenses, groupId, onDeleteExpense }) => {
             </motion.li>
           ))}
         </motion.ul>
+      )}
+
+      {hasMoreExpenses && (
+        <div className="flex justify-center mt-6">
+          <Button
+            variant="secondary"
+            isLoading={isLoadingMoreExpenses}
+            onClick={onLoadMoreExpenses}
+          >
+            Load more
+          </Button>
+        </div>
       )}
 
       {/* Settle Debts button */}

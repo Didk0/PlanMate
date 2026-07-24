@@ -6,23 +6,21 @@ import ConfirmDialog from "@/components/shared/ConfirmDialog";
 import EmptyState from "@/components/shared/EmptyState";
 import ErrorScreen from "@/components/shared/ErrorScreen";
 import PageShell from "@/components/shared/PageShell";
+import Pagination from "@/components/shared/Pagination";
 import Skeleton from "@/components/shared/Skeleton";
 import { useAsyncData } from "@/hooks/useAsyncData";
 import { notifyError, notifySuccess } from "@/lib/notify";
 import { selectAppUserId } from "@/store/authSlice";
 
+const USERS_PAGE_SIZE = 10;
+
 const AdminUsersPage = () => {
   const appUserId = useSelector(selectAppUserId);
 
-  const fetchUsers = useCallback(() => userService.getAllUsers(), []);
-  const {
-    data: users,
-    setData: setUsers,
-    isLoading,
-    error,
-    errorStatus,
-    reload,
-  } = useAsyncData(fetchUsers, []);
+  const [page, setPage] = useState(0);
+  const fetchUsers = useCallback(() => userService.getAllUsers(page, USERS_PAGE_SIZE), [page]);
+  const { data, isLoading, error, errorStatus, reload } = useAsyncData(fetchUsers, [page]);
+  const users = data?.content ?? [];
 
   const [userToDelete, setUserToDelete] = useState(null);
 
@@ -31,7 +29,11 @@ const AdminUsersPage = () => {
     setUserToDelete(null);
     try {
       await userService.deleteUser(userId);
-      setUsers((prev) => prev.filter((u) => u.id !== userId));
+      if (users.length === 1 && page > 0) {
+        setPage((prev) => prev - 1);
+      } else {
+        reload();
+      }
       notifySuccess("User deleted");
     } catch (err) {
       notifyError(err, "Failed to delete user");
@@ -87,6 +89,7 @@ const AdminUsersPage = () => {
               ))}
             </tbody>
           </table>
+          <Pagination page={page} totalPages={data.totalPages} onPageChange={setPage} />
         </div>
       )}
 
