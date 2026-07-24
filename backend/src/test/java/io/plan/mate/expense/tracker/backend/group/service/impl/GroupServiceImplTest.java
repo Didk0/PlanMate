@@ -20,6 +20,7 @@ import io.plan.mate.expense.tracker.backend.member.jpa.repository.MemberReposito
 import io.plan.mate.expense.tracker.backend.member.service.dto.MemberDto;
 import io.plan.mate.expense.tracker.backend.settlement.controller.payload.event.SettlementsChangedEvent;
 import io.plan.mate.expense.tracker.backend.settlement.service.SettlementService;
+import io.plan.mate.expense.tracker.backend.commons.service.dto.PagedResponse;
 import io.plan.mate.expense.tracker.backend.user.jpa.entity.User;
 import io.plan.mate.expense.tracker.backend.user.jpa.repository.UserRepository;
 import java.util.List;
@@ -34,6 +35,9 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.modelmapper.ModelMapper;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("GroupServiceImpl")
@@ -149,13 +153,14 @@ class GroupServiceImplTest {
     @DisplayName("returns every group when the caller is an ADMIN")
     void getAllGroups_shouldReturnEveryGroup_whenCallerIsAdmin() {
       Group group = Group.builder().id(1L).name("Trip").build();
+      Pageable pageable = PageRequest.of(0, 5);
       when(currentUserService.isAdmin()).thenReturn(true);
-      when(groupRepository.findAll()).thenReturn(List.of(group));
+      when(groupRepository.findAll(pageable)).thenReturn(new PageImpl<>(List.of(group), pageable, 1));
       when(modelMapper.map(group, GroupDto.class)).thenReturn(GroupDto.builder().id(1L).build());
 
-      List<GroupDto> groups = groupService.getAllGroups();
+      PagedResponse<GroupDto> groups = groupService.getAllGroups(pageable);
 
-      assertThat(groups).hasSize(1);
+      assertThat(groups.content()).hasSize(1);
       verify(currentUserService, never()).findCurrentUserId();
     }
 
@@ -164,28 +169,31 @@ class GroupServiceImplTest {
     void getAllGroups_shouldReturnCallerGroups_whenCallerIsNotAdmin() {
       Group group = Group.builder().id(1L).name("Trip").build();
       Member member = Member.builder().id(1L).group(group).build();
+      Pageable pageable = PageRequest.of(0, 5);
 
       when(currentUserService.isAdmin()).thenReturn(false);
       when(currentUserService.findCurrentUserId()).thenReturn(Optional.of(7L));
-      when(memberRepository.findByUserId(7L)).thenReturn(List.of(member));
+      when(memberRepository.findByUserId(7L, pageable))
+          .thenReturn(new PageImpl<>(List.of(member), pageable, 1));
       when(modelMapper.map(group, GroupDto.class)).thenReturn(GroupDto.builder().id(1L).build());
 
-      List<GroupDto> groups = groupService.getAllGroups();
+      PagedResponse<GroupDto> groups = groupService.getAllGroups(pageable);
 
-      assertThat(groups).hasSize(1);
-      verify(groupRepository, never()).findAll();
+      assertThat(groups.content()).hasSize(1);
+      verify(groupRepository, never()).findAll(any(Pageable.class));
     }
 
     @Test
-    @DisplayName("returns an empty list when the caller is not provisioned")
-    void getAllGroups_shouldReturnEmptyList_whenCallerIsNotProvisioned() {
+    @DisplayName("returns an empty page when the caller is not provisioned")
+    void getAllGroups_shouldReturnEmptyPage_whenCallerIsNotProvisioned() {
+      Pageable pageable = PageRequest.of(0, 5);
       when(currentUserService.isAdmin()).thenReturn(false);
       when(currentUserService.findCurrentUserId()).thenReturn(Optional.empty());
 
-      List<GroupDto> groups = groupService.getAllGroups();
+      PagedResponse<GroupDto> groups = groupService.getAllGroups(pageable);
 
-      assertThat(groups).isEmpty();
-      verify(memberRepository, never()).findByUserId(any());
+      assertThat(groups.content()).isEmpty();
+      verify(memberRepository, never()).findByUserId(any(), any());
     }
   }
 }

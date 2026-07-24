@@ -1,5 +1,6 @@
 package io.plan.mate.expense.tracker.backend.group.controller;
 
+import io.plan.mate.expense.tracker.backend.commons.service.dto.PagedResponse;
 import io.plan.mate.expense.tracker.backend.group.service.dto.GroupDto;
 import io.plan.mate.expense.tracker.backend.commons.exception.handling.dto.ApiError;
 import io.plan.mate.expense.tracker.backend.group.controller.payload.request.CreateGroupRequest;
@@ -10,8 +11,9 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
-import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -73,19 +75,20 @@ public class GroupController {
   @Operation(
       summary = "Get all groups",
       description =
-          "Returns the caller's groups, or every group in the system for an ADMIN caller",
+          "Returns a page of the caller's groups, or every group in the system for an ADMIN caller",
       responses = {
         @ApiResponse(
             responseCode = "200",
-            description = "List of groups",
-            content = @Content(schema = @Schema(implementation = GroupDto.class, type = "array"))),
+            description = "Page of groups",
+            content = @Content(schema = @Schema(implementation = PagedResponse.class))),
         @ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content(schema = @Schema(implementation = ApiError.class))),
         @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content(schema = @Schema(implementation = ApiError.class)))
       })
   @GetMapping
-  public ResponseEntity<List<GroupDto>> getAllGroups() {
+  public ResponseEntity<PagedResponse<GroupDto>> getAllGroups(
+      @PageableDefault(size = 5, sort = "name") final Pageable pageable) {
 
-    return ResponseEntity.ok(groupService.getAllGroups());
+    return ResponseEntity.ok(groupService.getAllGroups(pageable));
   }
 
   @Operation(

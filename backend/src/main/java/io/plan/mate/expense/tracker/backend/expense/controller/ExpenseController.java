@@ -1,5 +1,6 @@
 package io.plan.mate.expense.tracker.backend.expense.controller;
 
+import io.plan.mate.expense.tracker.backend.commons.service.dto.PagedResponse;
 import io.plan.mate.expense.tracker.backend.expense.service.dto.ExpenseDto;
 import io.plan.mate.expense.tracker.backend.commons.exception.handling.dto.ApiError;
 import io.plan.mate.expense.tracker.backend.expense.controller.payload.request.CreateExpenseRequest;
@@ -11,8 +12,10 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
-import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -60,13 +63,12 @@ public class ExpenseController {
 
   @Operation(
       summary = "Get expenses by group ID",
-      description = "Retrieves all expenses for a specified group",
+      description = "Retrieves a page of expenses for a specified group, newest first",
       responses = {
         @ApiResponse(
             responseCode = "200",
-            description = "List of expenses for the group",
-            content =
-                @Content(schema = @Schema(implementation = ExpenseDto.class, type = "array"))),
+            description = "Page of expenses for the group",
+            content = @Content(schema = @Schema(implementation = PagedResponse.class))),
         @ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content(schema = @Schema(implementation = ApiError.class))),
         @ApiResponse(responseCode = "403", description = "Caller is not a member of the group", content = @Content(schema = @Schema(implementation = ApiError.class))),
         @ApiResponse(responseCode = "404", description = "Group not found", content = @Content(schema = @Schema(implementation = ApiError.class))),
@@ -74,11 +76,12 @@ public class ExpenseController {
       })
   @PreAuthorize("@groupAccess.isMember(#groupId)")
   @GetMapping("/{groupId}/expenses")
-  public ResponseEntity<List<ExpenseDto>> getGroupExpenses(@PathVariable final Long groupId) {
+  public ResponseEntity<PagedResponse<ExpenseDto>> getGroupExpenses(
+      @PathVariable final Long groupId,
+      @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC)
+          final Pageable pageable) {
 
-    final List<ExpenseDto> expenseDtos = expenseService.getGroupExpenses(groupId);
-
-    return ResponseEntity.ok(expenseDtos);
+    return ResponseEntity.ok(expenseService.getGroupExpenses(groupId, pageable));
   }
 
   @Operation(

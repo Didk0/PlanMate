@@ -10,12 +10,14 @@ import static org.mockito.Mockito.when;
 import io.plan.mate.expense.tracker.backend.commons.exception.handling.exception.ConflictException;
 import io.plan.mate.expense.tracker.backend.commons.exception.handling.exception.ResourceNotFoundException;
 import io.plan.mate.expense.tracker.backend.commons.security.CurrentUserService;
+import io.plan.mate.expense.tracker.backend.commons.service.dto.PagedResponse;
 import io.plan.mate.expense.tracker.backend.expense.jpa.repository.ExpenseRepository;
 import io.plan.mate.expense.tracker.backend.member.jpa.repository.MemberRepository;
 import io.plan.mate.expense.tracker.backend.user.jpa.entity.User;
 import io.plan.mate.expense.tracker.backend.user.jpa.repository.UserRepository;
 import io.plan.mate.expense.tracker.backend.user.service.dto.UserDto;
 import io.plan.mate.expense.tracker.backend.user.service.keycloak.KeycloakService;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.DisplayName;
@@ -27,6 +29,9 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.modelmapper.ModelMapper;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.oauth2.jwt.Jwt;
 
 @ExtendWith(MockitoExtension.class)
@@ -165,6 +170,26 @@ class UserServiceImplTest {
       userService.provisionCurrentUser();
 
       verify(userRepository, never()).save(any());
+    }
+  }
+
+  @Nested
+  @DisplayName("getAllUsers")
+  class GetAllUsers {
+
+    @Test
+    @DisplayName("returns a paged response mapped from the requested page")
+    void getAllUsers_shouldReturnPagedUsers_whenUsersExist() {
+      User alice = User.builder().id(1L).username("alice").build();
+      Pageable pageable = PageRequest.of(0, 10);
+      when(userRepository.findAll(pageable)).thenReturn(new PageImpl<>(List.of(alice), pageable, 1));
+      when(modelMapper.map(alice, UserDto.class)).thenReturn(UserDto.builder().id(1L).build());
+
+      PagedResponse<UserDto> result = userService.getAllUsers(pageable);
+
+      assertThat(result.content()).hasSize(1);
+      assertThat(result.totalElements()).isEqualTo(1);
+      assertThat(result.page()).isZero();
     }
   }
 }
