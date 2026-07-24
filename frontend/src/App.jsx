@@ -12,6 +12,7 @@ import HomePage from "@/pages/HomePage";
 const GroupsPage = lazy(() => import("@/pages/GroupsPage"));
 const GroupDetailsPage = lazy(() => import("@/pages/GroupDetailsPage"));
 const AddExpensePage = lazy(() => import("@/pages/AddExpensePage"));
+const EditExpensePage = lazy(() => import("@/pages/EditExpensePage"));
 const SettlementsPage = lazy(() => import("@/pages/SettlementsPage"));
 const AdminUsersPage = lazy(() => import("@/pages/AdminUsersPage"));
 const NotFoundPage = lazy(() => import("@/pages/NotFoundPage"));
@@ -41,6 +42,7 @@ function App() {
               <Route path="/groups" element={<GroupsPage />} />
               <Route path="/groups/:id" element={<GroupDetailsPage />} />
               <Route path="/groups/:id/expense" element={<AddExpensePage />} />
+              <Route path="/groups/:id/expense/:expenseId/edit" element={<EditExpensePage />} />
               <Route path="/groups/:id/settlements" element={<SettlementsPage />} />
               <Route element={<RequireRole role="ADMIN" />}>
                 <Route path="/admin/users" element={<AdminUsersPage />} />

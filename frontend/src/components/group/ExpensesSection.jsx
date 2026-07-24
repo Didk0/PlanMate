@@ -1,9 +1,10 @@
 import { motion } from "framer-motion";
+import Button from "@/components/shared/Button";
 import EmptyState from "@/components/shared/EmptyState";
 import LinkButton from "@/components/shared/LinkButton";
 import { itemVariants, listVariants } from "@/lib/motion";
 
-const ExpensesSection = ({ expenses, groupId }) => {
+const ExpensesSection = ({ expenses, groupId, onDeleteExpense }) => {
   return (
     <section>
       <div className="flex items-center justify-between mb-4">
@@ -40,6 +41,22 @@ const ExpensesSection = ({ expenses, groupId }) => {
                     <div>
                       Paid by {expense.paidByFirstName} {expense.paidByLastName}
                     </div>
+                  </div>
+                  <div className="flex gap-3 mt-3">
+                    <LinkButton
+                      to={`/groups/${groupId}/expense/${expense.id}/edit`}
+                      variant="secondary"
+                      size="sm"
+                    >
+                      Edit
+                    </LinkButton>
+                    <Button
+                      variant="danger"
+                      size="sm"
+                      onClick={() => onDeleteExpense?.(expense.id)}
+                    >
+                      Delete
+                    </Button>
                   </div>
                 </div>
                 {/* Participants list */}
