@@ -1,9 +1,10 @@
 package io.plan.mate.expense.tracker.backend.group.service;
 
+import io.plan.mate.expense.tracker.backend.commons.service.dto.PagedResponse;
 import io.plan.mate.expense.tracker.backend.group.service.dto.GroupDto;
 import io.plan.mate.expense.tracker.backend.group.controller.payload.request.CreateGroupRequest;
 
-import java.util.List;
+import org.springframework.data.domain.Pageable;
 
 public interface GroupService {
 
@@ -11,7 +12,7 @@ public interface GroupService {
 
     GroupDto getGroupById(Long id);
 
-    List<GroupDto> getAllGroups();
+    PagedResponse<GroupDto> getAllGroups(Pageable pageable);
 
     void deleteGroup(Long id);
 }

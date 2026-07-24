@@ -1,9 +1,10 @@
 package io.plan.mate.expense.tracker.backend.expense.service;
 
+import io.plan.mate.expense.tracker.backend.commons.service.dto.PagedResponse;
 import io.plan.mate.expense.tracker.backend.expense.service.dto.ExpenseDto;
 import io.plan.mate.expense.tracker.backend.expense.controller.payload.request.CreateExpenseRequest;
 import io.plan.mate.expense.tracker.backend.expense.controller.payload.request.UpdateExpenseRequest;
-import java.util.List;
+import org.springframework.data.domain.Pageable;
 
 public interface ExpenseService {
 
@@ -14,5 +15,5 @@ public interface ExpenseService {
 
   void deleteExpense(Long groupId, Long expenseId);
 
-  List<ExpenseDto> getGroupExpenses(Long groupId);
+  PagedResponse<ExpenseDto> getGroupExpenses(Long groupId, Pageable pageable);
 }

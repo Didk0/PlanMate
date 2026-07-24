@@ -1,7 +1,8 @@
 package io.plan.mate.expense.tracker.backend.user.service;
 
+import io.plan.mate.expense.tracker.backend.commons.service.dto.PagedResponse;
 import io.plan.mate.expense.tracker.backend.user.service.dto.UserDto;
-import java.util.List;
+import org.springframework.data.domain.Pageable;
 
 public interface UserService {
 
@@ -9,7 +10,7 @@ public interface UserService {
 
   UserDto getUserById(Long userId);
 
-  List<UserDto> getAllUsers();
+  PagedResponse<UserDto> getAllUsers(Pageable pageable);
 
   void deleteUser(Long userId);
 }

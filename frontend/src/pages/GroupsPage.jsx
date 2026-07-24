@@ -8,22 +8,20 @@ import CollapsibleSection from "@/components/shared/CollapsibleSection";
 import EmptyState from "@/components/shared/EmptyState";
 import ErrorScreen from "@/components/shared/ErrorScreen";
 import PageShell from "@/components/shared/PageShell";
+import Pagination from "@/components/shared/Pagination";
 import Skeleton from "@/components/shared/Skeleton";
 import TextInput from "@/components/shared/TextInput";
 import { useAsyncData } from "@/hooks/useAsyncData";
 import { itemVariants, listVariants } from "@/lib/motion";
 import { notifyError, notifySuccess } from "@/lib/notify";
 
+const GROUPS_PAGE_SIZE = 5;
+
 const GroupsPage = () => {
-  const fetchGroups = useCallback(() => groupService.getAllGroups(), []);
-  const {
-    data: groups,
-    setData: setGroups,
-    isLoading,
-    error,
-    errorStatus,
-    reload,
-  } = useAsyncData(fetchGroups, []);
+  const [page, setPage] = useState(0);
+  const fetchGroups = useCallback(() => groupService.getAllGroups(page, GROUPS_PAGE_SIZE), [page]);
+  const { data, isLoading, error, errorStatus, reload } = useAsyncData(fetchGroups, [page]);
+  const groups = data?.content ?? [];
 
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [newGroup, setNewGroup] = useState({ name: "", description: "" });
@@ -44,10 +42,14 @@ const GroupsPage = () => {
     setIsCreating(true);
     setCreateError(null);
     try {
-      const createdGroup = await groupService.createGroup(newGroup);
-      setGroups((prev) => [...(prev ?? []), createdGroup]);
+      await groupService.createGroup(newGroup);
       setNewGroup({ name: "", description: "" });
       setShowCreateForm(false);
+      if (page === 0) {
+        reload();
+      } else {
+        setPage(0);
+      }
       notifySuccess("Group created");
     } catch (err) {
       notifyError(err, "Failed to create group");
@@ -81,18 +83,26 @@ const GroupsPage = () => {
           description="Create a group to start tracking shared expenses."
         />
       ) : (
-        <motion.ul className="space-y-3" variants={listVariants} initial="hidden" animate="visible">
-          {groups.map((group) => (
-            <motion.li key={group.id} variants={itemVariants}>
-              <Link
-                to={`/groups/${group.id}`}
-                className="block rounded-xl border border-slate-700 bg-surface p-4 shadow-sm transition hover:border-primary-500 hover:shadow-md"
-              >
-                <span className="font-semibold text-slate-100">{group.name}</span>
-              </Link>
-            </motion.li>
-          ))}
-        </motion.ul>
+        <>
+          <motion.ul
+            className="space-y-3"
+            variants={listVariants}
+            initial="hidden"
+            animate="visible"
+          >
+            {groups.map((group) => (
+              <motion.li key={group.id} variants={itemVariants}>
+                <Link
+                  to={`/groups/${group.id}`}
+                  className="block rounded-xl border border-slate-700 bg-surface p-4 shadow-sm transition hover:border-primary-500 hover:shadow-md"
+                >
+                  <span className="font-semibold text-slate-100">{group.name}</span>
+                </Link>
+              </motion.li>
+            ))}
+          </motion.ul>
+          <Pagination page={page} totalPages={data.totalPages} onPageChange={setPage} />
+        </>
       )}
 
       {/* Create Group form */}

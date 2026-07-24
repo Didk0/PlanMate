@@ -10,6 +10,7 @@ import static org.mockito.Mockito.when;
 
 import io.plan.mate.expense.tracker.backend.commons.exception.handling.exception.BadRequestException;
 import io.plan.mate.expense.tracker.backend.commons.exception.handling.exception.ResourceNotFoundException;
+import io.plan.mate.expense.tracker.backend.commons.service.dto.PagedResponse;
 import io.plan.mate.expense.tracker.backend.expense.controller.payload.event.ExpenseChangedEvent;
 import io.plan.mate.expense.tracker.backend.expense.controller.payload.request.CreateExpenseParticipant;
 import io.plan.mate.expense.tracker.backend.expense.controller.payload.request.CreateExpenseRequest;
@@ -26,6 +27,7 @@ import io.plan.mate.expense.tracker.backend.settlement.controller.payload.event.
 import io.plan.mate.expense.tracker.backend.user.jpa.entity.User;
 import io.plan.mate.expense.tracker.backend.user.jpa.repository.UserRepository;
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -40,6 +42,10 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.modelmapper.ModelMapper;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("ExpenseServiceImpl")
@@ -409,6 +415,67 @@ class ExpenseServiceImplTest {
       verify(settlementService).clearSettlementCache(1L);
       verify(eventPublisher).publishEvent(any(ExpenseChangedEvent.class));
       verify(eventPublisher).publishEvent(any(SettlementsChangedEvent.class));
+    }
+  }
+
+  @Nested
+  @DisplayName("getGroupExpenses")
+  class GetGroupExpenses {
+
+    @Test
+    @DisplayName("returns paged expenses in the order returned by the id page, using a requested sort plus an id tiebreaker")
+    void getGroupExpenses_shouldReturnPagedExpensesInIdPageOrder_whenGroupHasExpenses() {
+      Group group = Group.builder().id(1L).name("Trip").build();
+      Expense older =
+          Expense.builder()
+              .id(1L)
+              .group(group)
+              .amount(new BigDecimal("10.00"))
+              .createdAt(LocalDateTime.now().minusDays(1))
+              .build();
+      Expense newer =
+          Expense.builder()
+              .id(2L)
+              .group(group)
+              .amount(new BigDecimal("20.00"))
+              .createdAt(LocalDateTime.now())
+              .build();
+      Pageable requestedPageable =
+          PageRequest.of(0, 10, Sort.by(Sort.Direction.DESC, "createdAt"));
+      Pageable expectedPageable =
+          PageRequest.of(
+              0,
+              10,
+              Sort.by(Sort.Direction.DESC, "createdAt").and(Sort.by(Sort.Direction.ASC, "id")));
+
+      when(expenseRepository.findExpenseIdsByGroupId(1L, expectedPageable))
+          .thenReturn(new PageImpl<>(List.of(2L, 1L), expectedPageable, 2));
+      when(expenseRepository.findByIdIn(List.of(2L, 1L))).thenReturn(List.of(older, newer));
+      when(modelMapper.map(older, ExpenseDto.class)).thenReturn(ExpenseDto.builder().id(1L).build());
+      when(modelMapper.map(newer, ExpenseDto.class)).thenReturn(ExpenseDto.builder().id(2L).build());
+
+      PagedResponse<ExpenseDto> result =
+          expenseService.getGroupExpenses(1L, requestedPageable);
+
+      assertThat(result.content()).extracting(ExpenseDto::getId).containsExactly(2L, 1L);
+      assertThat(result.totalElements()).isEqualTo(2);
+    }
+
+    @Test
+    @DisplayName("returns an empty page when group has no expenses")
+    void getGroupExpenses_shouldReturnEmptyPage_whenGroupHasNoExpenses() {
+      Pageable requestedPageable = PageRequest.of(0, 10);
+      Pageable expectedPageable =
+          PageRequest.of(0, 10, Sort.by(Sort.Direction.ASC, "id"));
+      when(expenseRepository.findExpenseIdsByGroupId(1L, expectedPageable))
+          .thenReturn(new PageImpl<>(List.of(), expectedPageable, 0));
+      when(expenseRepository.findByIdIn(List.of())).thenReturn(List.of());
+
+      PagedResponse<ExpenseDto> result =
+          expenseService.getGroupExpenses(1L, requestedPageable);
+
+      assertThat(result.content()).isEmpty();
+      assertThat(result.totalElements()).isZero();
     }
   }
 }

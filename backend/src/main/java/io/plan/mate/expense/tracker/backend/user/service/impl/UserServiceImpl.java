@@ -1,5 +1,6 @@
 package io.plan.mate.expense.tracker.backend.user.service.impl;
 
+import io.plan.mate.expense.tracker.backend.commons.service.dto.PagedResponse;
 import io.plan.mate.expense.tracker.backend.user.service.dto.UserDto;
 import io.plan.mate.expense.tracker.backend.user.jpa.entity.User;
 import io.plan.mate.expense.tracker.backend.user.jpa.repository.UserRepository;
@@ -12,12 +13,12 @@ import io.plan.mate.expense.tracker.backend.user.service.UserService;
 import io.plan.mate.expense.tracker.backend.user.service.keycloak.KeycloakService;
 import jakarta.ws.rs.WebApplicationException;
 import java.time.LocalDateTime;
-import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.modelmapper.ModelMapper;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -93,11 +94,10 @@ public class UserServiceImpl implements UserService {
 
   @Override
   @Transactional(readOnly = true)
-  public List<UserDto> getAllUsers() {
+  public PagedResponse<UserDto> getAllUsers(final Pageable pageable) {
 
-    return userRepository.findAll().stream()
-        .map(user -> modelMapper.map(user, UserDto.class))
-        .toList();
+    return PagedResponse.from(
+        userRepository.findAll(pageable).map(user -> modelMapper.map(user, UserDto.class)));
   }
 
   @Override

@@ -20,6 +20,8 @@ import { useGroupWebSocket } from "@/hooks/useGroupWebSocket";
 import { notifyError, notifySuccess } from "@/lib/notify";
 import { selectIsAdmin } from "@/store/authSlice";
 
+const EXPENSES_PAGE_SIZE = 10;
+
 const GroupDetailsPage = () => {
   const { id } = useParams();
   const groupId = id;
@@ -30,9 +32,20 @@ const GroupDetailsPage = () => {
   const fetchDetails = useCallback(() => groupService.getGroupDetails(groupId), [groupId]);
   const { data, isLoading, error, errorStatus, reload } = useAsyncData(fetchDetails, [groupId]);
 
+  const fetchFirstExpensesPage = useCallback(
+    () => expenseService.getGroupExpenses(groupId, 0, EXPENSES_PAGE_SIZE),
+    [groupId]
+  );
+  const { data: expensesPageData } = useAsyncData(fetchFirstExpensesPage, [groupId]);
+
   const [loadedData, setLoadedData] = useState(null);
   const [members, setMembers] = useState([]);
+
+  const [loadedExpensesPageData, setLoadedExpensesPageData] = useState(null);
   const [expenses, setExpenses] = useState([]);
+  const [expensePage, setExpensePage] = useState(0);
+  const [expenseTotalPages, setExpenseTotalPages] = useState(0);
+  const [isLoadingMoreExpenses, setIsLoadingMoreExpenses] = useState(false);
 
   const [showExpenses, setShowExpenses] = useState(false);
   const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
@@ -42,12 +55,48 @@ const GroupDetailsPage = () => {
   if (data && data !== loadedData) {
     setLoadedData(data);
     setMembers(data.membersData);
-    setExpenses(data.expensesData);
   }
 
+  if (expensesPageData && expensesPageData !== loadedExpensesPageData) {
+    setLoadedExpensesPageData(expensesPageData);
+    setExpenses(expensesPageData.content);
+    setExpensePage(0);
+    setExpenseTotalPages(expensesPageData.totalPages);
+  }
+
+  const handleLoadMoreExpenses = async () => {
+    setIsLoadingMoreExpenses(true);
+    try {
+      const nextPage = expensePage + 1;
+      const expensesPage = await expenseService.getGroupExpenses(
+        groupId,
+        nextPage,
+        EXPENSES_PAGE_SIZE
+      );
+      setExpenses((prev) => [...prev, ...expensesPage.content]);
+      setExpensePage(nextPage);
+      setExpenseTotalPages(expensesPage.totalPages);
+    } catch (err) {
+      notifyError(err, "Failed to load more expenses");
+    } finally {
+      setIsLoadingMoreExpenses(false);
+    }
+  };
+
+  const refreshExpensesPreservingProgress = async () => {
+    const loadedCount = (expensePage + 1) * EXPENSES_PAGE_SIZE;
+    const expensesPage = await expenseService.getGroupExpenses(groupId, 0, loadedCount);
+    setExpenses(expensesPage.content);
+    setExpenseTotalPages(Math.ceil(expensesPage.totalElements / EXPENSES_PAGE_SIZE));
+    setExpensePage(Math.max(0, Math.ceil(expensesPage.content.length / EXPENSES_PAGE_SIZE) - 1));
+  };
+
   useGroupWebSocket(groupId, (topic) => {
-    if (topic.endsWith("/users") || topic.endsWith("/expenses")) {
+    if (topic.endsWith("/users")) {
       reload();
+    }
+    if (topic.endsWith("/expenses")) {
+      refreshExpensesPreservingProgress();
     }
   });
 
@@ -181,6 +230,9 @@ const GroupDetailsPage = () => {
               expenses={expenses}
               groupId={groupId}
               onDeleteExpense={setExpenseIdToDelete}
+              hasMoreExpenses={expensePage + 1 < expenseTotalPages}
+              isLoadingMoreExpenses={isLoadingMoreExpenses}
+              onLoadMoreExpenses={handleLoadMoreExpenses}
             />
           </motion.div>
         )}

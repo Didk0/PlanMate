@@ -1,5 +1,6 @@
 package io.plan.mate.expense.tracker.backend.user.controller;
 
+import io.plan.mate.expense.tracker.backend.commons.service.dto.PagedResponse;
 import io.plan.mate.expense.tracker.backend.user.service.dto.UserDto;
 import io.plan.mate.expense.tracker.backend.commons.exception.handling.dto.ApiError;
 import io.plan.mate.expense.tracker.backend.user.service.UserService;
@@ -8,8 +9,9 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -75,22 +77,22 @@ public class UserController {
 
   @Operation(
       summary = "Get all users",
-      description = "Retrieves a list of all users",
+      description = "Retrieves a page of all users",
       responses = {
         @ApiResponse(
             responseCode = "200",
-            description = "List of users",
-            content = @Content(schema = @Schema(implementation = UserDto.class, type = "array"))),
+            description = "Page of users",
+            content = @Content(schema = @Schema(implementation = PagedResponse.class))),
         @ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content(schema = @Schema(implementation = ApiError.class))),
         @ApiResponse(responseCode = "403", description = "Caller is not an ADMIN", content = @Content(schema = @Schema(implementation = ApiError.class))),
         @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content(schema = @Schema(implementation = ApiError.class)))
       })
   @PreAuthorize("hasRole('ADMIN')")
   @GetMapping
-  public ResponseEntity<List<UserDto>> getAllUsers() {
+  public ResponseEntity<PagedResponse<UserDto>> getAllUsers(
+      @PageableDefault(size = 10, sort = "username") final Pageable pageable) {
 
-    final List<UserDto> users = userService.getAllUsers();
-    return ResponseEntity.ok(users);
+    return ResponseEntity.ok(userService.getAllUsers(pageable));
   }
 
   @Operation(

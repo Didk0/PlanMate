@@ -1,5 +1,6 @@
 package io.plan.mate.expense.tracker.backend.group.service.impl;
 
+import io.plan.mate.expense.tracker.backend.commons.service.dto.PagedResponse;
 import io.plan.mate.expense.tracker.backend.group.service.dto.GroupDto;
 import io.plan.mate.expense.tracker.backend.group.jpa.entity.Group;
 import io.plan.mate.expense.tracker.backend.group.jpa.repository.GroupRepository;
@@ -18,10 +19,11 @@ import io.plan.mate.expense.tracker.backend.settlement.controller.payload.event.
 import io.plan.mate.expense.tracker.backend.settlement.service.SettlementService;
 import io.plan.mate.expense.tracker.backend.user.jpa.repository.UserRepository;
 import java.time.LocalDateTime;
-import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -92,22 +94,25 @@ public class GroupServiceImpl implements GroupService {
 
   @Override
   @Transactional(readOnly = true)
-  public List<GroupDto> getAllGroups() {
+  public PagedResponse<GroupDto> getAllGroups(final Pageable pageable) {
 
     if (currentUserService.isAdmin()) {
-      return groupRepository.findAll().stream()
-          .map(group -> modelMapper.map(group, GroupDto.class))
-          .toList();
+      final Page<GroupDto> groupPage =
+          groupRepository.findAll(pageable).map(group -> modelMapper.map(group, GroupDto.class));
+      return PagedResponse.from(groupPage);
     }
 
-    return currentUserService
-        .findCurrentUserId()
-        .map(
-            userId ->
-                memberRepository.findByUserId(userId).stream()
-                    .map(member -> modelMapper.map(member.getGroup(), GroupDto.class))
-                    .toList())
-        .orElseGet(List::of);
+    final Page<GroupDto> groupPage =
+        currentUserService
+            .findCurrentUserId()
+            .map(
+                userId ->
+                    memberRepository
+                        .findByUserId(userId, pageable)
+                        .map(member -> modelMapper.map(member.getGroup(), GroupDto.class)))
+            .orElseGet(() -> Page.empty(pageable));
+
+    return PagedResponse.from(groupPage);
   }
 
   @Override

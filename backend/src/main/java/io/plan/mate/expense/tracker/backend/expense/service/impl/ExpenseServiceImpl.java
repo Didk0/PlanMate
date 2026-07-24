@@ -1,5 +1,6 @@
 package io.plan.mate.expense.tracker.backend.expense.service.impl;
 
+import io.plan.mate.expense.tracker.backend.commons.service.dto.PagedResponse;
 import io.plan.mate.expense.tracker.backend.expense.service.dto.ExpenseDto;
 import io.plan.mate.expense.tracker.backend.expense.jpa.entity.Expense;
 import io.plan.mate.expense.tracker.backend.expense.jpa.entity.ExpenseParticipant;
@@ -21,6 +22,10 @@ import io.plan.mate.expense.tracker.backend.settlement.controller.payload.event.
 import io.plan.mate.expense.tracker.backend.settlement.controller.payload.event.SettlementsChangedEvent;
 import io.plan.mate.expense.tracker.backend.settlement.service.SettlementService;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -145,11 +150,33 @@ public class ExpenseServiceImpl implements ExpenseService {
 
   @Override
   @Transactional(readOnly = true)
-  public List<ExpenseDto> getGroupExpenses(final Long groupId) {
+  public PagedResponse<ExpenseDto> getGroupExpenses(final Long groupId, final Pageable pageable) {
 
-    final List<Expense> expenses = expenseRepository.findByGroupId(groupId);
+    final Sort sortWithIdTiebreaker = pageable.getSort().and(Sort.by(Sort.Direction.ASC, "id"));
+    final Pageable pageableWithIdTiebreaker =
+        PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), sortWithIdTiebreaker);
 
-    return expenses.stream().map(expense -> modelMapper.map(expense, ExpenseDto.class)).toList();
+    final Page<Long> expenseIdPage =
+        expenseRepository.findExpenseIdsByGroupId(groupId, pageableWithIdTiebreaker);
+
+    final Map<Long, Expense> expensesById =
+        expenseRepository.findByIdIn(expenseIdPage.getContent()).stream()
+            .collect(Collectors.toMap(Expense::getId, Function.identity()));
+
+    final List<ExpenseDto> expenseDtos =
+        expenseIdPage.getContent().stream()
+            .map(expensesById::get)
+            .map(expense -> modelMapper.map(expense, ExpenseDto.class))
+            .toList();
+
+    return new PagedResponse<>(
+        expenseDtos,
+        expenseIdPage.getNumber(),
+        expenseIdPage.getSize(),
+        expenseIdPage.getTotalElements(),
+        expenseIdPage.getTotalPages(),
+        expenseIdPage.isFirst(),
+        expenseIdPage.isLast());
   }
 
   private Group findGroupOrThrow(final Long groupId) {
