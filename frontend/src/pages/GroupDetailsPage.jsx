@@ -6,6 +6,7 @@ import { useCallback, useContext, useState } from "react";
 import { AuthContext } from "react-oauth2-code-pkce";
 import { useSelector } from "react-redux";
 import { useNavigate, useParams } from "react-router-dom";
+import expenseService from "@/api/expenseService";
 import groupService from "@/api/groupService";
 import userService from "@/api/userService";
 import BackButton from "@/components/shared/BackButton";
@@ -36,6 +37,7 @@ const GroupDetailsPage = () => {
   const [showExpenses, setShowExpenses] = useState(false);
   const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [expenseIdToDelete, setExpenseIdToDelete] = useState(null);
 
   if (data && data !== loadedData) {
     setLoadedData(data);
@@ -84,6 +86,18 @@ const GroupDetailsPage = () => {
       navigate("/groups");
     } catch (err) {
       notifyError(err, "Failed to leave group");
+    }
+  };
+
+  const handleConfirmDeleteExpense = async () => {
+    const targetExpenseId = expenseIdToDelete;
+    setExpenseIdToDelete(null);
+    try {
+      await expenseService.deleteExpense(groupId, targetExpenseId);
+      setExpenses((prev) => prev.filter((expense) => expense.id !== targetExpenseId));
+      notifySuccess("Expense deleted");
+    } catch (err) {
+      notifyError(err, "Failed to delete expense");
     }
   };
 
@@ -163,7 +177,11 @@ const GroupDetailsPage = () => {
             transition={{ duration: 0.3, ease: "easeInOut" }}
             className="overflow-hidden"
           >
-            <ExpensesSection expenses={expenses} groupId={groupId} />
+            <ExpensesSection
+              expenses={expenses}
+              groupId={groupId}
+              onDeleteExpense={setExpenseIdToDelete}
+            />
           </motion.div>
         )}
       </AnimatePresence>
@@ -202,6 +220,16 @@ const GroupDetailsPage = () => {
         confirmLabel="Delete"
         onConfirm={handleConfirmDeleteGroup}
         onCancel={() => setShowDeleteConfirm(false)}
+      />
+
+      <ConfirmDialog
+        open={expenseIdToDelete !== null}
+        variant="danger"
+        title="Delete expense?"
+        message="This will permanently delete this expense and recompute balances. This action cannot be undone."
+        confirmLabel="Delete"
+        onConfirm={handleConfirmDeleteExpense}
+        onCancel={() => setExpenseIdToDelete(null)}
       />
     </PageShell>
   );

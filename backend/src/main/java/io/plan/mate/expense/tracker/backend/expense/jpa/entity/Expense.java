@@ -36,9 +36,10 @@ public class Expense {
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Long id;
 
-  private String description;
+  @Setter private String description;
 
   @Column(nullable = false)
+  @Setter
   private BigDecimal amount;
 
   @Column(name = "created_at", nullable = false, updatable = false)
@@ -51,6 +52,7 @@ public class Expense {
 
   @ManyToOne(optional = false, fetch = FetchType.LAZY)
   @JoinColumn(name = "paid_by_user_id")
+  @Setter
   private User paidBy;
 
   @OneToMany(mappedBy = "expense", cascade = CascadeType.ALL, orphanRemoval = true)

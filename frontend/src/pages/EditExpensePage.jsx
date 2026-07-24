@@ -10,30 +10,28 @@ import Skeleton from "@/components/shared/Skeleton";
 import { useAsyncData } from "@/hooks/useAsyncData";
 import { notifyError, notifySuccess } from "@/lib/notify";
 
-const AddExpensePage = () => {
-  const { id } = useParams();
+const EditExpensePage = () => {
+  const { id, expenseId } = useParams();
   const groupId = id;
   const navigate = useNavigate();
 
-  const fetchMembers = useCallback(() => userService.getGroupMembers(groupId), [groupId]);
-  const {
-    data: members,
-    isLoading,
-    error,
-    errorStatus,
-    reload,
-  } = useAsyncData(fetchMembers, [groupId]);
+  const fetchData = useCallback(
+    () =>
+      Promise.all([userService.getGroupMembers(groupId), expenseService.getGroupExpenses(groupId)]),
+    [groupId]
+  );
+  const { data, isLoading, error, errorStatus, reload } = useAsyncData(fetchData, [groupId]);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async (expenseData) => {
     setIsSubmitting(true);
     try {
-      await expenseService.createExpense(groupId, expenseData);
-      notifySuccess("Expense created");
+      await expenseService.updateExpense(groupId, expenseId, expenseData);
+      notifySuccess("Expense updated");
       navigate(`/groups/${groupId}`);
     } catch (err) {
-      notifyError(err, "Failed to create expense");
+      notifyError(err, "Failed to update expense");
       setIsSubmitting(false);
     }
   };
@@ -42,7 +40,7 @@ const AddExpensePage = () => {
     return <ErrorScreen message={error} status={errorStatus} onRetry={reload} />;
   }
 
-  if (isLoading) {
+  if (isLoading || !data) {
     return (
       <PageShell maxWidth="max-w-lg">
         <Skeleton className="h-4 w-24 mb-6" />
@@ -56,16 +54,34 @@ const AddExpensePage = () => {
     );
   }
 
+  const [members, expenses] = data;
+  const expense = expenses.find((e) => String(e.id) === expenseId);
+
+  if (!expense) {
+    return <ErrorScreen message="Expense not found" status={404} onRetry={reload} />;
+  }
+
+  const initialValues = {
+    description: expense.description,
+    amount: expense.amount,
+    paidByUsername: expense.paidByUsername,
+    participants: expense.participants.map((p) => ({
+      userName: p.username,
+      shareAmount: p.shareAmount,
+    })),
+  };
+
   return (
     <PageShell maxWidth="max-w-lg">
       {/* Back Button */}
       <BackButton to={`/groups/${groupId}`} className="mb-6" />
 
-      <h1 className="text-3xl font-bold text-slate-100 mb-6">Add Expense</h1>
+      <h1 className="text-3xl font-bold text-slate-100 mb-6">Edit Expense</h1>
 
       <ExpenseForm
         members={members}
-        submitLabel="Save Expense"
+        initialValues={initialValues}
+        submitLabel="Save Changes"
         onSubmit={handleSubmit}
         isSubmitting={isSubmitting}
       />
@@ -73,4 +89,4 @@ const AddExpensePage = () => {
   );
 };
 
-export default AddExpensePage;
+export default EditExpensePage;

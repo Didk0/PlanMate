@@ -21,6 +21,7 @@ public class ExpenseParticipantToDtoConverter
         .id(expenseParticipant.getId())
         .firstName(expenseParticipant.getParticipant().getFirstName())
         .lastName(expenseParticipant.getParticipant().getLastName())
+        .username(expenseParticipant.getParticipant().getUsername())
         .shareAmount(expenseParticipant.getShareAmount())
         .build();
   }

@@ -1,6 +1,6 @@
 package io.plan.mate.expense.tracker.backend.commons.websocket;
 
-import io.plan.mate.expense.tracker.backend.expense.controller.payload.event.ExpenseCreatedEvent;
+import io.plan.mate.expense.tracker.backend.expense.controller.payload.event.ExpenseChangedEvent;
 import io.plan.mate.expense.tracker.backend.member.controller.payload.event.MemberChangedEvent;
 import io.plan.mate.expense.tracker.backend.settlement.controller.payload.event.SettlementsChangedEvent;
 import lombok.RequiredArgsConstructor;
@@ -17,8 +17,8 @@ public class WebSocketEventListener {
   private final WebSocketEventPublisher eventPublisher;
 
   @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT, fallbackExecution = true)
-  public void onExpenseCreated(final ExpenseCreatedEvent event) {
-    eventPublisher.publishExpenseCreated(event);
+  public void onExpenseChanged(final ExpenseChangedEvent event) {
+    eventPublisher.publishExpenseChanged(event);
   }
 
   @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT, fallbackExecution = true)
@@ -32,9 +32,9 @@ public class WebSocketEventListener {
   }
 
   @TransactionalEventListener(phase = TransactionPhase.AFTER_ROLLBACK)
-  public void onExpenseCreatedRolledBack(final ExpenseCreatedEvent event) {
+  public void onExpenseChangedRolledBack(final ExpenseChangedEvent event) {
     log.warn(
-        "Transaction rolled back; skipping WS publish for expense creation in group {}",
+        "Transaction rolled back; skipping WS publish for expense change in group {}",
         event.groupId());
   }
 

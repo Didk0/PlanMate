@@ -36,6 +36,9 @@ public class ExpenseDto {
   @Schema(description = "Last name of the payer", example = "Johnson")
   private String paidByLastName;
 
+  @Schema(description = "Username of the payer", example = "alice")
+  private String paidByUsername;
+
   @Schema(description = "Participants sharing this expense")
   private List<ExpenseParticipantDto> participants;
 }
