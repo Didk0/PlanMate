@@ -1,6 +1,6 @@
 package io.plan.mate.expense.tracker.backend.commons.websocket;
 
-import io.plan.mate.expense.tracker.backend.expense.controller.payload.event.ExpenseCreatedEvent;
+import io.plan.mate.expense.tracker.backend.expense.controller.payload.event.ExpenseChangedEvent;
 import io.plan.mate.expense.tracker.backend.member.controller.payload.event.MemberChangedEvent;
 import io.plan.mate.expense.tracker.backend.settlement.controller.payload.event.SettlementsChangedEvent;
 import lombok.RequiredArgsConstructor;
@@ -15,7 +15,7 @@ public class WebSocketEventPublisher {
 
   private final SimpMessagingTemplate messagingTemplate;
 
-  public void publishExpenseCreated(final ExpenseCreatedEvent event) {
+  public void publishExpenseChanged(final ExpenseChangedEvent event) {
 
     final String destination = BASE_DEST + event.groupId() + "/expenses";
     messagingTemplate.convertAndSend(destination, event);

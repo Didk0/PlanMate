@@ -95,13 +95,15 @@ const ExpenseForm = ({ members, initialValues, submitLabel, onSubmit, isSubmitti
     event.preventDefault();
     if (!canSubmit) return;
 
-    const participants = checkedUsernames.map((username, i) => ({
-      userName: username,
-      shareAmount:
-        splitMode === SPLIT_MODES.EQUAL
-          ? fromCents(equalSharesCents[i])
-          : fromCents(toCents(exactShares[username])),
-    }));
+    const participants = checkedUsernames
+      .map((username, i) => ({
+        userName: username,
+        shareAmount:
+          splitMode === SPLIT_MODES.EQUAL
+            ? fromCents(equalSharesCents[i])
+            : fromCents(toCents(exactShares[username])),
+      }))
+      .filter((participant) => toCents(participant.shareAmount) > 0);
 
     onSubmit({
       description,

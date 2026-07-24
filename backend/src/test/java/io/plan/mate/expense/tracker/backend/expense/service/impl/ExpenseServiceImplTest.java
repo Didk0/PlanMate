@@ -10,7 +10,7 @@ import static org.mockito.Mockito.when;
 
 import io.plan.mate.expense.tracker.backend.commons.exception.handling.exception.BadRequestException;
 import io.plan.mate.expense.tracker.backend.commons.exception.handling.exception.ResourceNotFoundException;
-import io.plan.mate.expense.tracker.backend.expense.controller.payload.event.ExpenseCreatedEvent;
+import io.plan.mate.expense.tracker.backend.expense.controller.payload.event.ExpenseChangedEvent;
 import io.plan.mate.expense.tracker.backend.expense.controller.payload.request.CreateExpenseParticipant;
 import io.plan.mate.expense.tracker.backend.expense.controller.payload.request.CreateExpenseRequest;
 import io.plan.mate.expense.tracker.backend.expense.controller.payload.request.UpdateExpenseRequest;
@@ -239,7 +239,7 @@ class ExpenseServiceImplTest {
     }
 
     @Test
-    @DisplayName("publishes an ExpenseCreatedEvent and a SettlementsChangedEvent after saving")
+    @DisplayName("publishes an ExpenseChangedEvent and a SettlementsChangedEvent after saving")
     void createExpense_shouldPublishExpenseAndSettlementsEvents_whenExpenseIsSaved() {
       Group group = Group.builder().id(1L).name("Trip").build();
       User alice = user(1L, "alice");
@@ -261,7 +261,7 @@ class ExpenseServiceImplTest {
 
       expenseService.createExpense(1L, request);
 
-      verify(eventPublisher).publishEvent(any(ExpenseCreatedEvent.class));
+      verify(eventPublisher).publishEvent(any(ExpenseChangedEvent.class));
       verify(eventPublisher).publishEvent(any(SettlementsChangedEvent.class));
     }
   }
@@ -366,7 +366,7 @@ class ExpenseServiceImplTest {
           .isEqualTo("carol");
 
       verify(settlementService).clearSettlementCache(1L);
-      verify(eventPublisher).publishEvent(any(ExpenseCreatedEvent.class));
+      verify(eventPublisher).publishEvent(any(ExpenseChangedEvent.class));
       verify(eventPublisher).publishEvent(any(SettlementsChangedEvent.class));
     }
   }
@@ -407,7 +407,7 @@ class ExpenseServiceImplTest {
 
       verify(expenseRepository).delete(expense);
       verify(settlementService).clearSettlementCache(1L);
-      verify(eventPublisher).publishEvent(any(ExpenseCreatedEvent.class));
+      verify(eventPublisher).publishEvent(any(ExpenseChangedEvent.class));
       verify(eventPublisher).publishEvent(any(SettlementsChangedEvent.class));
     }
   }

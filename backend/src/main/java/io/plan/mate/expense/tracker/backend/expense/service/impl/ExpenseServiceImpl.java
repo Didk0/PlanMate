@@ -12,7 +12,7 @@ import io.plan.mate.expense.tracker.backend.user.jpa.repository.UserRepository;
 import io.plan.mate.expense.tracker.backend.commons.exception.handling.exception.BadRequestException;
 import io.plan.mate.expense.tracker.backend.commons.exception.handling.exception.ResourceNotFoundException;
 import io.plan.mate.expense.tracker.backend.expense.controller.payload.event.ExpenseChangeEnum;
-import io.plan.mate.expense.tracker.backend.expense.controller.payload.event.ExpenseCreatedEvent;
+import io.plan.mate.expense.tracker.backend.expense.controller.payload.event.ExpenseChangedEvent;
 import io.plan.mate.expense.tracker.backend.expense.controller.payload.request.CreateExpenseParticipant;
 import io.plan.mate.expense.tracker.backend.expense.controller.payload.request.CreateExpenseRequest;
 import io.plan.mate.expense.tracker.backend.expense.controller.payload.request.UpdateExpenseRequest;
@@ -79,7 +79,7 @@ public class ExpenseServiceImpl implements ExpenseService {
 
     settlementService.clearSettlementCache(group.getId());
     eventPublisher.publishEvent(
-        new ExpenseCreatedEvent(ExpenseChangeEnum.ADD_EXPENSE, group.getId(), expenseDto));
+        new ExpenseChangedEvent(ExpenseChangeEnum.ADD_EXPENSE, group.getId(), expenseDto));
     eventPublisher.publishEvent(
         new SettlementsChangedEvent(
             SettlementsChangeEnum.SETTLEMENTS_INVALIDATED, group.getId()));
@@ -120,7 +120,7 @@ public class ExpenseServiceImpl implements ExpenseService {
 
     settlementService.clearSettlementCache(groupId);
     eventPublisher.publishEvent(
-        new ExpenseCreatedEvent(ExpenseChangeEnum.EDIT_EXPENSE, groupId, expenseDto));
+        new ExpenseChangedEvent(ExpenseChangeEnum.EDIT_EXPENSE, groupId, expenseDto));
     eventPublisher.publishEvent(
         new SettlementsChangedEvent(SettlementsChangeEnum.SETTLEMENTS_INVALIDATED, groupId));
 
@@ -138,7 +138,7 @@ public class ExpenseServiceImpl implements ExpenseService {
 
     settlementService.clearSettlementCache(groupId);
     eventPublisher.publishEvent(
-        new ExpenseCreatedEvent(ExpenseChangeEnum.DELETE_EXPENSE, groupId, expenseDto));
+        new ExpenseChangedEvent(ExpenseChangeEnum.DELETE_EXPENSE, groupId, expenseDto));
     eventPublisher.publishEvent(
         new SettlementsChangedEvent(SettlementsChangeEnum.SETTLEMENTS_INVALIDATED, groupId));
   }
