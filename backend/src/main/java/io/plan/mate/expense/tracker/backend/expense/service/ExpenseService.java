@@ -15,5 +15,5 @@ public interface ExpenseService {
 
   void deleteExpense(Long groupId, Long expenseId);
 
-  PagedResponse<ExpenseDto> getGroupExpenses(Long groupId, Pageable pageable);
+  PagedResponse<ExpenseDto> getGroupExpenses(Long groupId, String search, Pageable pageable);
 }

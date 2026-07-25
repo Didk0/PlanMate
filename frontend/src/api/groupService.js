@@ -2,8 +2,10 @@ import api from "./client";
 import userService from "./userService";
 
 const groupService = {
-  getAllGroups: (page = 0, size = 5) =>
-    api.get("/groups", { params: { page, size } }).then((res) => res.data),
+  getAllGroups: (page = 0, size = 5, search = "") =>
+    api
+      .get("/groups", { params: { page, size, ...(search ? { search } : {}) } })
+      .then((res) => res.data),
 
   getGroupById: (groupId) => api.get(`groups/${groupId}`).then((res) => res.data),
 

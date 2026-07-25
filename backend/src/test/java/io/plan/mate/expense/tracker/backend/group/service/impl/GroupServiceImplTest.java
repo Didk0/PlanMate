@@ -155,29 +155,45 @@ class GroupServiceImplTest {
       Group group = Group.builder().id(1L).name("Trip").build();
       Pageable pageable = PageRequest.of(0, 5);
       when(currentUserService.isAdmin()).thenReturn(true);
-      when(groupRepository.findAll(pageable)).thenReturn(new PageImpl<>(List.of(group), pageable, 1));
+      when(groupRepository.search(null, pageable))
+          .thenReturn(new PageImpl<>(List.of(group), pageable, 1));
       when(modelMapper.map(group, GroupDto.class)).thenReturn(GroupDto.builder().id(1L).build());
 
-      PagedResponse<GroupDto> groups = groupService.getAllGroups(pageable);
+      PagedResponse<GroupDto> groups = groupService.getAllGroups(null, pageable);
 
       assertThat(groups.content()).hasSize(1);
       verify(currentUserService, never()).findCurrentUserId();
     }
 
     @Test
+    @DisplayName("passes a trimmed search term to the repository when the caller is an ADMIN")
+    void getAllGroups_shouldSearchTrimmed_whenSearchProvided() {
+      Group group = Group.builder().id(1L).name("Trip").build();
+      Pageable pageable = PageRequest.of(0, 5);
+      when(currentUserService.isAdmin()).thenReturn(true);
+      when(groupRepository.search("trip", pageable))
+          .thenReturn(new PageImpl<>(List.of(group), pageable, 1));
+      when(modelMapper.map(group, GroupDto.class)).thenReturn(GroupDto.builder().id(1L).build());
+
+      PagedResponse<GroupDto> groups = groupService.getAllGroups("  trip  ", pageable);
+
+      assertThat(groups.content()).hasSize(1);
+      verify(groupRepository).search("trip", pageable);
+    }
+
+    @Test
     @DisplayName("returns only the caller's groups when the caller is not an ADMIN")
     void getAllGroups_shouldReturnCallerGroups_whenCallerIsNotAdmin() {
       Group group = Group.builder().id(1L).name("Trip").build();
-      Member member = Member.builder().id(1L).group(group).build();
       Pageable pageable = PageRequest.of(0, 5);
 
       when(currentUserService.isAdmin()).thenReturn(false);
       when(currentUserService.findCurrentUserId()).thenReturn(Optional.of(7L));
-      when(memberRepository.findByUserId(7L, pageable))
-          .thenReturn(new PageImpl<>(List.of(member), pageable, 1));
+      when(groupRepository.searchForMember(7L, null, pageable))
+          .thenReturn(new PageImpl<>(List.of(group), pageable, 1));
       when(modelMapper.map(group, GroupDto.class)).thenReturn(GroupDto.builder().id(1L).build());
 
-      PagedResponse<GroupDto> groups = groupService.getAllGroups(pageable);
+      PagedResponse<GroupDto> groups = groupService.getAllGroups(null, pageable);
 
       assertThat(groups.content()).hasSize(1);
       verify(groupRepository, never()).findAll(any(Pageable.class));
@@ -190,10 +206,10 @@ class GroupServiceImplTest {
       when(currentUserService.isAdmin()).thenReturn(false);
       when(currentUserService.findCurrentUserId()).thenReturn(Optional.empty());
 
-      PagedResponse<GroupDto> groups = groupService.getAllGroups(pageable);
+      PagedResponse<GroupDto> groups = groupService.getAllGroups(null, pageable);
 
       assertThat(groups.content()).isEmpty();
-      verify(memberRepository, never()).findByUserId(any(), any());
+      verify(groupRepository, never()).searchForMember(any(), any(), any());
     }
   }
 }

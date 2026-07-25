@@ -31,9 +31,6 @@ public interface MemberRepository extends JpaRepository<Member, Long> {
   @EntityGraph(attributePaths = "group")
   List<Member> findByUserId(Long userId);
 
-  @EntityGraph(attributePaths = "group")
-  Page<Member> findByUserId(Long userId, Pageable pageable);
-
   @Query("select m.role from Member m where m.group.id = :groupId and m.user.id = :userId")
   Optional<MemberRole> findRoleByGroupIdAndUserId(
       @Param("groupId") Long groupId, @Param("userId") Long userId);

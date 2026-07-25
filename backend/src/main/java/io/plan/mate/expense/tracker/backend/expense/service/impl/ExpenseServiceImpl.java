@@ -11,6 +11,7 @@ import io.plan.mate.expense.tracker.backend.group.jpa.repository.GroupRepository
 import io.plan.mate.expense.tracker.backend.member.jpa.repository.MemberRepository;
 import io.plan.mate.expense.tracker.backend.user.jpa.repository.UserRepository;
 import io.plan.mate.expense.tracker.backend.commons.exception.handling.exception.BadRequestException;
+import io.plan.mate.expense.tracker.backend.commons.util.LikePatternEscaper;
 import io.plan.mate.expense.tracker.backend.commons.exception.handling.exception.ResourceNotFoundException;
 import io.plan.mate.expense.tracker.backend.expense.controller.payload.event.ExpenseChangeEnum;
 import io.plan.mate.expense.tracker.backend.expense.controller.payload.event.ExpenseChangedEvent;
@@ -27,6 +28,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.LinkedHashSet;
@@ -150,14 +152,19 @@ public class ExpenseServiceImpl implements ExpenseService {
 
   @Override
   @Transactional(readOnly = true)
-  public PagedResponse<ExpenseDto> getGroupExpenses(final Long groupId, final Pageable pageable) {
+  public PagedResponse<ExpenseDto> getGroupExpenses(
+      final Long groupId, final String search, final Pageable pageable) {
 
-    final Sort sortWithIdTiebreaker = pageable.getSort().and(Sort.by(Sort.Direction.ASC, "id"));
-    final Pageable pageableWithIdTiebreaker =
-        PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), sortWithIdTiebreaker);
+    final String normalizedSearch =
+        StringUtils.hasText(search) ? LikePatternEscaper.escape(search.trim()) : null;
+
+    final Sort sortById = pageable.getSort().and(Sort.by(Sort.Direction.ASC, "id"));
+    final Pageable pageableSortedById =
+        PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), sortById);
 
     final Page<Long> expenseIdPage =
-        expenseRepository.findExpenseIdsByGroupId(groupId, pageableWithIdTiebreaker);
+        expenseRepository.findExpenseIdsByGroupId(
+            groupId, normalizedSearch, pageableSortedById);
 
     final Map<Long, Expense> expensesById =
         expenseRepository.findByIdIn(expenseIdPage.getContent()).stream()

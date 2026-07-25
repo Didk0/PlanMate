@@ -182,14 +182,30 @@ class UserServiceImplTest {
     void getAllUsers_shouldReturnPagedUsers_whenUsersExist() {
       User alice = User.builder().id(1L).username("alice").build();
       Pageable pageable = PageRequest.of(0, 10);
-      when(userRepository.findAll(pageable)).thenReturn(new PageImpl<>(List.of(alice), pageable, 1));
+      when(userRepository.search(null, pageable))
+          .thenReturn(new PageImpl<>(List.of(alice), pageable, 1));
       when(modelMapper.map(alice, UserDto.class)).thenReturn(UserDto.builder().id(1L).build());
 
-      PagedResponse<UserDto> result = userService.getAllUsers(pageable);
+      PagedResponse<UserDto> result = userService.getAllUsers(null, pageable);
 
       assertThat(result.content()).hasSize(1);
       assertThat(result.totalElements()).isEqualTo(1);
       assertThat(result.page()).isZero();
+    }
+
+    @Test
+    @DisplayName("passes a trimmed search term to the repository when a search is provided")
+    void getAllUsers_shouldSearchTrimmed_whenSearchProvided() {
+      User alice = User.builder().id(1L).username("alice").build();
+      Pageable pageable = PageRequest.of(0, 10);
+      when(userRepository.search("ali", pageable))
+          .thenReturn(new PageImpl<>(List.of(alice), pageable, 1));
+      when(modelMapper.map(alice, UserDto.class)).thenReturn(UserDto.builder().id(1L).build());
+
+      PagedResponse<UserDto> result = userService.getAllUsers("  ali  ", pageable);
+
+      assertThat(result.content()).hasSize(1);
+      verify(userRepository).search("ali", pageable);
     }
   }
 }

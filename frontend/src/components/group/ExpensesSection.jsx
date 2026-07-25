@@ -2,6 +2,7 @@ import { motion } from "framer-motion";
 import Button from "@/components/shared/Button";
 import EmptyState from "@/components/shared/EmptyState";
 import LinkButton from "@/components/shared/LinkButton";
+import SearchInput from "@/components/shared/SearchInput";
 import { itemVariants, listVariants } from "@/lib/motion";
 
 const ExpensesSection = ({
@@ -11,6 +12,9 @@ const ExpensesSection = ({
   hasMoreExpenses = false,
   isLoadingMoreExpenses = false,
   onLoadMoreExpenses,
+  searchTerm = "",
+  onSearchChange,
+  isSearching = false,
 }) => {
   return (
     <section>
@@ -20,14 +24,27 @@ const ExpensesSection = ({
           Create Expense
         </LinkButton>
       </div>
+
+      <SearchInput
+        value={searchTerm}
+        onChange={(e) => onSearchChange?.(e.target.value)}
+        placeholder="Search by description..."
+        isSearching={isSearching}
+        className="mb-4"
+      />
+
       {expenses.length === 0 ? (
         <EmptyState
-          title="No expenses yet"
-          description="Add an expense to start splitting costs."
+          title={searchTerm ? "No matching expenses" : "No expenses yet"}
+          description={
+            searchTerm ? "Try a different search term." : "Add an expense to start splitting costs."
+          }
           action={
-            <LinkButton to={`/groups/${groupId}/expense`} size="sm">
-              Create Expense
-            </LinkButton>
+            !searchTerm && (
+              <LinkButton to={`/groups/${groupId}/expense`} size="sm">
+                Create Expense
+              </LinkButton>
+            )
           }
         />
       ) : (

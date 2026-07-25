@@ -16,11 +16,12 @@ import ErrorScreen from "@/components/shared/ErrorScreen";
 import PageShell from "@/components/shared/PageShell";
 import Skeleton from "@/components/shared/Skeleton";
 import { useAsyncData } from "@/hooks/useAsyncData";
+import { useDebounce } from "@/hooks/useDebounce";
 import { useGroupWebSocket } from "@/hooks/useGroupWebSocket";
 import { notifyError, notifySuccess } from "@/lib/notify";
 import { selectIsAdmin } from "@/store/authSlice";
 
-const EXPENSES_PAGE_SIZE = 10;
+const EXPENSES_PAGE_SIZE = 5;
 
 const GroupDetailsPage = () => {
   const { id } = useParams();
@@ -32,11 +33,18 @@ const GroupDetailsPage = () => {
   const fetchDetails = useCallback(() => groupService.getGroupDetails(groupId), [groupId]);
   const { data, isLoading, error, errorStatus, reload } = useAsyncData(fetchDetails, [groupId]);
 
+  const [expenseSearchTerm, setExpenseSearchTerm] = useState("");
+  const debouncedExpenseSearch = useDebounce(expenseSearchTerm);
+  const isSearchingExpenses = expenseSearchTerm !== debouncedExpenseSearch;
+
   const fetchFirstExpensesPage = useCallback(
-    () => expenseService.getGroupExpenses(groupId, 0, EXPENSES_PAGE_SIZE),
-    [groupId]
+    () => expenseService.getGroupExpenses(groupId, 0, EXPENSES_PAGE_SIZE, debouncedExpenseSearch),
+    [groupId, debouncedExpenseSearch]
   );
-  const { data: expensesPageData } = useAsyncData(fetchFirstExpensesPage, [groupId]);
+  const { data: expensesPageData } = useAsyncData(fetchFirstExpensesPage, [
+    groupId,
+    debouncedExpenseSearch,
+  ]);
 
   const [loadedData, setLoadedData] = useState(null);
   const [members, setMembers] = useState([]);
@@ -71,7 +79,8 @@ const GroupDetailsPage = () => {
       const expensesPage = await expenseService.getGroupExpenses(
         groupId,
         nextPage,
-        EXPENSES_PAGE_SIZE
+        EXPENSES_PAGE_SIZE,
+        debouncedExpenseSearch
       );
       setExpenses((prev) => [...prev, ...expensesPage.content]);
       setExpensePage(nextPage);
@@ -85,7 +94,12 @@ const GroupDetailsPage = () => {
 
   const refreshExpensesPreservingProgress = async () => {
     const loadedCount = (expensePage + 1) * EXPENSES_PAGE_SIZE;
-    const expensesPage = await expenseService.getGroupExpenses(groupId, 0, loadedCount);
+    const expensesPage = await expenseService.getGroupExpenses(
+      groupId,
+      0,
+      loadedCount,
+      debouncedExpenseSearch
+    );
     setExpenses(expensesPage.content);
     setExpenseTotalPages(Math.ceil(expensesPage.totalElements / EXPENSES_PAGE_SIZE));
     setExpensePage(Math.max(0, Math.ceil(expensesPage.content.length / EXPENSES_PAGE_SIZE) - 1));
@@ -233,6 +247,9 @@ const GroupDetailsPage = () => {
               hasMoreExpenses={expensePage + 1 < expenseTotalPages}
               isLoadingMoreExpenses={isLoadingMoreExpenses}
               onLoadMoreExpenses={handleLoadMoreExpenses}
+              searchTerm={expenseSearchTerm}
+              onSearchChange={setExpenseSearchTerm}
+              isSearching={isSearchingExpenses}
             />
           </motion.div>
         )}

@@ -17,8 +17,12 @@ public interface ExpenseRepository extends JpaRepository<Expense, Long> {
   @EntityGraph(attributePaths = {"participants", "participants.participant", "paidBy"})
   List<Expense> findByGroupId(Long groupId);
 
-  @Query("select e.id from Expense e where e.group.id = :groupId")
-  Page<Long> findExpenseIdsByGroupId(@Param("groupId") Long groupId, Pageable pageable);
+  @Query(
+      "select e.id from Expense e where e.group.id = :groupId and (:search is null "
+          + "or lower(e.description) "
+          + "like lower(concat('%', cast(:search as string), '%')) escape '\\')")
+  Page<Long> findExpenseIdsByGroupId(
+      @Param("groupId") Long groupId, @Param("search") String search, Pageable pageable);
 
   @EntityGraph(attributePaths = {"participants", "participants.participant", "paidBy"})
   List<Expense> findByIdIn(Collection<Long> ids);
