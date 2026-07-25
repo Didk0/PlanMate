@@ -10,7 +10,7 @@ import Pagination from "@/components/shared/Pagination";
 import SearchInput from "@/components/shared/SearchInput";
 import Skeleton from "@/components/shared/Skeleton";
 import { useAsyncData } from "@/hooks/useAsyncData";
-import { useDebounce } from "@/hooks/useDebounce";
+import { useSearchablePagination } from "@/hooks/useSearchablePagination";
 import { notifyError, notifySuccess } from "@/lib/notify";
 import { selectAppUserId } from "@/store/authSlice";
 
@@ -19,15 +19,8 @@ const USERS_PAGE_SIZE = 10;
 const AdminUsersPage = () => {
   const appUserId = useSelector(selectAppUserId);
 
-  const [page, setPage] = useState(0);
-  const [searchTerm, setSearchTerm] = useState("");
-  const debouncedSearch = useDebounce(searchTerm);
-
-  const [appliedSearch, setAppliedSearch] = useState(debouncedSearch);
-  if (appliedSearch !== debouncedSearch) {
-    setAppliedSearch(debouncedSearch);
-    setPage(0);
-  }
+  const { page, setPage, searchTerm, setSearchTerm, debouncedSearch, isSearching } =
+    useSearchablePagination();
 
   const fetchUsers = useCallback(
     () => userService.getAllUsers(page, USERS_PAGE_SIZE, debouncedSearch),
@@ -38,7 +31,6 @@ const AdminUsersPage = () => {
     debouncedSearch,
   ]);
   const users = data?.content ?? [];
-  const isSearching = searchTerm !== debouncedSearch;
 
   const [userToDelete, setUserToDelete] = useState(null);
 

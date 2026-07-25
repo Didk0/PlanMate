@@ -185,13 +185,12 @@ class GroupServiceImplTest {
     @DisplayName("returns only the caller's groups when the caller is not an ADMIN")
     void getAllGroups_shouldReturnCallerGroups_whenCallerIsNotAdmin() {
       Group group = Group.builder().id(1L).name("Trip").build();
-      Member member = Member.builder().id(1L).group(group).build();
       Pageable pageable = PageRequest.of(0, 5);
 
       when(currentUserService.isAdmin()).thenReturn(false);
       when(currentUserService.findCurrentUserId()).thenReturn(Optional.of(7L));
-      when(memberRepository.findByUserIdAndGroupSearch(7L, null, pageable))
-          .thenReturn(new PageImpl<>(List.of(member), pageable, 1));
+      when(groupRepository.searchForMember(7L, null, pageable))
+          .thenReturn(new PageImpl<>(List.of(group), pageable, 1));
       when(modelMapper.map(group, GroupDto.class)).thenReturn(GroupDto.builder().id(1L).build());
 
       PagedResponse<GroupDto> groups = groupService.getAllGroups(null, pageable);
@@ -210,7 +209,7 @@ class GroupServiceImplTest {
       PagedResponse<GroupDto> groups = groupService.getAllGroups(null, pageable);
 
       assertThat(groups.content()).isEmpty();
-      verify(memberRepository, never()).findByUserIdAndGroupSearch(any(), any(), any());
+      verify(groupRepository, never()).searchForMember(any(), any(), any());
     }
   }
 }

@@ -13,22 +13,15 @@ import SearchInput from "@/components/shared/SearchInput";
 import Skeleton from "@/components/shared/Skeleton";
 import TextInput from "@/components/shared/TextInput";
 import { useAsyncData } from "@/hooks/useAsyncData";
-import { useDebounce } from "@/hooks/useDebounce";
+import { useSearchablePagination } from "@/hooks/useSearchablePagination";
 import { itemVariants, listVariants } from "@/lib/motion";
 import { notifyError, notifySuccess } from "@/lib/notify";
 
 const GROUPS_PAGE_SIZE = 5;
 
 const GroupsPage = () => {
-  const [page, setPage] = useState(0);
-  const [searchTerm, setSearchTerm] = useState("");
-  const debouncedSearch = useDebounce(searchTerm);
-
-  const [appliedSearch, setAppliedSearch] = useState(debouncedSearch);
-  if (appliedSearch !== debouncedSearch) {
-    setAppliedSearch(debouncedSearch);
-    setPage(0);
-  }
+  const { page, setPage, searchTerm, setSearchTerm, debouncedSearch, isSearching } =
+    useSearchablePagination();
 
   const fetchGroups = useCallback(
     () => groupService.getAllGroups(page, GROUPS_PAGE_SIZE, debouncedSearch),
@@ -39,7 +32,6 @@ const GroupsPage = () => {
     debouncedSearch,
   ]);
   const groups = data?.content ?? [];
-  const isSearching = searchTerm !== debouncedSearch;
 
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [newGroup, setNewGroup] = useState({ name: "", description: "" });

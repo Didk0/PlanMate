@@ -7,6 +7,7 @@ import io.plan.mate.expense.tracker.backend.user.jpa.repository.UserRepository;
 import io.plan.mate.expense.tracker.backend.commons.exception.handling.exception.ConflictException;
 import io.plan.mate.expense.tracker.backend.commons.exception.handling.exception.ResourceNotFoundException;
 import io.plan.mate.expense.tracker.backend.commons.security.CurrentUserService;
+import io.plan.mate.expense.tracker.backend.commons.util.LikePatternEscaper;
 import io.plan.mate.expense.tracker.backend.expense.jpa.repository.ExpenseRepository;
 import io.plan.mate.expense.tracker.backend.member.jpa.repository.MemberRepository;
 import io.plan.mate.expense.tracker.backend.user.service.UserService;
@@ -97,7 +98,8 @@ public class UserServiceImpl implements UserService {
   @Transactional(readOnly = true)
   public PagedResponse<UserDto> getAllUsers(final String search, final Pageable pageable) {
 
-    final String normalizedSearch = StringUtils.hasText(search) ? search.trim() : null;
+    final String normalizedSearch =
+        StringUtils.hasText(search) ? LikePatternEscaper.escape(search.trim()) : null;
 
     return PagedResponse.from(
         userRepository

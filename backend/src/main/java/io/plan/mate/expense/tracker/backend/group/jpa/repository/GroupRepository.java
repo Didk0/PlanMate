@@ -13,7 +13,18 @@ public interface GroupRepository extends JpaRepository<Group, Long> {
 
   @Query(
       "select g from Group g where :search is null "
-          + "or lower(g.name) like lower(concat('%', cast(:search as string), '%')) "
-          + "or lower(coalesce(g.description, '')) like lower(concat('%', cast(:search as string), '%'))")
+          + "or lower(g.name) like lower(concat('%', cast(:search as string), '%')) escape '\\' "
+          + "or lower(coalesce(g.description, '')) "
+          + "like lower(concat('%', cast(:search as string), '%')) escape '\\'")
   Page<Group> search(@Param("search") String search, Pageable pageable);
+
+  @Query(
+      "select g from Group g where exists "
+          + "(select 1 from Member m where m.group = g and m.user.id = :userId) "
+          + "and (:search is null "
+          + "or lower(g.name) like lower(concat('%', cast(:search as string), '%')) escape '\\' "
+          + "or lower(coalesce(g.description, '')) "
+          + "like lower(concat('%', cast(:search as string), '%')) escape '\\')")
+  Page<Group> searchForMember(
+      @Param("userId") Long userId, @Param("search") String search, Pageable pageable);
 }

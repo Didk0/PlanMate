@@ -6,6 +6,7 @@ import io.plan.mate.expense.tracker.backend.group.jpa.entity.Group;
 import io.plan.mate.expense.tracker.backend.group.jpa.repository.GroupRepository;
 import io.plan.mate.expense.tracker.backend.commons.exception.handling.exception.ResourceNotFoundException;
 import io.plan.mate.expense.tracker.backend.commons.security.CurrentUserService;
+import io.plan.mate.expense.tracker.backend.commons.util.LikePatternEscaper;
 import io.plan.mate.expense.tracker.backend.group.controller.payload.request.CreateGroupRequest;
 import io.plan.mate.expense.tracker.backend.group.service.GroupService;
 import io.plan.mate.expense.tracker.backend.member.controller.payload.event.MemberChangeEnum;
@@ -97,7 +98,8 @@ public class GroupServiceImpl implements GroupService {
   @Transactional(readOnly = true)
   public PagedResponse<GroupDto> getAllGroups(final String search, final Pageable pageable) {
 
-    final String normalizedSearch = StringUtils.hasText(search) ? search.trim() : null;
+    final String normalizedSearch =
+        StringUtils.hasText(search) ? LikePatternEscaper.escape(search.trim()) : null;
 
     if (currentUserService.isAdmin()) {
       final Page<GroupDto> groupPage =
@@ -112,9 +114,9 @@ public class GroupServiceImpl implements GroupService {
             .findCurrentUserId()
             .map(
                 userId ->
-                    memberRepository
-                        .findByUserIdAndGroupSearch(userId, normalizedSearch, pageable)
-                        .map(member -> modelMapper.map(member.getGroup(), GroupDto.class)))
+                    groupRepository
+                        .searchForMember(userId, normalizedSearch, pageable)
+                        .map(group -> modelMapper.map(group, GroupDto.class)))
             .orElseGet(() -> Page.empty(pageable));
 
     return PagedResponse.from(groupPage);

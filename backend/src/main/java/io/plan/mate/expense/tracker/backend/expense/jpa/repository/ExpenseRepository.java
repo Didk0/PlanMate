@@ -19,7 +19,8 @@ public interface ExpenseRepository extends JpaRepository<Expense, Long> {
 
   @Query(
       "select e.id from Expense e where e.group.id = :groupId and (:search is null "
-          + "or lower(e.description) like lower(concat('%', cast(:search as string), '%')))")
+          + "or lower(e.description) "
+          + "like lower(concat('%', cast(:search as string), '%')) escape '\\')")
   Page<Long> findExpenseIdsByGroupId(
       @Param("groupId") Long groupId, @Param("search") String search, Pageable pageable);
 

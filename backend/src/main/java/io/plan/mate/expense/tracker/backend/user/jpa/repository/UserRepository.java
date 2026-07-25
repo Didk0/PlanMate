@@ -23,6 +23,6 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
   @Query(
       "select u from User u where :search is null "
-          + "or lower(u.username) like lower(concat('%', cast(:search as string), '%'))")
+          + "or lower(u.username) like lower(concat('%', cast(:search as string), '%')) escape '\\'")
   Page<User> search(@Param("search") String search, Pageable pageable);
 }

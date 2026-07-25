@@ -11,6 +11,7 @@ import io.plan.mate.expense.tracker.backend.group.jpa.repository.GroupRepository
 import io.plan.mate.expense.tracker.backend.member.jpa.repository.MemberRepository;
 import io.plan.mate.expense.tracker.backend.user.jpa.repository.UserRepository;
 import io.plan.mate.expense.tracker.backend.commons.exception.handling.exception.BadRequestException;
+import io.plan.mate.expense.tracker.backend.commons.util.LikePatternEscaper;
 import io.plan.mate.expense.tracker.backend.commons.exception.handling.exception.ResourceNotFoundException;
 import io.plan.mate.expense.tracker.backend.expense.controller.payload.event.ExpenseChangeEnum;
 import io.plan.mate.expense.tracker.backend.expense.controller.payload.event.ExpenseChangedEvent;
@@ -154,7 +155,8 @@ public class ExpenseServiceImpl implements ExpenseService {
   public PagedResponse<ExpenseDto> getGroupExpenses(
       final Long groupId, final String search, final Pageable pageable) {
 
-    final String normalizedSearch = StringUtils.hasText(search) ? search.trim() : null;
+    final String normalizedSearch =
+        StringUtils.hasText(search) ? LikePatternEscaper.escape(search.trim()) : null;
 
     final Sort sortById = pageable.getSort().and(Sort.by(Sort.Direction.ASC, "id"));
     final Pageable pageableSortedById =

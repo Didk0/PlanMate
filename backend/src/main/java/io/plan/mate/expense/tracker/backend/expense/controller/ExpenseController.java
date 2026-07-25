@@ -80,7 +80,7 @@ public class ExpenseController {
   public ResponseEntity<PagedResponse<ExpenseDto>> getGroupExpenses(
       @PathVariable final Long groupId,
       @RequestParam(required = false) final String search,
-      @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC)
+      @PageableDefault(size = 5, sort = "createdAt", direction = Sort.Direction.DESC)
           final Pageable pageable) {
 
     return ResponseEntity.ok(expenseService.getGroupExpenses(groupId, search, pageable));

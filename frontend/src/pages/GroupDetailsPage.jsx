@@ -21,7 +21,7 @@ import { useGroupWebSocket } from "@/hooks/useGroupWebSocket";
 import { notifyError, notifySuccess } from "@/lib/notify";
 import { selectIsAdmin } from "@/store/authSlice";
 
-const EXPENSES_PAGE_SIZE = 10;
+const EXPENSES_PAGE_SIZE = 5;
 
 const GroupDetailsPage = () => {
   const { id } = useParams();

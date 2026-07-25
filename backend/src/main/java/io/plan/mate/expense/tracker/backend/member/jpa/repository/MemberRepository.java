@@ -31,15 +31,6 @@ public interface MemberRepository extends JpaRepository<Member, Long> {
   @EntityGraph(attributePaths = "group")
   List<Member> findByUserId(Long userId);
 
-  @EntityGraph(attributePaths = "group")
-  @Query(
-      "select m from Member m where m.user.id = :userId and (:search is null "
-          + "or lower(m.group.name) like lower(concat('%', cast(:search as string), '%')) "
-          + "or lower(coalesce(m.group.description, '')) "
-          + "like lower(concat('%', cast(:search as string), '%')))")
-  Page<Member> findByUserIdAndGroupSearch(
-      @Param("userId") Long userId, @Param("search") String search, Pageable pageable);
-
   @Query("select m.role from Member m where m.group.id = :groupId and m.user.id = :userId")
   Optional<MemberRole> findRoleByGroupIdAndUserId(
       @Param("groupId") Long groupId, @Param("userId") Long userId);
