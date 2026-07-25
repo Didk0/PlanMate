@@ -12,7 +12,7 @@ public interface GroupService {
 
     GroupDto getGroupById(Long id);
 
-    PagedResponse<GroupDto> getAllGroups(Pageable pageable);
+    PagedResponse<GroupDto> getAllGroups(String search, Pageable pageable);
 
     void deleteGroup(Long id);
 }

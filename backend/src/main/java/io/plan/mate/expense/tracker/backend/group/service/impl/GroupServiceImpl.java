@@ -26,6 +26,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 @Service
 @RequiredArgsConstructor
@@ -94,11 +95,15 @@ public class GroupServiceImpl implements GroupService {
 
   @Override
   @Transactional(readOnly = true)
-  public PagedResponse<GroupDto> getAllGroups(final Pageable pageable) {
+  public PagedResponse<GroupDto> getAllGroups(final String search, final Pageable pageable) {
+
+    final String normalizedSearch = StringUtils.hasText(search) ? search.trim() : null;
 
     if (currentUserService.isAdmin()) {
       final Page<GroupDto> groupPage =
-          groupRepository.findAll(pageable).map(group -> modelMapper.map(group, GroupDto.class));
+          groupRepository
+              .search(normalizedSearch, pageable)
+              .map(group -> modelMapper.map(group, GroupDto.class));
       return PagedResponse.from(groupPage);
     }
 
@@ -108,7 +113,7 @@ public class GroupServiceImpl implements GroupService {
             .map(
                 userId ->
                     memberRepository
-                        .findByUserId(userId, pageable)
+                        .findByUserIdAndGroupSearch(userId, normalizedSearch, pageable)
                         .map(member -> modelMapper.map(member.getGroup(), GroupDto.class)))
             .orElseGet(() -> Page.empty(pageable));
 

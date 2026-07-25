@@ -22,6 +22,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 @Slf4j
 @Service
@@ -94,10 +95,14 @@ public class UserServiceImpl implements UserService {
 
   @Override
   @Transactional(readOnly = true)
-  public PagedResponse<UserDto> getAllUsers(final Pageable pageable) {
+  public PagedResponse<UserDto> getAllUsers(final String search, final Pageable pageable) {
+
+    final String normalizedSearch = StringUtils.hasText(search) ? search.trim() : null;
 
     return PagedResponse.from(
-        userRepository.findAll(pageable).map(user -> modelMapper.map(user, UserDto.class)));
+        userRepository
+            .search(normalizedSearch, pageable)
+            .map(user -> modelMapper.map(user, UserDto.class)));
   }
 
   @Override

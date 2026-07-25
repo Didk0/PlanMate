@@ -27,6 +27,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.LinkedHashSet;
@@ -150,14 +151,18 @@ public class ExpenseServiceImpl implements ExpenseService {
 
   @Override
   @Transactional(readOnly = true)
-  public PagedResponse<ExpenseDto> getGroupExpenses(final Long groupId, final Pageable pageable) {
+  public PagedResponse<ExpenseDto> getGroupExpenses(
+      final Long groupId, final String search, final Pageable pageable) {
 
-    final Sort sortWithIdTiebreaker = pageable.getSort().and(Sort.by(Sort.Direction.ASC, "id"));
-    final Pageable pageableWithIdTiebreaker =
-        PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), sortWithIdTiebreaker);
+    final String normalizedSearch = StringUtils.hasText(search) ? search.trim() : null;
+
+    final Sort sortById = pageable.getSort().and(Sort.by(Sort.Direction.ASC, "id"));
+    final Pageable pageableSortedById =
+        PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), sortById);
 
     final Page<Long> expenseIdPage =
-        expenseRepository.findExpenseIdsByGroupId(groupId, pageableWithIdTiebreaker);
+        expenseRepository.findExpenseIdsByGroupId(
+            groupId, normalizedSearch, pageableSortedById);
 
     final Map<Long, Expense> expensesById =
         expenseRepository.findByIdIn(expenseIdPage.getContent()).stream()

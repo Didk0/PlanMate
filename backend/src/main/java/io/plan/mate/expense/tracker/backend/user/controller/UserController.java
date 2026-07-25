@@ -20,6 +20,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -90,9 +91,10 @@ public class UserController {
   @PreAuthorize("hasRole('ADMIN')")
   @GetMapping
   public ResponseEntity<PagedResponse<UserDto>> getAllUsers(
+      @RequestParam(required = false) final String search,
       @PageableDefault(size = 10, sort = "username") final Pageable pageable) {
 
-    return ResponseEntity.ok(userService.getAllUsers(pageable));
+    return ResponseEntity.ok(userService.getAllUsers(search, pageable));
   }
 
   @Operation(

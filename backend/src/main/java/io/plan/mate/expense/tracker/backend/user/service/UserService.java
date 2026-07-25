@@ -10,7 +10,7 @@ public interface UserService {
 
   UserDto getUserById(Long userId);
 
-  PagedResponse<UserDto> getAllUsers(Pageable pageable);
+  PagedResponse<UserDto> getAllUsers(String search, Pageable pageable);
 
   void deleteUser(Long userId);
 }

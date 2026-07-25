@@ -448,17 +448,45 @@ class ExpenseServiceImplTest {
               10,
               Sort.by(Sort.Direction.DESC, "createdAt").and(Sort.by(Sort.Direction.ASC, "id")));
 
-      when(expenseRepository.findExpenseIdsByGroupId(1L, expectedPageable))
+      when(expenseRepository.findExpenseIdsByGroupId(1L, null, expectedPageable))
           .thenReturn(new PageImpl<>(List.of(2L, 1L), expectedPageable, 2));
       when(expenseRepository.findByIdIn(List.of(2L, 1L))).thenReturn(List.of(older, newer));
       when(modelMapper.map(older, ExpenseDto.class)).thenReturn(ExpenseDto.builder().id(1L).build());
       when(modelMapper.map(newer, ExpenseDto.class)).thenReturn(ExpenseDto.builder().id(2L).build());
 
       PagedResponse<ExpenseDto> result =
-          expenseService.getGroupExpenses(1L, requestedPageable);
+          expenseService.getGroupExpenses(1L, null, requestedPageable);
 
       assertThat(result.content()).extracting(ExpenseDto::getId).containsExactly(2L, 1L);
       assertThat(result.totalElements()).isEqualTo(2);
+    }
+
+    @Test
+    @DisplayName("passes a trimmed search term to the repository when a search is provided")
+    void getGroupExpenses_shouldSearchTrimmed_whenSearchProvided() {
+      Group group = Group.builder().id(1L).name("Trip").build();
+      Expense expense =
+          Expense.builder()
+              .id(1L)
+              .group(group)
+              .description("Dinner")
+              .amount(new BigDecimal("10.00"))
+              .createdAt(LocalDateTime.now())
+              .build();
+      Pageable requestedPageable = PageRequest.of(0, 10);
+      Pageable expectedPageable = PageRequest.of(0, 10, Sort.by(Sort.Direction.ASC, "id"));
+
+      when(expenseRepository.findExpenseIdsByGroupId(1L, "dinner", expectedPageable))
+          .thenReturn(new PageImpl<>(List.of(1L), expectedPageable, 1));
+      when(expenseRepository.findByIdIn(List.of(1L))).thenReturn(List.of(expense));
+      when(modelMapper.map(expense, ExpenseDto.class))
+          .thenReturn(ExpenseDto.builder().id(1L).build());
+
+      PagedResponse<ExpenseDto> result =
+          expenseService.getGroupExpenses(1L, "  dinner  ", requestedPageable);
+
+      assertThat(result.content()).extracting(ExpenseDto::getId).containsExactly(1L);
+      verify(expenseRepository).findExpenseIdsByGroupId(1L, "dinner", expectedPageable);
     }
 
     @Test
@@ -467,12 +495,12 @@ class ExpenseServiceImplTest {
       Pageable requestedPageable = PageRequest.of(0, 10);
       Pageable expectedPageable =
           PageRequest.of(0, 10, Sort.by(Sort.Direction.ASC, "id"));
-      when(expenseRepository.findExpenseIdsByGroupId(1L, expectedPageable))
+      when(expenseRepository.findExpenseIdsByGroupId(1L, null, expectedPageable))
           .thenReturn(new PageImpl<>(List.of(), expectedPageable, 0));
       when(expenseRepository.findByIdIn(List.of())).thenReturn(List.of());
 
       PagedResponse<ExpenseDto> result =
-          expenseService.getGroupExpenses(1L, requestedPageable);
+          expenseService.getGroupExpenses(1L, null, requestedPageable);
 
       assertThat(result.content()).isEmpty();
       assertThat(result.totalElements()).isZero();

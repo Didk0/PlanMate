@@ -23,6 +23,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -86,9 +87,10 @@ public class GroupController {
       })
   @GetMapping
   public ResponseEntity<PagedResponse<GroupDto>> getAllGroups(
+      @RequestParam(required = false) final String search,
       @PageableDefault(size = 5, sort = "name") final Pageable pageable) {
 
-    return ResponseEntity.ok(groupService.getAllGroups(pageable));
+    return ResponseEntity.ok(groupService.getAllGroups(search, pageable));
   }
 
   @Operation(

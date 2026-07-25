@@ -26,6 +26,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -78,10 +79,11 @@ public class ExpenseController {
   @GetMapping("/{groupId}/expenses")
   public ResponseEntity<PagedResponse<ExpenseDto>> getGroupExpenses(
       @PathVariable final Long groupId,
+      @RequestParam(required = false) final String search,
       @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC)
           final Pageable pageable) {
 
-    return ResponseEntity.ok(expenseService.getGroupExpenses(groupId, pageable));
+    return ResponseEntity.ok(expenseService.getGroupExpenses(groupId, search, pageable));
   }
 
   @Operation(
