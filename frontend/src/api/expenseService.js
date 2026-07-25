@@ -1,8 +1,12 @@
 import api from "./client";
 
 const expenseService = {
-  getGroupExpenses: (groupId, page = 0, size = 10) =>
-    api.get(`groups/${groupId}/expenses`, { params: { page, size } }).then((res) => res.data),
+  getGroupExpenses: (groupId, page = 0, size = 10, search = "") =>
+    api
+      .get(`groups/${groupId}/expenses`, {
+        params: { page, size, ...(search ? { search } : {}) },
+      })
+      .then((res) => res.data),
   calculateSettlements: (groupId) =>
     api.get(`/groups/${groupId}/settlements/calculate`).then((res) => res.data),
   createExpense: (groupId, expense) =>

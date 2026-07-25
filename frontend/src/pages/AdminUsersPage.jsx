@@ -7,8 +7,10 @@ import EmptyState from "@/components/shared/EmptyState";
 import ErrorScreen from "@/components/shared/ErrorScreen";
 import PageShell from "@/components/shared/PageShell";
 import Pagination from "@/components/shared/Pagination";
+import SearchInput from "@/components/shared/SearchInput";
 import Skeleton from "@/components/shared/Skeleton";
 import { useAsyncData } from "@/hooks/useAsyncData";
+import { useDebounce } from "@/hooks/useDebounce";
 import { notifyError, notifySuccess } from "@/lib/notify";
 import { selectAppUserId } from "@/store/authSlice";
 
@@ -18,9 +20,25 @@ const AdminUsersPage = () => {
   const appUserId = useSelector(selectAppUserId);
 
   const [page, setPage] = useState(0);
-  const fetchUsers = useCallback(() => userService.getAllUsers(page, USERS_PAGE_SIZE), [page]);
-  const { data, isLoading, error, errorStatus, reload } = useAsyncData(fetchUsers, [page]);
+  const [searchTerm, setSearchTerm] = useState("");
+  const debouncedSearch = useDebounce(searchTerm);
+
+  const [appliedSearch, setAppliedSearch] = useState(debouncedSearch);
+  if (appliedSearch !== debouncedSearch) {
+    setAppliedSearch(debouncedSearch);
+    setPage(0);
+  }
+
+  const fetchUsers = useCallback(
+    () => userService.getAllUsers(page, USERS_PAGE_SIZE, debouncedSearch),
+    [page, debouncedSearch]
+  );
+  const { data, isLoading, error, errorStatus, reload } = useAsyncData(fetchUsers, [
+    page,
+    debouncedSearch,
+  ]);
   const users = data?.content ?? [];
+  const isSearching = searchTerm !== debouncedSearch;
 
   const [userToDelete, setUserToDelete] = useState(null);
 
@@ -48,6 +66,14 @@ const AdminUsersPage = () => {
     <PageShell maxWidth="max-w-4xl">
       <h1 className="text-3xl font-bold text-slate-100 mb-6">Users</h1>
 
+      <SearchInput
+        value={searchTerm}
+        onChange={(e) => setSearchTerm(e.target.value)}
+        placeholder="Search by username..."
+        isSearching={isSearching}
+        className="mb-6"
+      />
+
       {isLoading ? (
         <div className="space-y-3">
           <Skeleton className="h-16 w-full" />
@@ -55,7 +81,7 @@ const AdminUsersPage = () => {
           <Skeleton className="h-16 w-full" />
         </div>
       ) : users.length === 0 ? (
-        <EmptyState title="No users yet" />
+        <EmptyState title={debouncedSearch ? "No matching users" : "No users yet"} />
       ) : (
         <div className="overflow-x-auto">
           <table className="w-full text-left">

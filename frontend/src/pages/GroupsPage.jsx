@@ -9,9 +9,11 @@ import EmptyState from "@/components/shared/EmptyState";
 import ErrorScreen from "@/components/shared/ErrorScreen";
 import PageShell from "@/components/shared/PageShell";
 import Pagination from "@/components/shared/Pagination";
+import SearchInput from "@/components/shared/SearchInput";
 import Skeleton from "@/components/shared/Skeleton";
 import TextInput from "@/components/shared/TextInput";
 import { useAsyncData } from "@/hooks/useAsyncData";
+import { useDebounce } from "@/hooks/useDebounce";
 import { itemVariants, listVariants } from "@/lib/motion";
 import { notifyError, notifySuccess } from "@/lib/notify";
 
@@ -19,9 +21,25 @@ const GROUPS_PAGE_SIZE = 5;
 
 const GroupsPage = () => {
   const [page, setPage] = useState(0);
-  const fetchGroups = useCallback(() => groupService.getAllGroups(page, GROUPS_PAGE_SIZE), [page]);
-  const { data, isLoading, error, errorStatus, reload } = useAsyncData(fetchGroups, [page]);
+  const [searchTerm, setSearchTerm] = useState("");
+  const debouncedSearch = useDebounce(searchTerm);
+
+  const [appliedSearch, setAppliedSearch] = useState(debouncedSearch);
+  if (appliedSearch !== debouncedSearch) {
+    setAppliedSearch(debouncedSearch);
+    setPage(0);
+  }
+
+  const fetchGroups = useCallback(
+    () => groupService.getAllGroups(page, GROUPS_PAGE_SIZE, debouncedSearch),
+    [page, debouncedSearch]
+  );
+  const { data, isLoading, error, errorStatus, reload } = useAsyncData(fetchGroups, [
+    page,
+    debouncedSearch,
+  ]);
   const groups = data?.content ?? [];
+  const isSearching = searchTerm !== debouncedSearch;
 
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [newGroup, setNewGroup] = useState({ name: "", description: "" });
@@ -71,6 +89,14 @@ const GroupsPage = () => {
         </Button>
       </div>
 
+      <SearchInput
+        value={searchTerm}
+        onChange={(e) => setSearchTerm(e.target.value)}
+        placeholder="Search by name or description..."
+        isSearching={isSearching}
+        className="mb-6"
+      />
+
       {isLoading ? (
         <div className="space-y-3">
           <Skeleton className="h-16 w-full" />
@@ -79,8 +105,12 @@ const GroupsPage = () => {
         </div>
       ) : groups.length === 0 ? (
         <EmptyState
-          title="No groups yet"
-          description="Create a group to start tracking shared expenses."
+          title={debouncedSearch ? "No matching groups" : "No groups yet"}
+          description={
+            debouncedSearch
+              ? "Try a different search term."
+              : "Create a group to start tracking shared expenses."
+          }
         />
       ) : (
         <>
