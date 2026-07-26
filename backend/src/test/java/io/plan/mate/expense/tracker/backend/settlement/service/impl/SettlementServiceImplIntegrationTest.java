@@ -1,77 +1,26 @@
 package io.plan.mate.expense.tracker.backend.settlement.service.impl;
 
-import static io.plan.mate.expense.tracker.backend.commons.utils.SettlementTestBuilders.newUser;
 import static io.plan.mate.expense.tracker.backend.commons.utils.SettlementTestBuilders.participant;
 import static org.assertj.core.api.Assertions.assertThat;
 
-import io.plan.mate.expense.tracker.backend.settlement.service.dto.SettlementDto;
-import io.plan.mate.expense.tracker.backend.expense.jpa.entity.Expense;
-import io.plan.mate.expense.tracker.backend.expense.jpa.entity.ExpenseParticipant;
+import io.plan.mate.expense.tracker.backend.commons.utils.AbstractIntegrationTest;
 import io.plan.mate.expense.tracker.backend.group.jpa.entity.Group;
-import io.plan.mate.expense.tracker.backend.user.jpa.entity.User;
-import io.plan.mate.expense.tracker.backend.expense.jpa.repository.ExpenseRepository;
-import io.plan.mate.expense.tracker.backend.group.jpa.repository.GroupRepository;
 import io.plan.mate.expense.tracker.backend.settlement.jpa.repository.SettlementRepository;
-import io.plan.mate.expense.tracker.backend.user.jpa.repository.UserRepository;
 import io.plan.mate.expense.tracker.backend.settlement.service.SettlementService;
-import jakarta.persistence.EntityManager;
+import io.plan.mate.expense.tracker.backend.settlement.service.dto.SettlementDto;
+import io.plan.mate.expense.tracker.backend.user.jpa.entity.User;
 import java.math.BigDecimal;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.cache.CacheManager;
-import org.springframework.security.oauth2.jwt.JwtDecoder;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
-import org.springframework.transaction.annotation.Transactional;
 
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE)
-@Transactional
 @DisplayName("SettlementServiceImpl integration tests")
-class SettlementServiceImplIntegrationTest {
-
-  @MockitoBean @SuppressWarnings("unused") private JwtDecoder jwtDecoder;
+class SettlementServiceImplIntegrationTest extends AbstractIntegrationTest {
 
   @Autowired private SettlementService settlementService;
-  @Autowired private UserRepository userRepository;
-  @Autowired private GroupRepository groupRepository;
-  @Autowired private ExpenseRepository expenseRepository;
   @Autowired private SettlementRepository settlementRepository;
-  @Autowired private CacheManager cacheManager;
-  @Autowired private EntityManager entityManager;
-
-  @BeforeEach
-  void clearSettlementsCache() {
-    Objects.requireNonNull(cacheManager.getCache("settlements")).clear();
-  }
-
-  private void flushAndClear() {
-    entityManager.flush();
-    entityManager.clear();
-  }
-
-  private User persistUser(String first, String last) {
-    return userRepository.save(newUser(first, last));
-  }
-
-  private Group persistGroup(String name) {
-    return groupRepository.save(Group.builder().name(name).build());
-  }
-
-  private void persistExpense(Group group, User paidBy, List<ExpenseParticipant> parts) {
-    BigDecimal total =
-        parts.stream()
-            .map(ExpenseParticipant::getShareAmount)
-            .reduce(BigDecimal.ZERO, BigDecimal::add);
-    Expense expense = Expense.builder().group(group).paidBy(paidBy).amount(total).build();
-    parts.forEach(p -> p.setExpense(expense));
-    expense.setParticipants(new ArrayList<>(parts));
-    expenseRepository.save(expense);
-  }
 
   @Test
   @DisplayName("single expense: correct debtor, creditor and amount are returned")
