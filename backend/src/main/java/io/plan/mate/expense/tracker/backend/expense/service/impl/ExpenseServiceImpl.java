@@ -19,6 +19,7 @@ import io.plan.mate.expense.tracker.backend.expense.controller.payload.request.C
 import io.plan.mate.expense.tracker.backend.expense.controller.payload.request.CreateExpenseRequest;
 import io.plan.mate.expense.tracker.backend.expense.controller.payload.request.UpdateExpenseRequest;
 import io.plan.mate.expense.tracker.backend.expense.service.ExpenseService;
+import io.plan.mate.expense.tracker.backend.expense.service.mapper.ExpenseMapper;
 import io.plan.mate.expense.tracker.backend.settlement.controller.payload.event.SettlementsChangeEnum;
 import io.plan.mate.expense.tracker.backend.settlement.controller.payload.event.SettlementsChangedEvent;
 import io.plan.mate.expense.tracker.backend.settlement.service.SettlementService;
@@ -30,7 +31,6 @@ import org.springframework.data.domain.Sort;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -38,7 +38,6 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
-import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -49,7 +48,7 @@ public class ExpenseServiceImpl implements ExpenseService {
   private final UserRepository userRepository;
   private final GroupRepository groupRepository;
   private final MemberRepository memberRepository;
-  private final ModelMapper modelMapper;
+  private final ExpenseMapper expenseMapper;
   private final SettlementService settlementService;
   private final ApplicationEventPublisher eventPublisher;
 
@@ -70,19 +69,14 @@ public class ExpenseServiceImpl implements ExpenseService {
                 createExpenseRequest.paidByUsername(), createExpenseRequest.participants()));
 
     final Expense expense =
-        Expense.builder()
-            .description(createExpenseRequest.description())
-            .amount(createExpenseRequest.amount())
-            .createdAt(LocalDateTime.now())
-            .group(group)
-            .paidBy(usersByUsername.get(createExpenseRequest.paidByUsername()))
-            .build();
+        expenseMapper.toEntity(
+            createExpenseRequest, group, usersByUsername.get(createExpenseRequest.paidByUsername()));
 
     expense.setParticipants(
         buildParticipants(expense, createExpenseRequest.participants(), usersByUsername));
 
     final Expense savedExpense = expenseRepository.save(expense);
-    final ExpenseDto expenseDto = modelMapper.map(savedExpense, ExpenseDto.class);
+    final ExpenseDto expenseDto = expenseMapper.toDto(savedExpense);
 
     settlementService.clearSettlementCache(group.getId());
     eventPublisher.publishEvent(
@@ -110,9 +104,8 @@ public class ExpenseServiceImpl implements ExpenseService {
             collectUsernames(
                 updateExpenseRequest.paidByUsername(), updateExpenseRequest.participants()));
 
-    expense.setDescription(updateExpenseRequest.description());
-    expense.setAmount(updateExpenseRequest.amount());
-    expense.setPaidBy(usersByUsername.get(updateExpenseRequest.paidByUsername()));
+    expenseMapper.updateEntity(
+        expense, updateExpenseRequest, usersByUsername.get(updateExpenseRequest.paidByUsername()));
 
     expense.getParticipants().clear();
 
@@ -123,7 +116,7 @@ public class ExpenseServiceImpl implements ExpenseService {
         .addAll(buildParticipants(expense, updateExpenseRequest.participants(), usersByUsername));
 
     final Expense savedExpense = expenseRepository.save(expense);
-    final ExpenseDto expenseDto = modelMapper.map(savedExpense, ExpenseDto.class);
+    final ExpenseDto expenseDto = expenseMapper.toDto(savedExpense);
 
     settlementService.clearSettlementCache(groupId);
     eventPublisher.publishEvent(
@@ -139,7 +132,7 @@ public class ExpenseServiceImpl implements ExpenseService {
   public void deleteExpense(final Long groupId, final Long expenseId) {
 
     final Expense expense = findExpenseInGroupOrThrow(groupId, expenseId);
-    final ExpenseDto expenseDto = modelMapper.map(expense, ExpenseDto.class);
+    final ExpenseDto expenseDto = expenseMapper.toDto(expense);
 
     expenseRepository.delete(expense);
 
@@ -173,7 +166,7 @@ public class ExpenseServiceImpl implements ExpenseService {
     final List<ExpenseDto> expenseDtos =
         expenseIdPage.getContent().stream()
             .map(expensesById::get)
-            .map(expense -> modelMapper.map(expense, ExpenseDto.class))
+            .map(expenseMapper::toDto)
             .toList();
 
     return new PagedResponse<>(
@@ -257,13 +250,7 @@ public class ExpenseServiceImpl implements ExpenseService {
       final Map<String, User> usersByUsername) {
 
     return participants.stream()
-        .map(
-            p ->
-                ExpenseParticipant.builder()
-                    .expense(expense)
-                    .participant(usersByUsername.get(p.userName()))
-                    .shareAmount(p.shareAmount())
-                    .build())
+        .map(p -> expenseMapper.toParticipantEntity(p, expense, usersByUsername.get(p.userName())))
         .toList();
   }
 

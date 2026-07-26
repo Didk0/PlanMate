@@ -12,12 +12,14 @@ import io.plan.mate.expense.tracker.backend.commons.exception.handling.exception
 import io.plan.mate.expense.tracker.backend.group.jpa.entity.Group;
 import io.plan.mate.expense.tracker.backend.group.jpa.repository.GroupRepository;
 import io.plan.mate.expense.tracker.backend.group.service.dto.GroupDto;
+import io.plan.mate.expense.tracker.backend.group.service.mapper.GroupMapperImpl;
 import io.plan.mate.expense.tracker.backend.member.controller.payload.event.MemberChangedEvent;
 import io.plan.mate.expense.tracker.backend.member.controller.payload.request.AddUserRequest;
 import io.plan.mate.expense.tracker.backend.member.jpa.entity.Member;
 import io.plan.mate.expense.tracker.backend.member.jpa.entity.MemberRole;
 import io.plan.mate.expense.tracker.backend.member.jpa.repository.MemberRepository;
 import io.plan.mate.expense.tracker.backend.member.service.dto.MemberDto;
+import io.plan.mate.expense.tracker.backend.member.service.mapper.MemberMapperImpl;
 import io.plan.mate.expense.tracker.backend.settlement.controller.payload.event.SettlementsChangedEvent;
 import io.plan.mate.expense.tracker.backend.settlement.service.SettlementService;
 import io.plan.mate.expense.tracker.backend.user.jpa.entity.User;
@@ -31,8 +33,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.modelmapper.ModelMapper;
 import org.springframework.context.ApplicationEventPublisher;
 
 @ExtendWith(MockitoExtension.class)
@@ -42,7 +44,8 @@ class MemberServiceImplTest {
   @Mock private UserRepository userRepository;
   @Mock private MemberRepository memberRepository;
   @Mock private GroupRepository groupRepository;
-  @Mock private ModelMapper modelMapper;
+  @Spy private MemberMapperImpl memberMapper;
+  @Spy private GroupMapperImpl groupMapper;
   @Mock private SettlementService settlementService;
   @Mock private ApplicationEventPublisher eventPublisher;
 
@@ -63,7 +66,6 @@ class MemberServiceImplTest {
       when(groupRepository.findById(1L)).thenReturn(Optional.of(group));
       when(memberRepository.findByGroupIdAndUserId(1L, 1L)).thenReturn(Optional.empty());
       when(memberRepository.save(any())).thenReturn(member);
-      when(modelMapper.map(member, MemberDto.class)).thenReturn(MemberDto.builder().id(1L).build());
 
       memberService.addUserToGroup(1L, new AddUserRequest("alice"));
 
@@ -83,8 +85,6 @@ class MemberServiceImplTest {
       when(groupRepository.findById(1L)).thenReturn(Optional.of(group));
       when(memberRepository.findByGroupIdAndUserId(1L, 1L)).thenReturn(Optional.empty());
       when(memberRepository.save(any())).thenReturn(savedMember);
-      when(modelMapper.map(savedMember, MemberDto.class))
-          .thenReturn(MemberDto.builder().id(1L).build());
 
       memberService.addUserToGroup(1L, new AddUserRequest("alice"));
 
@@ -160,7 +160,6 @@ class MemberServiceImplTest {
 
       when(userRepository.existsById(1L)).thenReturn(true);
       when(memberRepository.findByUserId(1L)).thenReturn(List.of(member));
-      when(modelMapper.map(group, GroupDto.class)).thenReturn(GroupDto.builder().id(1L).build());
 
       List<GroupDto> groups = memberService.getUserGroups(1L);
 

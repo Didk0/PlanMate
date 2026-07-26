@@ -14,17 +14,17 @@ import io.plan.mate.expense.tracker.backend.commons.exception.handling.exception
 import io.plan.mate.expense.tracker.backend.commons.exception.handling.exception.ResourceNotFoundException;
 import io.plan.mate.expense.tracker.backend.member.controller.payload.event.MemberChangeEnum;
 import io.plan.mate.expense.tracker.backend.member.controller.payload.event.MemberChangedEvent;
+import io.plan.mate.expense.tracker.backend.group.service.mapper.GroupMapper;
 import io.plan.mate.expense.tracker.backend.member.controller.payload.request.AddUserRequest;
 import io.plan.mate.expense.tracker.backend.member.service.MemberService;
+import io.plan.mate.expense.tracker.backend.member.service.mapper.MemberMapper;
 import io.plan.mate.expense.tracker.backend.settlement.controller.payload.event.SettlementsChangeEnum;
 import io.plan.mate.expense.tracker.backend.settlement.controller.payload.event.SettlementsChangedEvent;
 import io.plan.mate.expense.tracker.backend.settlement.service.SettlementService;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.transaction.annotation.Transactional;
-import java.time.LocalDateTime;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
-import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -34,7 +34,8 @@ public class MemberServiceImpl implements MemberService {
   private final UserRepository userRepository;
   private final MemberRepository memberRepository;
   private final GroupRepository groupRepository;
-  private final ModelMapper modelMapper;
+  private final MemberMapper memberMapper;
+  private final GroupMapper groupMapper;
   private final SettlementService settlementService;
   private final ApplicationEventPublisher eventPublisher;
 
@@ -61,19 +62,13 @@ public class MemberServiceImpl implements MemberService {
           "User with id " + user.getId() + " is already a member in group with id " + groupId);
     }
 
-    Member member =
-        Member.builder()
-            .user(user)
-            .group(group)
-            .role(MemberRole.MEMBER)
-            .joinedAt(LocalDateTime.now())
-            .build();
+    Member member = memberMapper.toEntity(user, group, MemberRole.MEMBER);
 
     member = memberRepository.save(member);
 
     settlementService.clearSettlementCache(groupId);
 
-    final MemberDto memberDto = modelMapper.map(member, MemberDto.class);
+    final MemberDto memberDto = memberMapper.toDto(member);
 
     eventPublisher.publishEvent(
         new MemberChangedEvent(MemberChangeEnum.ADD_MEMBER, groupId, memberDto));
@@ -118,7 +113,7 @@ public class MemberServiceImpl implements MemberService {
 
     final List<Member> groupMembers = memberRepository.findByGroupId(groupId);
 
-    return groupMembers.stream().map(member -> modelMapper.map(member, MemberDto.class)).toList();
+    return memberMapper.toDtoList(groupMembers);
   }
 
   @Override
@@ -130,7 +125,7 @@ public class MemberServiceImpl implements MemberService {
     }
 
     return memberRepository.findByUserId(userId).stream()
-        .map(member -> modelMapper.map(member.getGroup(), GroupDto.class))
+        .map(member -> groupMapper.toDto(member.getGroup()))
         .toList();
   }
 }

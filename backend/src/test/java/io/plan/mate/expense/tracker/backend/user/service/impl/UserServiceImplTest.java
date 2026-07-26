@@ -17,6 +17,7 @@ import io.plan.mate.expense.tracker.backend.user.jpa.entity.User;
 import io.plan.mate.expense.tracker.backend.user.jpa.repository.UserRepository;
 import io.plan.mate.expense.tracker.backend.user.service.dto.UserDto;
 import io.plan.mate.expense.tracker.backend.user.service.keycloak.KeycloakService;
+import io.plan.mate.expense.tracker.backend.user.service.mapper.UserMapperImpl;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -27,8 +28,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.modelmapper.ModelMapper;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -41,7 +42,7 @@ class UserServiceImplTest {
   @Mock private UserRepository userRepository;
   @Mock private MemberRepository memberRepository;
   @Mock private ExpenseRepository expenseRepository;
-  @Mock private ModelMapper modelMapper;
+  @Spy private UserMapperImpl userMapper;
   @Mock private KeycloakService keycloakService;
   @Mock private CurrentUserService currentUserService;
 
@@ -140,8 +141,6 @@ class UserServiceImplTest {
       when(currentUserService.getKeycloakId()).thenReturn(keycloakId);
       when(userRepository.findByKeycloakId(keycloakId)).thenReturn(Optional.empty());
       when(userRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
-      when(modelMapper.map(any(User.class), org.mockito.ArgumentMatchers.eq(UserDto.class)))
-          .thenReturn(UserDto.builder().build());
 
       userService.provisionCurrentUser();
 
@@ -165,7 +164,6 @@ class UserServiceImplTest {
       when(userRepository.findByKeycloakId(keycloakId)).thenReturn(Optional.of(existingUser));
       when(keycloakService.getUser(keycloakId))
           .thenThrow(new jakarta.ws.rs.WebApplicationException("service account lacks view-users"));
-      when(modelMapper.map(existingUser, UserDto.class)).thenReturn(UserDto.builder().id(1L).build());
 
       userService.provisionCurrentUser();
 
@@ -184,7 +182,6 @@ class UserServiceImplTest {
       Pageable pageable = PageRequest.of(0, 10);
       when(userRepository.search(null, pageable))
           .thenReturn(new PageImpl<>(List.of(alice), pageable, 1));
-      when(modelMapper.map(alice, UserDto.class)).thenReturn(UserDto.builder().id(1L).build());
 
       PagedResponse<UserDto> result = userService.getAllUsers(null, pageable);
 
@@ -200,7 +197,6 @@ class UserServiceImplTest {
       Pageable pageable = PageRequest.of(0, 10);
       when(userRepository.search("ali", pageable))
           .thenReturn(new PageImpl<>(List.of(alice), pageable, 1));
-      when(modelMapper.map(alice, UserDto.class)).thenReturn(UserDto.builder().id(1L).build());
 
       PagedResponse<UserDto> result = userService.getAllUsers("  ali  ", pageable);
 

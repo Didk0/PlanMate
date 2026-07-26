@@ -9,19 +9,18 @@ import io.plan.mate.expense.tracker.backend.commons.security.CurrentUserService;
 import io.plan.mate.expense.tracker.backend.commons.util.LikePatternEscaper;
 import io.plan.mate.expense.tracker.backend.group.controller.payload.request.CreateGroupRequest;
 import io.plan.mate.expense.tracker.backend.group.service.GroupService;
+import io.plan.mate.expense.tracker.backend.group.service.mapper.GroupMapper;
 import io.plan.mate.expense.tracker.backend.member.controller.payload.event.MemberChangeEnum;
 import io.plan.mate.expense.tracker.backend.member.controller.payload.event.MemberChangedEvent;
 import io.plan.mate.expense.tracker.backend.member.jpa.entity.Member;
 import io.plan.mate.expense.tracker.backend.member.jpa.entity.MemberRole;
 import io.plan.mate.expense.tracker.backend.member.jpa.repository.MemberRepository;
-import io.plan.mate.expense.tracker.backend.member.service.dto.MemberDto;
+import io.plan.mate.expense.tracker.backend.member.service.mapper.MemberMapper;
 import io.plan.mate.expense.tracker.backend.settlement.controller.payload.event.SettlementsChangeEnum;
 import io.plan.mate.expense.tracker.backend.settlement.controller.payload.event.SettlementsChangedEvent;
 import io.plan.mate.expense.tracker.backend.settlement.service.SettlementService;
 import io.plan.mate.expense.tracker.backend.user.jpa.repository.UserRepository;
-import java.time.LocalDateTime;
 import lombok.RequiredArgsConstructor;
-import org.modelmapper.ModelMapper;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -36,7 +35,8 @@ public class GroupServiceImpl implements GroupService {
   private final GroupRepository groupRepository;
   private final MemberRepository memberRepository;
   private final UserRepository userRepository;
-  private final ModelMapper modelMapper;
+  private final GroupMapper groupMapper;
+  private final MemberMapper memberMapper;
   private final SettlementService settlementService;
   private final CurrentUserService currentUserService;
   private final ApplicationEventPublisher eventPublisher;
@@ -47,33 +47,23 @@ public class GroupServiceImpl implements GroupService {
 
     final Long creatorId = currentUserService.requireCurrentUserId();
 
-    final Group group =
-        Group.builder()
-            .name(createGroupRequest.name())
-            .description(createGroupRequest.description())
-            .build();
+    final Group group = groupMapper.toEntity(createGroupRequest);
 
     final Group createdGroup = groupRepository.save(group);
 
     final Member owner =
-        Member.builder()
-            .user(userRepository.getReferenceById(creatorId))
-            .group(createdGroup)
-            .role(MemberRole.OWNER)
-            .joinedAt(LocalDateTime.now())
-            .build();
+        memberMapper.toEntity(
+            userRepository.getReferenceById(creatorId), createdGroup, MemberRole.OWNER);
 
     final Member savedOwner = memberRepository.save(owner);
 
     settlementService.clearSettlementCache(createdGroup.getId());
 
-    final GroupDto groupDto = modelMapper.map(createdGroup, GroupDto.class);
+    final GroupDto groupDto = groupMapper.toDto(createdGroup);
 
     eventPublisher.publishEvent(
         new MemberChangedEvent(
-            MemberChangeEnum.ADD_MEMBER,
-            createdGroup.getId(),
-            modelMapper.map(savedOwner, MemberDto.class)));
+            MemberChangeEnum.ADD_MEMBER, createdGroup.getId(), memberMapper.toDto(savedOwner)));
     eventPublisher.publishEvent(
         new SettlementsChangedEvent(
             SettlementsChangeEnum.SETTLEMENTS_INVALIDATED, createdGroup.getId()));
@@ -91,7 +81,7 @@ public class GroupServiceImpl implements GroupService {
             .orElseThrow(
                 () -> new ResourceNotFoundException("Group with id=" + groupId + " not found"));
 
-    return modelMapper.map(group, GroupDto.class);
+    return groupMapper.toDto(group);
   }
 
   @Override
@@ -103,9 +93,7 @@ public class GroupServiceImpl implements GroupService {
 
     if (currentUserService.isAdmin()) {
       final Page<GroupDto> groupPage =
-          groupRepository
-              .search(normalizedSearch, pageable)
-              .map(group -> modelMapper.map(group, GroupDto.class));
+          groupRepository.search(normalizedSearch, pageable).map(groupMapper::toDto);
       return PagedResponse.from(groupPage);
     }
 
@@ -116,7 +104,7 @@ public class GroupServiceImpl implements GroupService {
                 userId ->
                     groupRepository
                         .searchForMember(userId, normalizedSearch, pageable)
-                        .map(group -> modelMapper.map(group, GroupDto.class)))
+                        .map(groupMapper::toDto))
             .orElseGet(() -> Page.empty(pageable));
 
     return PagedResponse.from(groupPage);

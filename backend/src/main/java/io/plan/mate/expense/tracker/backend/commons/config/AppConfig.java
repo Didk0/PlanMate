@@ -1,7 +1,5 @@
 package io.plan.mate.expense.tracker.backend.commons.config;
 
-import io.plan.mate.expense.tracker.backend.expense.service.converter.ExpenseParticipantToDtoConverter;
-import io.plan.mate.expense.tracker.backend.member.service.converter.MemberToMemberDtoConverter;
 import io.swagger.v3.oas.models.ExternalDocumentation;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.Components;
@@ -11,7 +9,6 @@ import io.swagger.v3.oas.models.info.License;
 import io.swagger.v3.oas.models.security.SecurityRequirement;
 import io.swagger.v3.oas.models.security.SecurityScheme;
 import java.time.Duration;
-import org.modelmapper.ModelMapper;
 import org.springframework.boot.cache.autoconfigure.RedisCacheManagerBuilderCustomizer;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.Bean;
@@ -52,17 +49,6 @@ public class AppConfig {
             new ExternalDocumentation()
                 .description("PlanMate Github Repository")
                 .url("https://github.com/Didk0/PlanMate"));
-  }
-
-  @Bean
-  public ModelMapper modelMapper() {
-
-    final ModelMapper modelMapper = new ModelMapper();
-
-    modelMapper.addConverter(new MemberToMemberDtoConverter());
-    modelMapper.addConverter(new ExpenseParticipantToDtoConverter());
-
-    return modelMapper;
   }
 
   @Bean

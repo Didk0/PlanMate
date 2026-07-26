@@ -19,6 +19,7 @@ import io.plan.mate.expense.tracker.backend.expense.jpa.entity.Expense;
 import io.plan.mate.expense.tracker.backend.expense.jpa.entity.ExpenseParticipant;
 import io.plan.mate.expense.tracker.backend.expense.jpa.repository.ExpenseRepository;
 import io.plan.mate.expense.tracker.backend.expense.service.dto.ExpenseDto;
+import io.plan.mate.expense.tracker.backend.expense.service.mapper.ExpenseMapperImpl;
 import io.plan.mate.expense.tracker.backend.group.jpa.entity.Group;
 import io.plan.mate.expense.tracker.backend.group.jpa.repository.GroupRepository;
 import io.plan.mate.expense.tracker.backend.member.jpa.repository.MemberRepository;
@@ -39,8 +40,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.modelmapper.ModelMapper;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
@@ -55,7 +56,7 @@ class ExpenseServiceImplTest {
   @Mock private UserRepository userRepository;
   @Mock private GroupRepository groupRepository;
   @Mock private MemberRepository memberRepository;
-  @Mock private ModelMapper modelMapper;
+  @Spy private ExpenseMapperImpl expenseMapper;
   @Mock private SettlementService settlementService;
   @Mock private ApplicationEventPublisher eventPublisher;
 
@@ -194,8 +195,6 @@ class ExpenseServiceImplTest {
       when(memberRepository.findMemberUserIdsByGroupIdAndUserIdIn(eq(1L), any()))
           .thenReturn(Set.of(1L, 2L));
       when(expenseRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
-      when(modelMapper.map(any(Expense.class), eq(ExpenseDto.class)))
-          .thenReturn(ExpenseDto.builder().build());
 
       CreateExpenseRequest request =
           new CreateExpenseRequest(
@@ -229,8 +228,6 @@ class ExpenseServiceImplTest {
       when(memberRepository.findMemberUserIdsByGroupIdAndUserIdIn(eq(1L), any()))
           .thenReturn(Set.of(1L, 2L));
       when(expenseRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
-      when(modelMapper.map(any(Expense.class), eq(ExpenseDto.class)))
-          .thenReturn(ExpenseDto.builder().build());
 
       CreateExpenseRequest request =
           new CreateExpenseRequest(
@@ -255,8 +252,6 @@ class ExpenseServiceImplTest {
       when(memberRepository.findMemberUserIdsByGroupIdAndUserIdIn(eq(1L), any()))
           .thenReturn(Set.of(1L, 2L));
       when(expenseRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
-      when(modelMapper.map(any(Expense.class), eq(ExpenseDto.class)))
-          .thenReturn(ExpenseDto.builder().build());
 
       CreateExpenseRequest request =
           new CreateExpenseRequest(
@@ -349,8 +344,6 @@ class ExpenseServiceImplTest {
       when(memberRepository.findMemberUserIdsByGroupIdAndUserIdIn(eq(1L), any()))
           .thenReturn(Set.of(1L, 3L));
       when(expenseRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
-      when(modelMapper.map(any(Expense.class), eq(ExpenseDto.class)))
-          .thenReturn(ExpenseDto.builder().build());
 
       UpdateExpenseRequest request =
           new UpdateExpenseRequest(
@@ -406,8 +399,6 @@ class ExpenseServiceImplTest {
               .paidBy(user(1L, "alice"))
               .build();
       when(expenseRepository.findById(10L)).thenReturn(Optional.of(expense));
-      when(modelMapper.map(any(Expense.class), eq(ExpenseDto.class)))
-          .thenReturn(ExpenseDto.builder().build());
 
       expenseService.deleteExpense(1L, 10L);
 
@@ -451,8 +442,6 @@ class ExpenseServiceImplTest {
       when(expenseRepository.findExpenseIdsByGroupId(1L, null, expectedPageable))
           .thenReturn(new PageImpl<>(List.of(2L, 1L), expectedPageable, 2));
       when(expenseRepository.findByIdIn(List.of(2L, 1L))).thenReturn(List.of(older, newer));
-      when(modelMapper.map(older, ExpenseDto.class)).thenReturn(ExpenseDto.builder().id(1L).build());
-      when(modelMapper.map(newer, ExpenseDto.class)).thenReturn(ExpenseDto.builder().id(2L).build());
 
       PagedResponse<ExpenseDto> result =
           expenseService.getGroupExpenses(1L, null, requestedPageable);
@@ -479,8 +468,6 @@ class ExpenseServiceImplTest {
       when(expenseRepository.findExpenseIdsByGroupId(1L, "dinner", expectedPageable))
           .thenReturn(new PageImpl<>(List.of(1L), expectedPageable, 1));
       when(expenseRepository.findByIdIn(List.of(1L))).thenReturn(List.of(expense));
-      when(modelMapper.map(expense, ExpenseDto.class))
-          .thenReturn(ExpenseDto.builder().id(1L).build());
 
       PagedResponse<ExpenseDto> result =
           expenseService.getGroupExpenses(1L, "  dinner  ", requestedPageable);

@@ -12,13 +12,13 @@ import io.plan.mate.expense.tracker.backend.expense.jpa.repository.ExpenseReposi
 import io.plan.mate.expense.tracker.backend.member.jpa.repository.MemberRepository;
 import io.plan.mate.expense.tracker.backend.user.service.UserService;
 import io.plan.mate.expense.tracker.backend.user.service.keycloak.KeycloakService;
+import io.plan.mate.expense.tracker.backend.user.service.mapper.UserMapper;
 import jakarta.ws.rs.WebApplicationException;
 import java.time.LocalDateTime;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.keycloak.representations.idm.UserRepresentation;
-import org.modelmapper.ModelMapper;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Service;
@@ -33,7 +33,7 @@ public class UserServiceImpl implements UserService {
   private final UserRepository userRepository;
   private final MemberRepository memberRepository;
   private final ExpenseRepository expenseRepository;
-  private final ModelMapper modelMapper;
+  private final UserMapper userMapper;
   private final KeycloakService keycloakService;
   private final CurrentUserService currentUserService;
 
@@ -51,17 +51,14 @@ public class UserServiceImpl implements UserService {
       try {
         final UserRepresentation userRepresentation = keycloakService.getUser(keycloakId);
 
-        existingUser.setEmail(userRepresentation.getEmail());
-        existingUser.setUsername(userRepresentation.getUsername());
-        existingUser.setFirstName(userRepresentation.getFirstName());
-        existingUser.setLastName(userRepresentation.getLastName());
+        userMapper.updateFromKeycloak(existingUser, userRepresentation);
 
         userRepository.save(existingUser);
       } catch (final WebApplicationException ex) {
         log.warn("Skipping Keycloak profile sync for user {}: {}", keycloakId, ex.getMessage());
       }
 
-      return modelMapper.map(existingUser, UserDto.class);
+      return userMapper.toDto(existingUser);
     }
 
     final User user =
@@ -76,7 +73,7 @@ public class UserServiceImpl implements UserService {
 
     final User createdUser = userRepository.save(user);
 
-    return modelMapper.map(createdUser, UserDto.class);
+    return userMapper.toDto(createdUser);
   }
 
   @Override
@@ -91,7 +88,7 @@ public class UserServiceImpl implements UserService {
                     new ResourceNotFoundException(
                         String.format("No user with id %s found", userId)));
 
-    return modelMapper.map(user, UserDto.class);
+    return userMapper.toDto(user);
   }
 
   @Override
@@ -102,9 +99,7 @@ public class UserServiceImpl implements UserService {
         StringUtils.hasText(search) ? LikePatternEscaper.escape(search.trim()) : null;
 
     return PagedResponse.from(
-        userRepository
-            .search(normalizedSearch, pageable)
-            .map(user -> modelMapper.map(user, UserDto.class)));
+        userRepository.search(normalizedSearch, pageable).map(userMapper::toDto));
   }
 
   @Override

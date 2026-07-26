@@ -55,7 +55,7 @@ const EditExpensePage = () => {
   }
 
   const [members, expenses] = data;
-  const expense = expenses.find((e) => String(e.id) === expenseId);
+  const expense = expenses.content.find((e) => String(e.id) === expenseId);
 
   if (!expense) {
     return <ErrorScreen message="Expense not found" status={404} onRetry={reload} />;

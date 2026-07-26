@@ -11,6 +11,7 @@ import io.plan.mate.expense.tracker.backend.group.jpa.repository.GroupRepository
 import io.plan.mate.expense.tracker.backend.settlement.jpa.repository.SettlementRepository;
 import io.plan.mate.expense.tracker.backend.commons.exception.handling.exception.ResourceNotFoundException;
 import io.plan.mate.expense.tracker.backend.settlement.service.SettlementService;
+import io.plan.mate.expense.tracker.backend.settlement.service.mapper.SettlementMapper;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDateTime;
@@ -22,7 +23,6 @@ import java.util.Map;
 import java.util.PriorityQueue;
 import lombok.AllArgsConstructor;
 import lombok.RequiredArgsConstructor;
-import org.modelmapper.ModelMapper;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
@@ -35,7 +35,7 @@ public class SettlementServiceImpl implements SettlementService {
   private final SettlementRepository settlementRepository;
   private final GroupRepository groupRepository;
   private final ExpenseRepository expenseRepository;
-  private final ModelMapper modelMapper;
+  private final SettlementMapper settlementMapper;
 
   @Override
   @CacheEvict(value = "settlements", key = "#groupId")
@@ -55,8 +55,7 @@ public class SettlementServiceImpl implements SettlementService {
     // group has not been mutated (mutations clear these rows via clearSettlementCache).
     final List<Settlement> persisted = settlementRepository.findByGroupId(groupId);
     if (!persisted.isEmpty()) {
-      return new ArrayList<>(persisted.stream()
-                  .map(settlement -> modelMapper.map(settlement, SettlementDto.class)).toList());
+      return new ArrayList<>(settlementMapper.toDtoList(persisted));
     }
 
     final Group group =
@@ -124,8 +123,7 @@ public class SettlementServiceImpl implements SettlementService {
 
     final List<Settlement> saved = settlementRepository.saveAll(settlements);
 
-    return new ArrayList<>(saved.stream()
-                .map(settlement -> modelMapper.map(settlement, SettlementDto.class)).toList());
+    return new ArrayList<>(settlementMapper.toDtoList(saved));
   }
 
   private void populateCreditorsAndDebtors(

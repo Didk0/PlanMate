@@ -7,7 +7,6 @@ import static io.plan.mate.expense.tracker.backend.commons.utils.SettlementTestB
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -17,6 +16,7 @@ import io.plan.mate.expense.tracker.backend.expense.jpa.entity.Expense;
 import io.plan.mate.expense.tracker.backend.expense.jpa.repository.ExpenseRepository;
 import io.plan.mate.expense.tracker.backend.group.jpa.entity.Group;
 import io.plan.mate.expense.tracker.backend.settlement.jpa.entity.Settlement;
+import io.plan.mate.expense.tracker.backend.settlement.service.mapper.SettlementMapperImpl;
 import io.plan.mate.expense.tracker.backend.user.jpa.entity.User;
 import io.plan.mate.expense.tracker.backend.group.jpa.repository.GroupRepository;
 import io.plan.mate.expense.tracker.backend.settlement.jpa.repository.SettlementRepository;
@@ -41,8 +41,8 @@ import org.mockito.InOrder;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.modelmapper.ModelMapper;
 import org.springframework.dao.DataIntegrityViolationException;
 
 @ExtendWith(MockitoExtension.class)
@@ -52,7 +52,7 @@ class SettlementServiceImplTest {
   @Mock private SettlementRepository settlementRepository;
   @Mock private GroupRepository groupRepository;
   @Mock private ExpenseRepository expenseRepository;
-  @Mock private ModelMapper modelMapper;
+  @Spy private SettlementMapperImpl settlementMapper;
 
   @InjectMocks private SettlementServiceImpl settlementService;
 
@@ -104,19 +104,18 @@ class SettlementServiceImplTest {
               .toUser(alice)
               .amount(new BigDecimal("30.00"))
               .build();
-      SettlementDto settlementDto =
-          SettlementDto.builder()
-              .fromUserFirstName("Bob")
-              .toUserFirstName("Alice")
-              .amount(new BigDecimal("30.00"))
-              .build();
 
       when(settlementRepository.findByGroupId(1L)).thenReturn(List.of(settlement));
-      when(modelMapper.map(settlement, SettlementDto.class)).thenReturn(settlementDto);
 
       List<SettlementDto> result = settlementService.calculateSettlements(1L);
 
-      assertThat(result).containsExactly(settlementDto);
+      assertThat(result).singleElement().satisfies(dto -> {
+        assertThat(dto.getFromUserFirstName()).isEqualTo("Bob");
+        assertThat(dto.getFromUserLastName()).isEqualTo("Jones");
+        assertThat(dto.getToUserFirstName()).isEqualTo("Alice");
+        assertThat(dto.getToUserLastName()).isEqualTo("Smith");
+        assertThat(dto.getAmount()).isEqualByComparingTo("30.00");
+      });
       verify(groupRepository, never()).findById(any());
     }
 
@@ -134,8 +133,6 @@ class SettlementServiceImplTest {
       when(groupRepository.findById(1L)).thenReturn(Optional.of(groupWithExpense));
       when(expenseRepository.findByGroupId(1L)).thenReturn(List.of(expense));
       when(settlementRepository.saveAll(any())).thenAnswer(inv -> inv.getArgument(0));
-      when(modelMapper.map(any(Settlement.class), eq(SettlementDto.class)))
-          .thenReturn(SettlementDto.builder().build());
 
       settlementService.calculateSettlements(1L);
 
@@ -172,8 +169,6 @@ class SettlementServiceImplTest {
       when(groupRepository.findById(1L)).thenReturn(Optional.of(groupWithExpense));
       when(expenseRepository.findByGroupId(1L)).thenReturn(List.of(expense));
       when(settlementRepository.saveAll(any())).thenAnswer(inv -> inv.getArgument(0));
-      when(modelMapper.map(any(Settlement.class), eq(SettlementDto.class)))
-          .thenReturn(SettlementDto.builder().build());
 
       settlementService.calculateSettlements(1L);
 
@@ -251,8 +246,6 @@ class SettlementServiceImplTest {
       when(groupRepository.findById(1L)).thenReturn(Optional.of(groupWithExpense));
       when(expenseRepository.findByGroupId(1L)).thenReturn(List.of(expense));
       when(settlementRepository.saveAll(any())).thenAnswer(inv -> inv.getArgument(0));
-      when(modelMapper.map(any(Settlement.class), eq(SettlementDto.class)))
-          .thenReturn(SettlementDto.builder().build());
 
       settlementService.calculateSettlements(1L);
 
@@ -290,8 +283,6 @@ class SettlementServiceImplTest {
       when(groupRepository.findById(1L)).thenReturn(Optional.of(groupWithBothExpenses));
       when(expenseRepository.findByGroupId(1L)).thenReturn(List.of(expense1, expense2));
       when(settlementRepository.saveAll(any())).thenAnswer(inv -> inv.getArgument(0));
-      when(modelMapper.map(any(Settlement.class), eq(SettlementDto.class)))
-          .thenReturn(SettlementDto.builder().build());
 
       settlementService.calculateSettlements(1L);
 
@@ -319,8 +310,6 @@ class SettlementServiceImplTest {
       when(groupRepository.findById(1L)).thenReturn(Optional.of(groupWithExpense));
       when(expenseRepository.findByGroupId(1L)).thenReturn(List.of(expense));
       when(settlementRepository.saveAll(any())).thenAnswer(inv -> inv.getArgument(0));
-      when(modelMapper.map(any(Settlement.class), eq(SettlementDto.class)))
-          .thenReturn(SettlementDto.builder().build());
 
       settlementService.calculateSettlements(1L);
 
@@ -342,8 +331,6 @@ class SettlementServiceImplTest {
       when(groupRepository.findById(1L)).thenReturn(Optional.of(groupWithExpense));
       when(expenseRepository.findByGroupId(1L)).thenReturn(List.of(expense));
       when(settlementRepository.saveAll(any())).thenAnswer(inv -> inv.getArgument(0));
-      when(modelMapper.map(any(Settlement.class), eq(SettlementDto.class)))
-          .thenReturn(SettlementDto.builder().build());
 
       settlementService.calculateSettlements(1L);
 
@@ -366,8 +353,6 @@ class SettlementServiceImplTest {
       when(settlementRepository.findByGroupId(1L)).thenReturn(List.of());
       when(groupRepository.findById(1L)).thenReturn(Optional.of(groupWithExpense));
       when(expenseRepository.findByGroupId(1L)).thenReturn(List.of(expense));
-      when(modelMapper.map(any(Settlement.class), eq(SettlementDto.class)))
-          .thenReturn(SettlementDto.builder().build());
 
       // Simulate two transactions racing past the cold-cache check: the first saveAll to
       // reach the DB wins, the second hits the unique constraint and fails, mirroring

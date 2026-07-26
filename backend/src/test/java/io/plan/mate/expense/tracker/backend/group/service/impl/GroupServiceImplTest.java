@@ -13,11 +13,12 @@ import io.plan.mate.expense.tracker.backend.group.controller.payload.request.Cre
 import io.plan.mate.expense.tracker.backend.group.jpa.entity.Group;
 import io.plan.mate.expense.tracker.backend.group.jpa.repository.GroupRepository;
 import io.plan.mate.expense.tracker.backend.group.service.dto.GroupDto;
+import io.plan.mate.expense.tracker.backend.group.service.mapper.GroupMapperImpl;
 import io.plan.mate.expense.tracker.backend.member.controller.payload.event.MemberChangedEvent;
 import io.plan.mate.expense.tracker.backend.member.jpa.entity.Member;
 import io.plan.mate.expense.tracker.backend.member.jpa.entity.MemberRole;
 import io.plan.mate.expense.tracker.backend.member.jpa.repository.MemberRepository;
-import io.plan.mate.expense.tracker.backend.member.service.dto.MemberDto;
+import io.plan.mate.expense.tracker.backend.member.service.mapper.MemberMapperImpl;
 import io.plan.mate.expense.tracker.backend.settlement.controller.payload.event.SettlementsChangedEvent;
 import io.plan.mate.expense.tracker.backend.settlement.service.SettlementService;
 import io.plan.mate.expense.tracker.backend.commons.service.dto.PagedResponse;
@@ -32,8 +33,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.modelmapper.ModelMapper;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
@@ -46,7 +47,8 @@ class GroupServiceImplTest {
   @Mock private GroupRepository groupRepository;
   @Mock private MemberRepository memberRepository;
   @Mock private UserRepository userRepository;
-  @Mock private ModelMapper modelMapper;
+  @Spy private GroupMapperImpl groupMapper;
+  @Spy private MemberMapperImpl memberMapper;
   @Mock private SettlementService settlementService;
   @Mock private CurrentUserService currentUserService;
   @Mock private ApplicationEventPublisher eventPublisher;
@@ -99,8 +101,6 @@ class GroupServiceImplTest {
       when(userRepository.getReferenceById(7L)).thenReturn(creator);
       when(groupRepository.save(any())).thenReturn(group);
       when(memberRepository.save(any())).thenReturn(savedOwner);
-      when(modelMapper.map(group, GroupDto.class)).thenReturn(GroupDto.builder().id(1L).build());
-      when(modelMapper.map(savedOwner, MemberDto.class)).thenReturn(MemberDto.builder().id(1L).build());
 
       groupService.createGroup(new CreateGroupRequest("Trip", "desc"));
 
@@ -122,8 +122,6 @@ class GroupServiceImplTest {
       when(userRepository.getReferenceById(7L)).thenReturn(creator);
       when(groupRepository.save(any())).thenReturn(group);
       when(memberRepository.save(any())).thenReturn(savedOwner);
-      when(modelMapper.map(group, GroupDto.class)).thenReturn(GroupDto.builder().id(1L).build());
-      when(modelMapper.map(savedOwner, MemberDto.class)).thenReturn(MemberDto.builder().id(1L).build());
 
       groupService.createGroup(new CreateGroupRequest("Trip", "desc"));
 
@@ -157,7 +155,6 @@ class GroupServiceImplTest {
       when(currentUserService.isAdmin()).thenReturn(true);
       when(groupRepository.search(null, pageable))
           .thenReturn(new PageImpl<>(List.of(group), pageable, 1));
-      when(modelMapper.map(group, GroupDto.class)).thenReturn(GroupDto.builder().id(1L).build());
 
       PagedResponse<GroupDto> groups = groupService.getAllGroups(null, pageable);
 
@@ -173,7 +170,6 @@ class GroupServiceImplTest {
       when(currentUserService.isAdmin()).thenReturn(true);
       when(groupRepository.search("trip", pageable))
           .thenReturn(new PageImpl<>(List.of(group), pageable, 1));
-      when(modelMapper.map(group, GroupDto.class)).thenReturn(GroupDto.builder().id(1L).build());
 
       PagedResponse<GroupDto> groups = groupService.getAllGroups("  trip  ", pageable);
 
@@ -191,7 +187,6 @@ class GroupServiceImplTest {
       when(currentUserService.findCurrentUserId()).thenReturn(Optional.of(7L));
       when(groupRepository.searchForMember(7L, null, pageable))
           .thenReturn(new PageImpl<>(List.of(group), pageable, 1));
-      when(modelMapper.map(group, GroupDto.class)).thenReturn(GroupDto.builder().id(1L).build());
 
       PagedResponse<GroupDto> groups = groupService.getAllGroups(null, pageable);
 
