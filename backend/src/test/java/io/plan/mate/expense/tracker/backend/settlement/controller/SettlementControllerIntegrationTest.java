@@ -2,6 +2,10 @@ package io.plan.mate.expense.tracker.backend.settlement.controller;
 
 import static io.plan.mate.expense.tracker.backend.commons.utils.SettlementTestBuilders.participant;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.Matchers.closeTo;
+import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.everyItem;
+import static org.hamcrest.Matchers.is;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -71,8 +75,9 @@ class SettlementControllerIntegrationTest extends AbstractIntegrationTest {
         .perform(get("/api/groups/{groupId}/settlements/calculate", group.getId()).with(asUser(alice)))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.length()").value(2))
-        .andExpect(jsonPath("$[0].toUserFirstName").value("Alice"))
-        .andExpect(jsonPath("$[1].toUserFirstName").value("Alice"));
+        .andExpect(jsonPath("$[*].toUserFirstName", everyItem(is("Alice"))))
+        .andExpect(jsonPath("$[*].fromUserFirstName", containsInAnyOrder("Bob", "Charlie")))
+        .andExpect(jsonPath("$[*].amount", everyItem(closeTo(30.00, 0.001))));
   }
 
   @Test

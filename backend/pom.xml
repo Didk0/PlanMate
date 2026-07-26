@@ -179,9 +179,7 @@
                         <exclude>**/controller/payload/**</exclude>
                         <exclude>**/exception/handling/dto/**</exclude>
                         <exclude>**/config/application/properties/**</exclude>
-                        <exclude>**/commons/config/AppConfig.class</exclude>
-                        <exclude>**/commons/config/SecurityConfig.class</exclude>
-                        <exclude>**/commons/config/WebSocketConfig.class</exclude>
+                        <exclude>**/commons/config/*.class</exclude>
                     </excludes>
                 </configuration>
                 <executions>
