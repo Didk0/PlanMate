@@ -362,6 +362,16 @@
     }
   },
   "groups": [],
+  "users": [
+    {
+      "username": "service-account-planmate-backend",
+      "enabled": true,
+      "serviceAccountClientId": "planmate-backend",
+      "clientRoles": {
+        "realm-management": ["view-users", "manage-users"]
+      }
+    }
+  ],
   "defaultRole": {
     "name": "default-roles-planmate",
     "description": "${role_default-roles}",
@@ -629,12 +639,8 @@
       "alwaysDisplayInConsole": false,
       "clientAuthenticatorType": "client-secret",
       "secret": "${KEYCLOAK_CLIENT_SECRET:planmate-dev-secret}",
-      "redirectUris": [
-        "/*"
-      ],
-      "webOrigins": [
-        "/*"
-      ],
+      "redirectUris": [],
+      "webOrigins": [],
       "notBefore": 0,
       "bearerOnly": false,
       "consentRequired": false,
