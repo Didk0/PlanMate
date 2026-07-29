@@ -63,9 +63,6 @@ dist-ssr
 # Environment variables
 *.env
 
-### Keycloak ###
-docker/planmate/keycloak/
-
 ### Claude ###
 .mcp.json
 CLAUDE.md

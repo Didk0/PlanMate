@@ -44,6 +44,8 @@ services:
     image: quay.io/keycloak/keycloak:26.1.0
     ports:
       - "9090:8080"
+    env_file:
+      - ../../backend/backend.env
     environment:
       KC_BOOTSTRAP_ADMIN_USERNAME: admin
       KC_BOOTSTRAP_ADMIN_PASSWORD: password
@@ -55,6 +57,7 @@ services:
     volumes:
       - keycloak_data:/opt/keycloak/data
       - ./keycloak/planmate-realm.json:/opt/keycloak/data/import/planmate-realm.json:ro
+      - ./keycloak/themes/planmate:/opt/keycloak/themes/planmate:ro
     command:
       - start-dev
       - --import-realm
@@ -81,6 +84,7 @@ services:
     environment:
       DATASOURCE_URL: jdbc:postgresql://db:5432/planmate?currentSchema=planmate
       REDIS_HOST: redis
+      REDIS_PORT: "6379"
       JWT_ISSUER_URI: http://localhost:9090/realms/planmate
       JWK_SET_URI: http://keycloak:8080/realms/planmate/protocol/openid-connect/certs
       KEYCLOAK_URL: http://keycloak:8080
