@@ -1,0 +1,32 @@
+# Build output - the image builds its own jar inside the builder stage.
+target/
+
+# Secrets. backend.env.
+*.env
+!*.env.example
+
+# Docs and assets.
+*.md
+*.png
+
+# The Dockerfile is passed with -f and does not need to be inside the context.
+docker/
+
+# IDE and editor state.
+.idea/
+.vscode/
+.settings/
+*.iml
+*.iws
+*.ipr
+.classpath
+.project
+.factorypath
+
+# VCS
+.git/
+.gitignore
+.gitattributes
+
+# OS cruft
+.DS_Store

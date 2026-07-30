@@ -1,0 +1,116 @@
+# Continuous Integration.
+#
+# Triggers:
+#   pull_request      - gate every PR into main
+#   workflow_dispatch - manual "Run workflow" button, useful before cd.yml exists
+#   workflow_call     - lets .github/workflows/cd.yml invoke this as a hard gate,
+#                       so a red CI means the deploy jobs never start
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+  workflow_call:
+
+# A newer push makes an in-flight test run obsolete, so cancel it.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  # Monorepo: work out which halves of the repo this change actually touches, so a
+  # frontend-only PR does not sit through the backend suite.
+  changes:
+    name: Detect changed paths
+    runs-on: ubuntu-latest
+    outputs:
+      backend: ${{ steps.filter.outputs.backend }}
+      frontend: ${{ steps.filter.outputs.frontend }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            backend:
+              - 'backend/**'
+              - '.github/workflows/**'
+            frontend:
+              - 'frontend/**'
+              - '.github/workflows/**'
+
+  backend:
+    name: Backend (tests + coverage gate)
+    needs: changes
+    if: needs.changes.outputs.backend == 'true'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 25
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '25'
+          cache: maven
+
+      # `verify`, not `test`: the Jacoco check (90% instruction / 80% branch over the
+      # bundle) is bound to the verify phase.
+      - name: Verify
+        run: ./mvnw -B -ntp verify
+
+      # Only on failure: when coverage drops.
+      - name: Upload Jacoco report
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: jacoco-report
+          path: backend/target/site/jacoco/
+          retention-days: 5
+
+  frontend:
+    name: Frontend (lint + build)
+    needs: changes
+    if: needs.changes.outputs.frontend == 'true'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - run: npm ci
+
+      - run: npm run lint
+      - run: npm run build
+
+  # Single job to point branch protection at. Required checks treat "skipped" and
+  # "success" differently, so this collapses the conditional jobs above into one
+  # unambiguous pass/fail.
+  ci-passed:
+    name: CI passed
+    needs: [backend, frontend]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fail if any needed job failed or was cancelled
+        run: |
+          if [ "${{ contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled') }}" = "true" ]; then
+            echo "::error::A required CI job failed."
+            exit 1
+          fi
+          echo "All CI jobs passed or were skipped as unaffected."
