@@ -370,6 +370,22 @@
       "clientRoles": {
         "realm-management": ["view-users", "manage-users"]
       }
+    },
+    {
+      "username": "admin",
+      "enabled": true,
+      "emailVerified": true,
+      "email": "admin@gmail.com",
+      "firstName": "Admin",
+      "lastName": "Admin",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "admin",
+          "temporary": false
+        }
+      ],
+      "realmRoles": ["default-roles-planmate", "USER", "ADMIN"]
     }
   ],
   "defaultRole": {

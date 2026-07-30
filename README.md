@@ -51,9 +51,23 @@ Docker + Docker Compose — that's the only thing you need installed.
 
 ### How Keycloak is already set up for you
 The realm import at `docker/planmate/keycloak/planmate-realm.json` provisions everything the app needs — nobody has to click through the Keycloak admin console to get a working setup:
-- **`planmate-frontend`** — a public client (PKCE flow, no secret) that the React app logs in through. Its redirect URI and web origin are fixed to `http://localhost:5173`, so login will break with an `invalid_redirect_uri` error if you run the frontend on a different port.
+- **`planmate-frontend`** — a public client (PKCE flow, no secret) that the React app logs in through. Its redirect URI and web origin are fixed to `http://localhost:5173`, so login will break with Keycloak's `Invalid parameter: redirect_uri` page if you run the frontend on any other port.
 - **`planmate-backend`** — a confidential client the backend uses as a service account to talk to Keycloak's admin API (looking up users, etc.). It needs a secret, which is where `backend.env` comes in: the realm's copy of the secret is `${KEYCLOAK_CLIENT_SECRET:planmate-dev-secret}` — a placeholder Keycloak resolves from the environment at import time, falling back to `planmate-dev-secret` if nothing is set. As long as `backend.env`'s `KEYCLOAK_CLIENT_SECRET` matches that default (it does, out of the box), the two sides agree automatically.
-- **Realm roles `USER` and `ADMIN`** — every self-registered user is automatically granted `USER`. `ADMIN` is not granted automatically; if you need admin-only features, open the Keycloak admin console, find your user under the `planmate` realm, and add the `ADMIN` role to it under Role Mapping, then log out and back in so the new role ends up in your token.
+- **Realm roles `USER` and `ADMIN`** — every self-registered user is automatically granted `USER`. `ADMIN` is not granted automatically; if you need admin-only features on your own account, open the Keycloak admin console, find your user under the `planmate` realm, and add the `ADMIN` role to it under Role Mapping, then log out and back in so the new role ends up in your token.
+- **An `admin` application user** — created automatically by that same realm import when the Keycloak container first starts. Username `admin`, password `admin`, with both the `USER` and `ADMIN` realm roles already assigned. This is a ready-to-use account for the app itself, so you can log in and reach admin-only features without touching the Keycloak console. (Not to be confused with the Keycloak *console* admin, which is `admin` / `password` on the `master` realm.)
 
 ### First login
-Register a new account directly from the frontend — self-registration is on, and you'll land with the `USER` role already assigned.
+Log in at `http://localhost:5173` as **`admin` / `admin`** — it exists from the moment Keycloak finishes starting. You can also register a new account from the frontend; self-registration is on, and you'll land with the `USER` role already assigned.
+
+### Optional: sample users for testing
+PlanMate splits expenses *between people*, so a single account isn't enough to try out groups, members, or settlements. To get a set of ordinary users, run:
+
+```bash
+./docker/planmate/dev-users.sh
+```
+
+This creates **10 additional users** — `alice`, `bob`, `carol`, `david`, `emma`, `frank`, `grace`, `henry`, `ivy`, `jack` — each with the `USER` role and **password equal to the username** (`alice` / `alice`, and so on). Add them to a group by username in the UI and start logging expenses between them.
+
+Notes:
+- Only **Keycloak** needs to be running. The backend is optional: if it's up, the script also creates each user's app-side record immediately; if not, that record is created automatically the first time each user logs in.
+- It's safe to re-run — users that already exist are skipped.
