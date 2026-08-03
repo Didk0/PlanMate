@@ -1,0 +1,175 @@
+# Continuous Deployment.
+#
+# On push to main: gate on CI, build changed images (tagged by commit SHA) and
+# push them to GHCR, then hit Render's deploy hooks in order - Keycloak first,
+# then backend, then frontend
+# followed by a health-check retry loop so a bad deploy fails the workflow
+# instead of silently leaving a broken service live.
+name: CD
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# Never cancel a half-finished deploy
+concurrency:
+  group: cd-main
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  packages: write # required to push images to GHCR
+
+env:
+  REGISTRY: ghcr.io
+
+jobs:
+  ci:
+    uses: ./.github/workflows/ci.yml
+
+  changes:
+    name: Detect changed paths
+    runs-on: ubuntu-latest
+    outputs:
+      backend: ${{ steps.filter.outputs.backend }}
+      frontend: ${{ steps.filter.outputs.frontend }}
+      keycloak: ${{ steps.filter.outputs.keycloak }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            backend:
+              - 'backend/**'
+            frontend:
+              - 'frontend/**'
+            keycloak:
+              - 'docker/planmate/keycloak/**'
+
+  build-backend:
+    name: Build + push backend image
+    needs: [ci, changes]
+    if: needs.changes.outputs.backend == 'true'
+    runs-on: ubuntu-latest
+    outputs:
+      image: ${{ steps.meta.outputs.image }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - id: meta
+        run: |
+          OWNER=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
+          echo "image=${{ env.REGISTRY }}/${OWNER}/planmate-backend:${{ github.sha }}" >> "$GITHUB_OUTPUT"
+
+      - uses: docker/build-push-action@v6
+        with:
+          context: ./backend
+          file: ./backend/docker/Dockerfile
+          platforms: linux/amd64 # Render runs amd64 only
+          provenance: false # keep the tag a plain image, not an OCI index
+          push: true
+          tags: ${{ steps.meta.outputs.image }}
+          cache-from: type=gha,scope=backend
+          cache-to: type=gha,scope=backend,mode=max
+
+  build-keycloak:
+    name: Build + push Keycloak image
+    needs: [ci, changes]
+    if: needs.changes.outputs.keycloak == 'true'
+    runs-on: ubuntu-latest
+    outputs:
+      image: ${{ steps.meta.outputs.image }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - id: meta
+        run: |
+          OWNER=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
+          echo "image=${{ env.REGISTRY }}/${OWNER}/planmate-keycloak:${{ github.sha }}" >> "$GITHUB_OUTPUT"
+
+      - uses: docker/build-push-action@v6
+        with:
+          context: ./docker/planmate/keycloak
+          file: ./docker/planmate/keycloak/Dockerfile
+          platforms: linux/amd64
+          provenance: false
+          push: true
+          tags: ${{ steps.meta.outputs.image }}
+          cache-from: type=gha,scope=keycloak
+          cache-to: type=gha,scope=keycloak,mode=max
+
+  deploy-keycloak:
+    name: Deploy Keycloak
+    needs: build-keycloak
+    if: needs.build-keycloak.result == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Render deploy hook
+        run: |
+          curl -fsS --retry 3 -G "${{ secrets.RENDER_HOOK_KEYCLOAK }}" \
+            --data-urlencode "imgURL=${{ needs.build-keycloak.outputs.image }}"
+
+      - name: Wait for Keycloak to become healthy
+        run: |
+          for i in $(seq 1 40); do
+            code=$(curl -s -o /dev/null -w '%{http_code}' \
+              "${{ vars.KEYCLOAK_URL }}/realms/master/.well-known/openid-configuration" || true)
+            echo "attempt $i -> $code"
+            [ "$code" = "200" ] && exit 0
+            sleep 15
+          done
+          echo "::error::Keycloak unhealthy after 10 minutes"
+          exit 1
+
+  deploy-backend:
+    name: Deploy backend
+    needs: [build-backend, deploy-keycloak]
+    if: always() && needs.build-backend.result == 'success' && needs.deploy-keycloak.result != 'failure'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Render deploy hook
+        run: |
+          curl -fsS --retry 3 -G "${{ secrets.RENDER_HOOK_BACKEND }}" \
+            --data-urlencode "imgURL=${{ needs.build-backend.outputs.image }}"
+
+      - name: Smoke test (tolerates a cold start)
+        run: |
+          for i in $(seq 1 40); do
+            code=$(curl -s -o /tmp/health -w '%{http_code}' --max-time 30 \
+              "${{ vars.BACKEND_URL }}/actuator/health" || true)
+            echo "attempt $i -> $code $(head -c 200 /tmp/health 2>/dev/null)"
+            if [ "$code" = "200" ] && grep -q '"status":"UP"' /tmp/health; then
+              exit 0
+            fi
+            sleep 15
+          done
+          echo "::error::Backend unhealthy after 10 minutes"
+          exit 1
+
+  deploy-frontend:
+    name: Deploy frontend
+    needs: [ci, changes, deploy-backend]
+    if: always() && needs.ci.result == 'success' && needs.changes.outputs.frontend == 'true' && needs.deploy-backend.result != 'failure'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Render deploy hook
+        run: curl -fsS --retry 3 "${{ secrets.RENDER_HOOK_FRONTEND }}"

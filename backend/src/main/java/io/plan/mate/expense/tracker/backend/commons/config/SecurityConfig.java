@@ -55,7 +55,7 @@ public class SecurityConfig {
                 authorize.requestMatchers("/actuator/**").permitAll();
               } else {
                 authorize
-                    .requestMatchers("/actuator/health", "/actuator/info")
+                    .requestMatchers("/actuator/health", "/actuator/health/**", "/actuator/info")
                     .permitAll()
                     .requestMatchers("/actuator/**")
                     .hasRole("ADMIN");
