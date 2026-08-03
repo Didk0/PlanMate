@@ -20,6 +20,8 @@ ENV KC_PROXY_HEADERS=xforwarded
 
 ENV KC_CACHE=local
 
+ENV KC_DB_SCHEMA=keycloak
+
 ENV JAVA_OPTS_KC_HEAP="-Xms96m -Xmx300m -XX:MaxMetaspaceSize=160m -Xss512k"
 
 ENV KC_DB_POOL_INITIAL_SIZE=1
