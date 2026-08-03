@@ -4,6 +4,10 @@ import { getAuthToken } from "@/api/client";
 
 export function createStompClient({ onConnect, onDisconnect, onError } = {}) {
   const wsUrl = import.meta.env.VITE_WS_URL;
+  if (!wsUrl) {
+    throw new Error("VITE_WS_URL is not set - SockJS cannot connect without a WebSocket URL");
+  }
+
   const log = import.meta.env.DEV ? console.log : () => {};
   const warn = import.meta.env.DEV ? console.warn : () => {};
 
