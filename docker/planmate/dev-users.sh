@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 #
-# Creates a set of sample PlanMate users for local testing.
-# You need Keycloak to be up to run the script.
+# Creates a set of sample PlanMate users for local testing, plus an `admin`
+# app user with the ADMIN role. You need Keycloak to be up to run the script.
 #
-# Only `admin` is seeded from planmate-realm.json, because one account is all a
-# newcomer needs to boot the app. But PlanMate splits expenses *between people*,
-# so exercising groups/members/settlements needs several users — that is what
-# this script is for.
+# planmate-realm.json seeds no application users at all (removed so the same
+# realm file is safe to import straight into production) — this script is
+# what replaces it locally, since PlanMate splits expenses *between people*
+# and exercising groups/members/settlements needs several users to begin with.
 #
 # Every password equals the username. Safe to re-run: existing users are skipped.
 #
@@ -55,11 +55,16 @@ if [ -z "$AT" ] || [ "$AT" = "null" ]; then
   exit 1
 fi
 
-ROLES=$(curl -sf "$KC/admin/realms/$REALM/roles" -H "Authorization: Bearer $AT" \
-  | jq -c '[.[] | select(.name=="USER" or .name=="default-roles-planmate") | {id,name}]')
+ALL_ROLES=$(curl -sf "$KC/admin/realms/$REALM/roles" -H "Authorization: Bearer $AT")
+USER_ROLES=$(echo "$ALL_ROLES" | jq -c '[.[] | select(.name=="USER" or .name=="default-roles-planmate") | {id,name}]')
+ADMIN_ROLES=$(echo "$ALL_ROLES" | jq -c '[.[] | select(.name=="USER" or .name=="ADMIN" or .name=="default-roles-planmate") | {id,name}]')
 
-for ENTRY in "${USERS[@]}"; do
-  UN="${ENTRY%%:*}"; REST="${ENTRY#*:}"; FN="${REST%%:*}"; LN="${REST#*:}"
+# create_user <username> <firstName> <lastName> <rolesJson>
+# Password always equals the username. Skips creation if the user already
+# exists, but still (re-)provisions the app-side row so the script stays safe
+# to re-run after a `docker compose down -v`.
+create_user() {
+  local UN="$1" FN="$2" LN="$3" ROLES="$4" UID_
 
   EXISTING=$(curl -sf "$KC/admin/realms/$REALM/users?username=$UN&exact=true" \
     -H "Authorization: Bearer $AT" | jq -r '.[0].id // empty')
@@ -87,7 +92,7 @@ for ENTRY in "${USERS[@]}"; do
     echo "==> created $UN ($FN $LN)"
   fi
 
-  [ "$BACKEND_UP" -eq 1 ] || continue
+  [ "$BACKEND_UP" -eq 1 ] || return 0
 
   # A Keycloak identity alone is not enough: the app-side planmate.users row is
   # created lazily by POST /api/users. The frontend does this on login; do it
@@ -100,7 +105,7 @@ for ENTRY in "${USERS[@]}"; do
 
   if [ -z "$TOKEN" ] || [ "$TOKEN" = "null" ]; then
     echo "    WARNING: could not log in as $UN — app-side row not provisioned" >&2
-    continue
+    return 0
   fi
 
   # `|| echo 000` keeps a connection failure from tripping `set -e`.
@@ -112,8 +117,16 @@ for ENTRY in "${USERS[@]}"; do
     000)     echo "    WARNING: backend unreachable — row not provisioned" >&2 ;;
     *)       echo "    WARNING: provisioning returned HTTP $CODE" >&2 ;;
   esac
+}
+
+create_user admin Admin Admin "$ADMIN_ROLES"
+
+for ENTRY in "${USERS[@]}"; do
+  UN="${ENTRY%%:*}"; REST="${ENTRY#*:}"; FN="${REST%%:*}"; LN="${REST#*:}"
+  create_user "$UN" "$FN" "$LN" "$USER_ROLES"
 done
 
 echo
-echo "Done. Sample users ready (password == username):"
+echo "Done. Users ready (password == username):"
+echo "  admin (ADMIN + USER)"
 printf '  %s\n' "${USERS[@]%%:*}"
