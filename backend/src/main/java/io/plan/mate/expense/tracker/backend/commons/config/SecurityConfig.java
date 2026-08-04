@@ -81,7 +81,7 @@ public class SecurityConfig {
   public JwtDecoder jwtDecoder() {
 
     final SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
-    requestFactory.setConnectTimeout(Duration.ofSeconds(10));
+    requestFactory.setConnectTimeout(Duration.ofSeconds(60));
     requestFactory.setReadTimeout(Duration.ofSeconds(120));
     final RestTemplate restTemplate = new RestTemplate(requestFactory);
 
