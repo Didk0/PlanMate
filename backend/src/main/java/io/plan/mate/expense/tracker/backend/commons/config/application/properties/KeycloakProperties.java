@@ -23,4 +23,8 @@ public class KeycloakProperties {
   @NotBlank private String clientSecret;
 
   private String scope;
+
+  @NotBlank private String issuerUri;
+
+  @NotBlank private String jwkSetUri;
 }
