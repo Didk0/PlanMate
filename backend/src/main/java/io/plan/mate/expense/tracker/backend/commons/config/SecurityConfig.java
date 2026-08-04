@@ -3,9 +3,12 @@ package io.plan.mate.expense.tracker.backend.commons.config;
 import io.plan.mate.expense.tracker.backend.commons.config.application.properties.FrontendProperties;
 import io.plan.mate.expense.tracker.backend.commons.config.application.properties.KeycloakProperties;
 import io.plan.mate.expense.tracker.backend.commons.config.converters.JwtConverter;
+import jakarta.ws.rs.client.Client;
 import java.time.Duration;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import lombok.RequiredArgsConstructor;
+import org.jboss.resteasy.client.jaxrs.internal.ResteasyClientBuilderImpl;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.KeycloakBuilder;
@@ -82,7 +85,7 @@ public class SecurityConfig {
 
     final SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
     requestFactory.setConnectTimeout(Duration.ofSeconds(60));
-    requestFactory.setReadTimeout(Duration.ofSeconds(120));
+    requestFactory.setReadTimeout(Duration.ofSeconds(180));
     final RestTemplate restTemplate = new RestTemplate(requestFactory);
 
     final NimbusJwtDecoder jwtDecoder =
@@ -116,6 +119,12 @@ public class SecurityConfig {
   @Lazy
   public Keycloak keycloak() {
 
+    final Client resteasyClient =
+        new ResteasyClientBuilderImpl()
+            .connectTimeout(60, TimeUnit.SECONDS)
+            .readTimeout(180, TimeUnit.SECONDS)
+            .build();
+
     return KeycloakBuilder.builder()
         .serverUrl(keycloakProperties.getAuthServerUrl())
         .realm(keycloakProperties.getRealm())
@@ -123,6 +132,7 @@ public class SecurityConfig {
         .grantType(OAuth2Constants.CLIENT_CREDENTIALS)
         .clientSecret(keycloakProperties.getClientSecret())
         .scope(keycloakProperties.getScope())
+        .resteasyClient(resteasyClient)
         .build();
   }
 }
