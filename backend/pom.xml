@@ -111,7 +111,7 @@
         <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-admin-client</artifactId>
-            <version>26.0.11</version>
+            <version>26.0.12</version>
         </dependency>
 
         <!-- validation -->
@@ -183,7 +183,7 @@
             <plugin>
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
-                <version>0.8.13</version>
+                <version>0.8.15</version>
                 <configuration>
                     <excludes>
                         <exclude>**/BackendApplication.class</exclude>
